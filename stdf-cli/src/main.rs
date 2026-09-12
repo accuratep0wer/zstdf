@@ -10,6 +10,7 @@ use stdf_validate::{Severity, ValidationReport};
 
 mod dashboard;
 mod partitioned;
+mod sanity;
 mod traceability;
 
 #[cfg(test)]
@@ -27,6 +28,8 @@ struct Cli {
 
 #[derive(Debug, Subcommand)]
 enum Command {
+    /// Audit CP/FT source fields and preview run metadata and per-unit first values.
+    Sanity(sanity::Arguments),
     /// Trace device test steps and retest differences directly from STDF.
     Traceability(traceability::Arguments),
     /// Verify hashes, paths, schemas, and row counts of the current dataset snapshot.
@@ -139,6 +142,7 @@ fn main() {
 
 fn execute(cli: Cli, out: &mut impl Write) -> CliResult<()> {
     match cli.command {
+        Command::Sanity(args) => sanity::execute(args, out),
         Command::Traceability(args) => traceability::execute(args, out),
         Command::VerifyDataset { input } => {
             let catalog = stdf_parquet::catalog::verify_catalog(&input)?;

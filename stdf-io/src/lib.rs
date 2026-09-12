@@ -7,4 +7,4 @@ mod hardening_tests;
 
 pub use error::{IoError, IoResult};
 pub use reader::{StdfReader, StdfSource};
-pub use streaming::StreamingRecordReader;
+pub use streaming::{RecordEvent, StreamingRecordReader};

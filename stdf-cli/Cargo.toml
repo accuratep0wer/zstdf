@@ -23,4 +23,5 @@ serde = { version = "1", features = ["derive"] }
 sha2 = "0.10"
 flate2.workspace = true
 stdf-analytics = { path = "../stdf-analytics" }
+regex = "1"
 

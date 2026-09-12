@@ -1317,7 +1317,7 @@ input:focus, select:focus { border-color: var(--cyan); box-shadow: 0 0 0 3px rgb
   border-radius: 24px;
   box-shadow: 0 18px 70px rgba(0,0,0,.32);
 }
-.panel { padding: 18px; min-height: 240px; }
+.panel { padding: 18px; min-height: 240px; min-width: 0; overflow-x: auto; }
 .kpi { padding: 16px; position: relative; overflow: hidden; }
 .kpi::after {
   content: "";
@@ -1559,29 +1559,48 @@ function renderQuality() {
 function renderBar(id, items, label, value, color, suffix, onPick) {
   const canvas = setupCanvas(id);
   const ctx = canvas.getContext('2d');
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  canvas.onclick = null;
   if (!items.length) return emptyCanvas(ctx, canvas, 'No data for current filters');
+  // Layout in CSS pixels so labels and picking stay consistent at every DPR.
+  const rect = canvas.getBoundingClientRect();
+  const width = rect.width || 320, height = rect.height || 300;
+  ctx.setTransform(canvas.width / width, 0, 0, canvas.height / height, 0, 0);
+  ctx.clearRect(0, 0, width, height);
   const max = Math.max(...items.map(value), 1);
-  const left = 130, right = 18, top = 18, gap = 7;
-  const barH = Math.max(8, (canvas.height - top * 2) / items.length - gap);
   ctx.font = '12px Segoe UI';
+  const values = items.map(item => `${Number(value(item)).toLocaleString(undefined, {maximumFractionDigits: 1})}${suffix}`);
+  const right = Math.max(...values.map(text => ctx.measureText(text).width)) + 24;
+  const left = Math.min(130, width * .32), top = 18;
+  const stride = Math.min(40, (height - top * 2) / items.length);
+  const barH = Math.max(1, stride - 7), plotWidth = Math.max(1, width - left - right);
+  ctx.textBaseline = 'middle';
+  canvas.setAttribute('role', 'img');
+  canvas.setAttribute('aria-label', items.map((item, i) => `${label(item)}: ${values[i]}`).join('; '));
   items.forEach((item, index) => {
-    const y = top + index * (barH + gap);
+    const y = top + index * stride;
     const v = value(item);
-    const w = (canvas.width - left - right) * v / max;
+    const w = plotWidth * v / max;
+    let text = String(label(item));
+    if (ctx.measureText(text).width > left - 20) {
+      while (text.length && ctx.measureText(text + '…').width > left - 20) text = text.slice(0, -1);
+      text += '…';
+    }
+    ctx.textAlign = 'left';
     ctx.fillStyle = '#8fb5ac';
-    ctx.fillText(trim(label(item), 18), 10, y + barH * .75);
+    ctx.fillText(text, 10, y + barH / 2);
     ctx.fillStyle = color(item);
-    roundRect(ctx, left, y, Math.max(w, 2), barH, 6);
+    roundRect(ctx, left, y, Math.max(w, 2), barH, Math.min(6, barH / 2, Math.max(w, 2) / 2));
     ctx.fill();
     ctx.fillStyle = '#effff8';
-    ctx.fillText(`${Number(v).toLocaleString(undefined, {maximumFractionDigits: 1})}${suffix}`, left + w + 8, y + barH * .75);
+    ctx.textAlign = 'right';
+    ctx.fillText(values[index], width - 10, y + barH / 2);
   });
   canvas.onclick = event => {
     if (!onPick) return;
     const rect = canvas.getBoundingClientRect();
-    const index = Math.floor((event.clientY - rect.top - top) / ((barH + gap) * rect.height / canvas.height));
-    if (items[index]) onPick(items[index]);
+    const y = (event.clientY - rect.top) * height / rect.height - top;
+    const index = Math.floor(y / stride);
+    if (items[index] && y - index * stride <= barH) onPick(items[index]);
   };
 }
 

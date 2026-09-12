@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 
+pub mod fields;
+
 use stdf_core::{raw_records, records::decode_record, StdfError, StdfRecord};
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]

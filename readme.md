@@ -8,6 +8,12 @@ The independent `traceability` command reads STDF files/directories/gzip directl
 and reports device test histories, retest verdict/bin differences, missing steps,
 and source evidence in an offline HTML report. See [traceability usage and demo](docs/traceability.md).
 
+The `sanity` command checks CP/FT source records and shows important run fields
+plus the first value of the first two records per type in each unit. It exports
+field evidence and an offline report. See [CP/FT sanity 安装、运行与示例](docs/sanity.md)
+for runnable commands, profile configuration, and the current validation scope.
+Quick start: [运行 CP/FT Sanity 报告](#运行-cpft-sanity-报告).
+
 Dashboard part identity now uses **wafer + positive PRR X/Y**, with an all-or-nothing
 fallback to **lot + positive integer PTR X/Y**. New conversions produce `eav-v2`;
 reconvert older Parquet/catalog datasets from their source STDF before using the
@@ -183,6 +189,32 @@ for the CLI; only the Python setup below uses Homebrew.
 
 ## Run the CLI
 
+### Phase 10D 以前的功能是否仍然保留？
+
+**保留。** `sanity` 和 `traceability` 是新增的独立入口，原有 CLI 命令与 Python
+转换接口仍然存在。当前可用入口如下；这里表示已实现的功能，不代表整个 Phase 10D 已完成。
+
+| 功能 | 当前入口 |
+| --- | --- |
+| STDF 解码摘要、记录查看、ASCII 导出 | `info`、`dump`、`to-ascii` |
+| 原有单文件和批量校验 | `check`、`batch-check` |
+| 单文件 Parquet 转换、manifest 和重试复用 | `convert`、`--no-overwrite` |
+| Phase 10A 单文件可视化 | `dashboard` |
+| Phase 10B 多文件转换和文件粒度分区 | `convert-many` |
+| Phase 10C.1 按行分区和受预算约束的转换 | `convert-partitioned`（当前支持 PTR） |
+| Phase 10C.2 数据集完整性、恢复与多 lot 可视化 | `verify-dataset`、`recover-dataset`、`dashboard-dir` |
+| 可选 Python 转换接口 | `_zstdf`，见 [Optional Python Binding](#optional-python-binding) |
+
+原来的 `STDF → convert → dashboard` 和
+`STDF → convert-partitioned → verify-dataset → dashboard-dir` 流程仍然可用。
+`sanity` 直接读取 STDF，输出的 `record_fields.parquet` 是字段检查证据，不能作为
+`dashboard` 所需的测量 EAV Parquet。它也不会自动调用转换或修改 Dashboard 的良率口径。
+
+旧版 Parquet/catalog 必须从 STDF 重新转换到新的输出目录，得到 `eav-v2` 后再使用
+当前 Dashboard；这是坐标身份规则升级的兼容要求。Phase 10D.2/10D.3 和 10D.5
+仍未完成，10D.4 sanity 已有可运行实现但尚未完成全部标准规则验收。
+详细状态见 [阶段规格](PHASED_EXECUTION_SPEC.md)。
+
 ### Windows PowerShell
 
 Replace the example paths below with files or directories that exist on your
@@ -248,6 +280,86 @@ xdg-open dashboard.html
 On a headless RHEL server, transfer `dashboard.html` to your desktop computer
 and open it in a browser. The generated HTML is self-contained; no web server
 is required. The same PTR-only and memory-accounting limits described above apply.
+
+## 运行 CP/FT Sanity 报告
+
+在仓库根目录运行。先按上方对应平台的安装说明准备 Rust 和编译工具；读取实际 STDF
+只需要 CLI，Python 仅用于生成下面的合成示例。
+
+### 1. 构建并确认入口
+
+```powershell
+cargo build --release -p stdf-cli --locked
+.\target\release\zstdf-cli.exe sanity --help
+```
+
+### 2. 检查实际 CP 或 FT 数据
+
+把输入路径换成实际存在的文件或目录。支持多个输入、目录递归和 gzip。
+未指定 `--profile` 时，使用对应 CP/FT 的内置基础规则。
+
+```powershell
+.\target\release\zstdf-cli.exe sanity "D:\STDF\CP" `
+  --test-domain cp --output-dir .\reports\cp-sanity
+Invoke-Item .\reports\cp-sanity\report.html
+
+.\target\release\zstdf-cli.exe sanity "D:\STDF\FT\sample.stdf.gz" `
+  --test-domain ft --output-dir .\reports\ft-sanity
+Invoke-Item .\reports\ft-sanity\report.html
+```
+
+CP 基础规则要求明确的 wafer 上下文；FT 不因缺少 wafer 记录自动报错。
+实际产品格式可通过 `--profile .\my-cp-profile.json` 配置。
+[CP 示例](examples/sanity/cp-profile.json) 和 [FT 示例](examples/sanity/ft-profile.json)
+中的 lot/程序命名用于合成数据，请修改后再用于产品数据。
+
+### 3. 运行合成示例及混合 CP/FT 报告
+
+以下使用 Python 3 标准库生成 STDF，不需要安装 Python binding：
+
+```powershell
+python .\examples\sanity\generate_demo.py
+
+.\target\release\zstdf-cli.exe sanity .\examples\sanity\generated\cp.stdf `
+  --test-domain cp --profile .\examples\sanity\cp-profile.json `
+  --output-dir .\examples\sanity\generated\cp-report
+
+.\target\release\zstdf-cli.exe sanity `
+  .\examples\sanity\generated\cp.stdf .\examples\sanity\generated\ft.stdf `
+  --run-profiles .\examples\sanity\run-profiles.json `
+  --output-dir .\examples\sanity\generated\mixed-report
+
+Invoke-Item .\examples\sanity\generated\mixed-report\report.html
+```
+
+混合示例包含 **2 个 run、6 个 unit**。FT 的 3 个身份未解析 warning 是演示数据的预期结果，
+不会被报告为格式验证错误。`--run-profiles` 与 `--test-domain`、`--profile` 互斥。
+每个 MIR 必须唯一匹配一条路由；示例按 `JOB_NAM` 和 `JOB_REV` 精确匹配，
+使用真实数据时要修改 [run-profiles.json](examples/sanity/run-profiles.json)。
+
+报告上半部展示每个 run 的 MIR/SDR 等重要字段；选择 unit 后，按 DTR/PTR/MPR/FTR/GDR
+类型各展示前两条记录的首值。所有记录仍参与检查，原始值、默认/继承来源和诊断保留在证据中。
+浏览器支持 run 切换、unit 搜索、诊断筛选和完整 JSON 导出，不需要 Web 服务。
+首值以数值、单位或 PASS/FAIL 显示；点击 **Raw evidence** 查看原始 bits、字段状态及来源。
+显示格式不会改变原始证据或 JSON 导出，run 下拉框同时标明 CP/FT 与 profile ID。
+
+`--output-dir` 自动创建。根目录的 `report.html` 引用同目录下不可变的 `sanity-*` 子目录；
+分享全部证据时应复制整个输出目录。检查发现错误时会发布明确失败的诊断报告并返回退出码 1；
+I/O、配置错误、超限或取消则保留原报告。生成的 `ft-invalid.stdf` 含一条位于预览范围之外的
+NaN，可用于验证全文件检查。
+
+### 4. Linux/macOS
+
+构建方式见上方平台说明，参数相同，使用原生可执行文件路径：
+
+```bash
+./target/release/zstdf-cli sanity /path/to/cp \
+  --test-domain cp --output-dir reports/cp-sanity
+```
+
+macOS 用 `open reports/cp-sanity/report.html`；Linux 桌面用
+`xdg-open reports/cp-sanity/report.html`。本地实际验证环境为 Windows，
+Linux/macOS 命令是对应平台的运行说明。资源限制和完整字段合同见 [Sanity 说明](docs/sanity.md)。
 
 ## 安装与运行测试流程追溯报告
 
@@ -391,6 +503,27 @@ Do not type the brackets. Quote paths and titles containing spaces.
 Use `zstdf-cli --help` to list commands, `zstdf-cli --version` for the version,
 and `zstdf-cli <command> --help` for that command's options. Boolean flags are
 off unless supplied; use `--no-overwrite`, not `--no-overwrite true`.
+
+### `sanity`: Inspect CP/FT Fields and Compact Unit Previews
+
+```text
+zstdf-cli sanity <inputs>... --test-domain cp|ft --output-dir DIR [--profile FILE]
+zstdf-cli sanity <inputs>... --run-profiles FILE --output-dir DIR
+```
+
+| Parameter | Default | Meaning |
+| --- | --- | --- |
+| `inputs` | Required, one or more | STDF files/directories; gzip supported. |
+| `--test-domain cp\|ft` | Required unless `--run-profiles` is supplied | One domain for all input runs. |
+| `--profile FILE` | Built-in domain profile | Product rules for the selected domain. |
+| `--run-profiles FILE` | None | Unique per-MIR route selection for mixed CP/FT; conflicts with the two options above. |
+| `--output-dir DIR` | Required | Bundle directory; open its root `report.html`. |
+| `--preview-records-per-type N` | `2` | First N records per type in each unit, range 1–100; does not limit full-file checking. |
+| `--max-report-mib N` | `32` | Retained-summary budget and serialized report limit, not a hard RSS cap. |
+| `--disk-limit-mib N` | `1024` | Write budget for this generation, including evidence and atomic report copy. |
+| `--max-units N` | `100000` | Maximum independent unit attempts; exceeding it fails without truncation. |
+| `--max-sources N` | `10000` | Input-path limit before content deduplication. |
+| `--cancel-file FILE` | None | Creating this file requests cooperative cancellation before publication. |
 
 ### `traceability`: Trace Steps and Retest Differences
 

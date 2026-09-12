@@ -7,6 +7,15 @@ use stdf_core::{
     StdfRecord,
 };
 
+/// A complete wire record, including decode failures for known record types.
+/// Offsets refer to the decompressed input. Framing failures are returned separately.
+pub struct RecordEvent {
+    pub offset: usize,
+    pub header: RecordHeader,
+    pub body: Vec<u8>,
+    pub decoded: Result<StdfRecord, StdfError>,
+}
+
 /// Incremental STDF decoder over any `Read` source.
 pub struct StreamingRecordReader<R: Read> {
     reader: BufReader<R>,
@@ -42,7 +51,7 @@ impl<R: Read> StreamingRecordReader<R> {
         self.offset
     }
 
-    fn read_next(&mut self) -> IoResult<Option<StdfRecord>> {
+    pub fn next_event(&mut self) -> IoResult<Option<RecordEvent>> {
         if self.finished {
             return Ok(None);
         }
@@ -80,6 +89,7 @@ impl<R: Read> StreamingRecordReader<R> {
             let header = RecordHeader::from_bytes(&header_bytes, self.byte_order);
             let mut body = vec![0u8; header.rec_len as usize];
             self.reader.read_exact(&mut body).map_err(|err| {
+                self.finished = true;
                 if err.kind() == std::io::ErrorKind::UnexpectedEof {
                     IoError::Decode(StdfError::UnexpectedEof {
                         position: self.offset + 4,
@@ -92,16 +102,15 @@ impl<R: Read> StreamingRecordReader<R> {
             (header, body)
         };
 
+        let offset = self.offset;
         self.offset += 4 + header.rec_len as usize;
-        let record = decode_record(&header, &body, self.byte_order).unwrap_or_else(|_| {
-            StdfRecord::Unknown {
-                typ: header.rec_typ,
-                sub: header.rec_sub,
-                data: body,
-            }
-        });
-
-        Ok(Some(record))
+        let decoded = decode_record(&header, &body, self.byte_order);
+        Ok(Some(RecordEvent {
+            offset,
+            header,
+            body,
+            decoded,
+        }))
     }
 }
 
@@ -115,7 +124,17 @@ impl<R: Read> Iterator for StreamingRecordReader<R> {
     type Item = IoResult<StdfRecord>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        self.read_next().transpose()
+        self.next_event()
+            .map(|event| {
+                event.map(|e| {
+                    e.decoded.unwrap_or_else(|_| StdfRecord::Unknown {
+                        typ: e.header.rec_typ,
+                        sub: e.header.rec_sub,
+                        data: e.body,
+                    })
+                })
+            })
+            .transpose()
     }
 }
 
@@ -211,5 +230,19 @@ mod tests {
         assert!(reader.next().unwrap().is_ok());
         assert!(reader.next().unwrap().is_ok());
         assert!(reader.next().unwrap().is_err());
+        assert!(reader.next().is_none());
+    }
+
+    #[test]
+    fn event_retains_known_decode_error_and_raw_offset() {
+        let mut bytes = vec![2, 0, 0, 10, 2, 4];
+        push_record(&mut bytes, 5, 20, &[1]);
+        let mut reader = StreamingRecordReader::new(Cursor::new(bytes)).unwrap();
+        assert_eq!(reader.next_event().unwrap().unwrap().offset, 0);
+        let event = reader.next_event().unwrap().unwrap();
+        assert_eq!(event.offset, 6);
+        assert_eq!(event.body, [1]);
+        assert!(event.decoded.is_err());
+        assert!(reader.next_event().unwrap().is_none());
     }
 }

@@ -1,0 +1,81 @@
+{
+  "version": 1,
+  "id": "demo-mixed-v1",
+  "routes": [
+    {
+      "matches": [
+        {
+          "mir": {
+            "JOB_NAM": "DEMO_CP",
+            "JOB_REV": "v1"
+          }
+        }
+      ],
+      "profile": {
+        "version": 1,
+        "id": "demo-cp-v1",
+        "domain": "cp",
+        "require_wafer": true,
+        "rules": [
+          {
+            "record": "MIR",
+            "field": "LOT_ID",
+            "required": true,
+            "pattern": "LOT[0-9]+"
+          },
+          {
+            "record": "MIR",
+            "field": "JOB_NAM",
+            "required": true
+          },
+          {
+            "record": "MIR",
+            "field": "JOB_REV",
+            "required": true
+          },
+          {
+            "record": "WIR",
+            "field": "WAFER_ID",
+            "required": true,
+            "pattern": "[A-Z0-9]+"
+          }
+        ]
+      }
+    },
+    {
+      "matches": [
+        {
+          "mir": {
+            "JOB_NAM": "DEMO_FT",
+            "JOB_REV": "v1"
+          }
+        }
+      ],
+      "profile": {
+        "version": 1,
+        "id": "demo-ft-v1",
+        "domain": "ft",
+        "require_wafer": false,
+        "rules": [
+          {
+            "record": "MIR",
+            "field": "LOT_ID",
+            "required": true,
+            "pattern": "LOT[0-9]+"
+          },
+          {
+            "record": "MIR",
+            "field": "JOB_NAM",
+            "required": true
+          },
+          {
+            "record": "PRR",
+            "field": "PART_ID",
+            "required": true,
+            "pattern": "UNIT[0-9]+"
+          }
+        ]
+      }
+    }
+  ]
+}

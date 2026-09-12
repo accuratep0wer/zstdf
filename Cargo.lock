@@ -1371,6 +1371,7 @@ dependencies = [
  "flate2",
  "parquet",
  "rayon",
+ "regex",
  "serde",
  "serde_json",
  "sha2",
@@ -1433,6 +1434,8 @@ dependencies = [
 name = "stdf-validate"
 version = "0.1.0"
 dependencies = [
+ "serde",
+ "serde_json",
  "stdf-core",
  "thiserror",
 ]

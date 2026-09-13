@@ -1,3 +1,6 @@
+// Copyright 2026 zstdf contributors
+// SPDX-License-Identifier: Apache-2.0
+
 //! Bounded scratch storage for the forthcoming disk-backed dashboard engine.
 //! This crate does not change the existing dashboard's counting semantics.
 

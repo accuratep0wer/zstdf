@@ -1,3 +1,6 @@
+// Copyright 2026 zstdf contributors
+// SPDX-License-Identifier: Apache-2.0
+
 use arrow::pyarrow::ToPyArrow;
 use pyo3::exceptions::PyRuntimeError;
 use pyo3::prelude::*;

@@ -1,3 +1,6 @@
+// Copyright 2026 zstdf contributors
+// SPDX-License-Identifier: Apache-2.0
+
 mod error;
 mod reader;
 mod streaming;

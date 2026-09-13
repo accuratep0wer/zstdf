@@ -501,7 +501,7 @@ resolver = "2"
 [workspace.package]
 version = "0.1.0"
 edition = "2021"
-license = "MIT"
+license = "Apache-2.0"
 
 [workspace.dependencies]
 thiserror = "2"
@@ -613,7 +613,7 @@ fn zstdf(m: &Bound<'_, PyModule>) -> PyResult<()> {
 - Create `stdf-py/pyproject.toml`:
 ```toml
 [build-system]
-requires = ["maturin>=1.0,<2.0"]
+requires = ["maturin>=1.9.3,<2.0"]
 build-backend = "maturin"
 
 [project]
@@ -621,7 +621,8 @@ name = "zstdf"
 version = "0.1.0"
 description = "High-performance STDF V4 parser — Rust core with Python bindings"
 requires-python = ">=3.9"
-license = { text = "MIT" }
+license = "Apache-2.0"
+license-files = ["LICENSE", "NOTICE"]
 classifiers = [
     "Programming Language :: Python :: 3",
     "Programming Language :: Rust",

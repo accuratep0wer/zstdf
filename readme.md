@@ -1,5 +1,7 @@
 # zstdf
 
+Licensed under [Apache-2.0](LICENSE). See [License and commercial use](#license-and-commercial-use).
+
 Rust tools for reading semiconductor Standard Test Data Format (STDF) files,
 exporting Parquet data, validating records, and generating interactive HTML
 dashboards. An optional Python extension exposes the conversion APIs as `_zstdf`.
@@ -903,6 +905,38 @@ files, rows, fragments = _zstdf.write_parquet_partitioned(
 | `cc` or `clang` not found | On RHEL install GCC/build utilities; on macOS install the Command Line Tools and verify `xcode-select -p`. |
 | RHEL cannot find Python 3.12 packages | Check that the enabled repositories provide RHEL 9.4 or later packages. Python is optional for the CLI. |
 | Wrong architecture on macOS | Use matching native architectures for the terminal, Rust, Homebrew, and Python. Recreate the virtual environment if its Python architecture is wrong. |
+
+## License and Commercial Use
+
+Copyright 2026 zstdf contributors.
+
+zstdf is licensed under the **Apache License, Version 2.0**. You may use, modify,
+and distribute it commercially, including in proprietary products, subject to
+the license terms. You do not have to publish your modifications merely because
+you use this license. See the complete [LICENSE](LICENSE) and project [NOTICE](NOTICE).
+
+When redistributing the software, include the license, retain applicable
+copyright and attribution notices, preserve relevant NOTICE content, and mark
+modified files as required by Section 4. The license includes the contributor
+patent grant described in Section 3; it does not grant general trademark rights.
+The software is provided without warranty, as stated in the license.
+
+This declaration applies to this revision and subsequent revisions carrying it.
+It does not revoke permissions already granted for earlier versions. Third-party
+dependencies remain under their own licenses; distributing binaries requires
+preserving their applicable licenses and notices as well. This repository's
+license does not change ownership or licensing of user-supplied STDF/test data.
+
+All active Rust crates declare `Apache-2.0` through workspace inheritance. Cargo
+packages carry local copies of LICENSE and NOTICE. Both Python build entries
+declare the SPDX expression and include those files using PEP 639; this requires
+Maturin 1.9.3 or later. Contribution terms are in [CONTRIBUTING.md](CONTRIBUTING.md).
+
+Validate the declarations and package notice copies with Python 3.11 or later:
+
+```text
+python scripts/check_licenses.py
+```
 
 ## Project Documentation
 

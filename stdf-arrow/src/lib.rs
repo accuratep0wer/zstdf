@@ -1,3 +1,6 @@
+// Copyright 2026 zstdf contributors
+// SPDX-License-Identifier: Apache-2.0
+
 pub mod batch_builder;
 mod bounded;
 pub mod context;

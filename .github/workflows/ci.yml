@@ -22,6 +22,9 @@ jobs:
       - name: Format
         run: cargo fmt --all -- --check
 
+      - name: License declarations
+        run: py -3.12 scripts/check_licenses.py
+
       - name: Check
         run: cargo check --workspace
 

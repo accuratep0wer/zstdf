@@ -12,9 +12,9 @@ and source evidence in an offline HTML report. See [traceability usage and demo]
 
 The `sanity` command checks CP/FT source records and shows important run fields
 plus the first value of the first two records per type in each unit. It exports
-field evidence and an offline report. See [CP/FT sanity 安装、运行与示例](docs/sanity.md)
+field evidence and an offline report. See [CP/FT sanity installation, execution, and examples](docs/sanity.md)
 for runnable commands, profile configuration, and the current validation scope.
-Quick start: [运行 CP/FT Sanity 报告](#运行-cpft-sanity-报告).
+Quick start: [Run CP/FT Sanity Reports](#run-cpft-sanity-reports).
 
 Dashboard part identity now uses **wafer + positive PRR X/Y**, with an all-or-nothing
 fallback to **lot + positive integer PTR X/Y**. New conversions produce `eav-v2`;
@@ -25,7 +25,7 @@ Build instructions: [Windows](#build-on-windows), [RHEL 9](#build-on-red-hat-ent
 and [macOS](#build-on-macos). The Linux/macOS commands below are setup guidance;
 they have not been build-tested on this Windows development machine.
 
-For device histories and retests, follow [安装与运行测试流程追溯报告](#安装与运行测试流程追溯报告)
+For device histories and retests, follow [Install and Run Traceability Reports](#install-and-run-traceability-reports)
 after building the CLI. This includes a ready-to-run synthetic example and
 configuration for your own CP/FT data.
 
@@ -191,31 +191,31 @@ for the CLI; only the Python setup below uses Homebrew.
 
 ## Run the CLI
 
-### Phase 10D 以前的功能是否仍然保留？
+### Are features from before Phase 10D still available?
 
-**保留。** `sanity` 和 `traceability` 是新增的独立入口，原有 CLI 命令与 Python
-转换接口仍然存在。当前可用入口如下；这里表示已实现的功能，不代表整个 Phase 10D 已完成。
+**Yes.** `sanity` and `traceability` are additional, independent entry points. The original CLI commands and Python
+conversion interfaces remain available. The following features are implemented; this does not mean all of Phase 10D is complete.
 
-| 功能 | 当前入口 |
+| Feature | Current entry point |
 | --- | --- |
-| STDF 解码摘要、记录查看、ASCII 导出 | `info`、`dump`、`to-ascii` |
-| 原有单文件和批量校验 | `check`、`batch-check` |
-| 单文件 Parquet 转换、manifest 和重试复用 | `convert`、`--no-overwrite` |
-| Phase 10A 单文件可视化 | `dashboard` |
-| Phase 10B 多文件转换和文件粒度分区 | `convert-many` |
-| Phase 10C.1 按行分区和受预算约束的转换 | `convert-partitioned`（当前支持 PTR） |
-| Phase 10C.2 数据集完整性、恢复与多 lot 可视化 | `verify-dataset`、`recover-dataset`、`dashboard-dir` |
-| 可选 Python 转换接口 | `_zstdf`，见 [Optional Python Binding](#optional-python-binding) |
+| STDF decoding summary, record inspection, and ASCII export | `info`, `dump`, `to-ascii` |
+| Existing single-file and batch validation | `check`, `batch-check` |
+| Single-file Parquet conversion, manifests, and retry reuse | `convert`, `--no-overwrite` |
+| Phase 10A single-file visualization | `dashboard` |
+| Phase 10B multi-file conversion and file-level partitioning | `convert-many` |
+| Phase 10C.1 row partitioning and conversion within resource budgets | `convert-partitioned` (currently supports PTR) |
+| Phase 10C.2 dataset integrity, recovery, and multi-lot visualization | `verify-dataset`, `recover-dataset`, `dashboard-dir` |
+| Optional Python conversion interface | `_zstdf`; see [Optional Python Binding](#optional-python-binding) |
 
-原来的 `STDF → convert → dashboard` 和
-`STDF → convert-partitioned → verify-dataset → dashboard-dir` 流程仍然可用。
-`sanity` 直接读取 STDF，输出的 `record_fields.parquet` 是字段检查证据，不能作为
-`dashboard` 所需的测量 EAV Parquet。它也不会自动调用转换或修改 Dashboard 的良率口径。
+The original `STDF → convert → dashboard` and
+`STDF → convert-partitioned → verify-dataset → dashboard-dir` workflows remain available.
+`sanity` reads STDF directly. Its `record_fields.parquet` output contains field-validation evidence and cannot serve as
+the measurement EAV Parquet required by `dashboard`. It neither runs conversion automatically nor changes Dashboard yield definitions.
 
-旧版 Parquet/catalog 必须从 STDF 重新转换到新的输出目录，得到 `eav-v2` 后再使用
-当前 Dashboard；这是坐标身份规则升级的兼容要求。Phase 10D.2/10D.3 和 10D.5
-仍未完成，10D.4 sanity 已有可运行实现但尚未完成全部标准规则验收。
-详细状态见 [阶段规格](PHASED_EXECUTION_SPEC.md)。
+Legacy Parquet/catalog data must be reconverted from STDF into a new output directory to produce `eav-v2` before use
+with the current Dashboard. This compatibility requirement follows the coordinate identity update. Phase 10D.2/10D.3 and 10D.5
+remain incomplete; 10D.4 sanity has a runnable implementation but has not passed acceptance for every standard rule.
+See the [phased specification](PHASED_EXECUTION_SPEC.md) for detailed status.
 
 ### Windows PowerShell
 
@@ -283,22 +283,22 @@ On a headless RHEL server, transfer `dashboard.html` to your desktop computer
 and open it in a browser. The generated HTML is self-contained; no web server
 is required. The same PTR-only and memory-accounting limits described above apply.
 
-## 运行 CP/FT Sanity 报告
+## Run CP/FT Sanity Reports
 
-在仓库根目录运行。先按上方对应平台的安装说明准备 Rust 和编译工具；读取实际 STDF
-只需要 CLI，Python 仅用于生成下面的合成示例。
+Run these commands from the repository root. First install Rust and the build tools using the platform instructions above.
+Reading actual STDF requires only the CLI; Python is used only to generate the synthetic examples below.
 
-### 1. 构建并确认入口
+### 1. Build and verify the command
 
 ```powershell
 cargo build --release -p stdf-cli --locked
 .\target\release\zstdf-cli.exe sanity --help
 ```
 
-### 2. 检查实际 CP 或 FT 数据
+### 2. Check actual CP or FT data
 
-把输入路径换成实际存在的文件或目录。支持多个输入、目录递归和 gzip。
-未指定 `--profile` 时，使用对应 CP/FT 的内置基础规则。
+Replace the input paths with existing files or directories. Multiple inputs, recursive directories, and gzip are supported.
+Without `--profile`, the built-in basic rules for the selected CP/FT domain apply.
 
 ```powershell
 .\target\release\zstdf-cli.exe sanity "D:\STDF\CP" `
@@ -310,14 +310,14 @@ Invoke-Item .\reports\cp-sanity\report.html
 Invoke-Item .\reports\ft-sanity\report.html
 ```
 
-CP 基础规则要求明确的 wafer 上下文；FT 不因缺少 wafer 记录自动报错。
-实际产品格式可通过 `--profile .\my-cp-profile.json` 配置。
-[CP 示例](examples/sanity/cp-profile.json) 和 [FT 示例](examples/sanity/ft-profile.json)
-中的 lot/程序命名用于合成数据，请修改后再用于产品数据。
+The basic CP rules require an unambiguous wafer context; FT does not automatically fail when wafer records are absent.
+Configure product-specific formats with `--profile .\my-cp-profile.json`.
+The lot and program names in the [CP example](examples/sanity/cp-profile.json) and [FT example](examples/sanity/ft-profile.json)
+are for synthetic data. Adapt them before using the profiles with product data.
 
-### 3. 运行合成示例及混合 CP/FT 报告
+### 3. Run synthetic examples and a mixed CP/FT report
 
-以下使用 Python 3 标准库生成 STDF，不需要安装 Python binding：
+The following uses the Python 3 standard library to generate STDF; the Python binding is not required:
 
 ```powershell
 python .\examples\sanity\generate_demo.py
@@ -334,45 +334,45 @@ python .\examples\sanity\generate_demo.py
 Invoke-Item .\examples\sanity\generated\mixed-report\report.html
 ```
 
-混合示例包含 **2 个 run、6 个 unit**。FT 的 3 个身份未解析 warning 是演示数据的预期结果，
-不会被报告为格式验证错误。`--run-profiles` 与 `--test-domain`、`--profile` 互斥。
-每个 MIR 必须唯一匹配一条路由；示例按 `JOB_NAM` 和 `JOB_REV` 精确匹配，
-使用真实数据时要修改 [run-profiles.json](examples/sanity/run-profiles.json)。
+The mixed example contains **2 runs and 6 units**. Its 3 unresolved FT identity warnings are expected for this demonstration
+and are not reported as format-validation errors. `--run-profiles` is mutually exclusive with `--test-domain` and `--profile`.
+Each MIR must match exactly one route. The example uses exact `JOB_NAM` and `JOB_REV` matches;
+adapt [run-profiles.json](examples/sanity/run-profiles.json) when using real data.
 
-报告上半部展示每个 run 的 MIR/SDR 等重要字段；选择 unit 后，按 DTR/PTR/MPR/FTR/GDR
-类型各展示前两条记录的首值。所有记录仍参与检查，原始值、默认/继承来源和诊断保留在证据中。
-浏览器支持 run 切换、unit 搜索、诊断筛选和完整 JSON 导出，不需要 Web 服务。
-首值以数值、单位或 PASS/FAIL 显示；点击 **Raw evidence** 查看原始 bits、字段状态及来源。
-显示格式不会改变原始证据或 JSON 导出，run 下拉框同时标明 CP/FT 与 profile ID。
+The upper section shows important MIR/SDR and other fields for each run. Selecting a unit shows the first value of each of
+the first two records per DTR/PTR/MPR/FTR/GDR type. All records are checked; raw values, default/inheritance provenance, and diagnostics remain in the evidence.
+The browser supports run selection, unit search, diagnostic filters, and complete JSON export without a web service.
+First values appear as numbers, units, or PASS/FAIL. Click **Raw evidence** to inspect raw bits, field states, and provenance.
+Display formatting does not change raw evidence or JSON exports. The run selector also shows CP/FT and the profile ID.
 
-`--output-dir` 自动创建。根目录的 `report.html` 引用同目录下不可变的 `sanity-*` 子目录；
-分享全部证据时应复制整个输出目录。检查发现错误时会发布明确失败的诊断报告并返回退出码 1；
-I/O、配置错误、超限或取消则保留原报告。生成的 `ft-invalid.stdf` 含一条位于预览范围之外的
-NaN，可用于验证全文件检查。
+`--output-dir` is created automatically. Its root `report.html` references an immutable `sanity-*` subdirectory;
+copy the entire output directory to share all evidence. Validation errors publish a diagnostic report clearly marked as failed and return exit code 1.
+I/O errors, configuration errors, resource-limit failures, or cancellation preserve the previous report. The generated `ft-invalid.stdf` contains a
+NaN outside the preview range, which can be used to verify full-file validation.
 
 ### 4. Linux/macOS
 
-构建方式见上方平台说明，参数相同，使用原生可执行文件路径：
+Follow the platform build instructions above, use the same arguments, and select the native executable path:
 
 ```bash
 ./target/release/zstdf-cli sanity /path/to/cp \
   --test-domain cp --output-dir reports/cp-sanity
 ```
 
-macOS 用 `open reports/cp-sanity/report.html`；Linux 桌面用
-`xdg-open reports/cp-sanity/report.html`。本地实际验证环境为 Windows，
-Linux/macOS 命令是对应平台的运行说明。资源限制和完整字段合同见 [Sanity 说明](docs/sanity.md)。
+On macOS, use `open reports/cp-sanity/report.html`; on a Linux desktop, use
+`xdg-open reports/cp-sanity/report.html`. Local validation was performed on Windows;
+the Linux/macOS commands are instructions for those platforms. See the [Sanity guide](docs/sanity.md) for resource limits and the complete field contract.
 
-## 安装与运行测试流程追溯报告
+## Install and Run Traceability Reports
 
-`traceability` 直接读取多份 STDF，按 wafer/坐标关联芯片的各步骤与重测，生成可离线
-打开的交互式 HTML。支持文件、目录和 gzip；不需要先转换 Parquet，也不需要 Python
-或启动 Web 服务。每次 PRR 都作为独立测试保留，内容相同的文件副本自动去重。
+`traceability` reads multiple STDF files directly, links device steps and retests by wafer/coordinates, and generates an interactive HTML report
+that opens offline. Files, directories, and gzip are supported. No prior Parquet conversion, Python installation,
+or web service is required. Each PRR is retained as an independent test, and files with identical content are deduplicated automatically.
 
-### 1. 安装和构建（Windows）
+### 1. Install and build on Windows
 
-先按上面的 [Windows 安装说明](#build-on-windows) 安装 Git、Rust、MSVC C++
-Build Tools 和 Windows SDK，然后在 Developer PowerShell 中运行：
+First install Git, Rust, MSVC C++ Build Tools, and the Windows SDK following the
+[Windows build instructions](#build-on-windows) above. Then run these commands in Developer PowerShell:
 
 ```powershell
 git clone https://github.com/zefangzh/zstdf.git
@@ -382,13 +382,13 @@ cargo build --release -p stdf-cli --locked
 .\target\release\zstdf-cli.exe traceability --help
 ```
 
-如果已经克隆过仓库，在现有仓库根目录执行构建命令即可，不必再次克隆。
-首次构建需要联网下载依赖；依赖已经缓存后，可以为 Cargo 命令添加 `--offline`。
-CLI 源码构建不需要安装 Python binding。
+If you have already cloned the repository, run the build command from its existing root; do not clone it again.
+The first build needs network access to download dependencies. Once dependencies are cached, you can add `--offline` to Cargo commands.
+Building the CLI from source does not require the Python binding.
 
-### 2. 运行仓库自带示例
+### 2. Run the included example
 
-在仓库根目录运行以下 PowerShell 命令。示例 STDF 已随仓库提供，无需安装 Python：
+Run these PowerShell commands from the repository root. The example STDF files are included, so Python is not required:
 
 ```powershell
 .\target\release\zstdf-cli.exe traceability `
@@ -401,36 +401,36 @@ CLI 源码构建不需要安装 Python binding。
 Invoke-Item .\trace.html
 ```
 
-PowerShell 的反引号必须是每行最后一个字符，后面不要加空格。也可以把命令合并成
-一行。成功时输出 **10 个器件、9 份独立 STDF**；其中一个 gzip 副本不会增加重测次数。
-示例步骤 `stage-a`、`stage-b`、`stage-c` 是演示配置，不代表实际产品流程。
+Each PowerShell backtick must be the last character on its line, with no trailing spaces. Alternatively, combine the command into
+one line. A successful run produces **10 devices and 9 independent STDF files**; a gzip duplicate does not increase the retest count.
+The example steps `stage-a`, `stage-b`, and `stage-c` are demonstration settings, not an actual product flow.
 
-浏览器中可按 wafer/lot、X/Y 坐标、步骤和异常类型筛选；点击矩阵单元格下钻，查看
-各步骤全部测试记录、程序/设备、源文件、SHA-256 和记录位置。重测判定/bin 变化与
-缺失步骤会用文字、图标和颜色高亮。“导出全部 JSON 证据”导出完整数据，不受当前筛选影响。
+In the browser, filter by wafer/lot, X/Y coordinates, step, and anomaly type. Click a matrix cell to inspect
+every attempt for each step, program/hardware details, source files, SHA-256 hashes, and record positions. Retest verdict/bin changes and
+missing steps are highlighted with text, icons, and colors. The full JSON evidence export includes all data regardless of the current filters.
 
-### 3. 为实际 CP/FT 数据配置流程
+### 3. Configure a flow for actual CP/FT data
 
-先复制示例配置并编辑，目标文件名可自行调整：
+Copy and edit the example configuration first; choose any suitable destination filename:
 
 ```powershell
 Copy-Item .\examples\traceability\flow.json .\flow.json
 notepad .\flow.json
 ```
 
-修改流程 `flow_id`、`version`、有序 `steps`，以及各步骤的 `required`、`stop_on_fail`
-和 `matches`。匹配字段取自 STDF 的 MIR：`job_nam`、`job_rev`、`test_cod`、`flow_id`、
-`tst_temp`。字段采用**区分大小写的精确匹配**；同一条件内各字段为 AND，多组条件为 OR。
-不同程序版本可以配置为同一步骤，未匹配或匹配多个步骤时会显示“步骤未识别”。
+Edit the flow `flow_id`, `version`, ordered `steps`, and each step's `required`, `stop_on_fail`,
+and `matches`. Matching fields come from STDF MIR: `job_nam`, `job_rev`, `test_cod`, `flow_id`, and
+`tst_temp`. Fields use **case-sensitive exact matching**: fields within a condition are ANDed, and condition groups are ORed.
+Different program versions can map to the same step. Unmatched records or records matching multiple steps are shown as unidentified steps.
 
-需要核对实际 MIR 字段时，可以先导出记录文本：
+To inspect the actual MIR fields, export the records as text first:
 
 ```powershell
 .\target\release\zstdf-cli.exe to-ascii "D:\STDF\CP\sample.stdf" .\sample-records.txt
 notepad .\sample-records.txt
 ```
 
-将以下路径换成真实存在的数据目录或文件，再生成报告：
+Replace these paths with existing data directories or files, then generate the report:
 
 ```powershell
 .\target\release\zstdf-cli.exe traceability `
@@ -441,18 +441,18 @@ notepad .\sample-records.txt
 Invoke-Item .\trace.html
 ```
 
-输入可以混合多个文件与目录，含空格的路径必须加引号。输出目录需要提前存在。
-再次成功运行会原子替换同名报告；输入错误、超限或协作取消会保留已有报告。
+Inputs can mix multiple files and directories. Quote paths containing spaces. The output directory must already exist.
+A subsequent successful run atomically replaces the report at the same path. Input errors, resource-limit failures, or cooperative cancellation preserve the existing report.
 
-### 4. 可选：显式关闭流程与映射器件身份
+### 4. Optional: explicitly close flows and map device identities
 
-- `--flow-closures closures.json`：指定流程 ID/版本以及 lot 或完整器件身份，明确流程
-  已关闭。未关闭时，尚未进入的末尾必测步骤显示“待测”；已有后续步骤的前置必测缺口
-  可以判为“缺失”。单个 STDF 的 MRR 不等于制造流程关闭。
-- `--identity-map identities.json`：显式将完整的 lot/PTR 键映射到 wafer/PRR 键。
-  不会只因坐标相同就自动跨 wafer/lot 关联。无映射的回退身份显示关联限制。
+- `--flow-closures closures.json`: specify a flow ID/version and a lot or complete device identity to declare the flow
+  closed. Until then, required trailing steps not yet reached appear as pending; gaps in required earlier steps
+  with observed later steps can be marked missing. An STDF MRR does not close the manufacturing flow.
+- `--identity-map identities.json`: explicitly map complete lot/PTR keys to wafer/PRR keys.
+  Equal coordinates alone never trigger cross-wafer/lot association. Unmapped fallback identities display an association limitation.
 
-编辑好这两个可选配置文件后运行：
+After editing these two optional configuration files, run:
 
 ```powershell
 .\target\release\zstdf-cli.exe traceability `
@@ -463,13 +463,13 @@ Invoke-Item .\trace.html
   --output .\trace.html
 ```
 
-配置格式参见 [流程](examples/traceability/flow.json)、
-[关闭清单](examples/traceability/closures.json)、[身份映射](examples/traceability/identities.json)。
-请按实际产品填写，不要将演示关闭清单或映射直接用于真实数据。
+See the configuration examples for [flows](examples/traceability/flow.json),
+[closures](examples/traceability/closures.json), and [identity mappings](examples/traceability/identities.json).
+Adapt them to the actual product; do not apply demonstration closures or mappings directly to real data.
 
-### 5. Linux/macOS 与重新生成合成数据
+### 5. Linux/macOS and regenerating synthetic data
 
-完成上面的对应平台构建后，可在仓库根目录运行示例：
+After completing the platform build instructions above, run the example from the repository root:
 
 ```bash
 ./target/release/zstdf-cli traceability examples/traceability/generated/inputs \
@@ -479,20 +479,20 @@ Invoke-Item .\trace.html
   --output trace.html
 ```
 
-macOS 用 `open trace.html` 打开；Linux 图形桌面可用 `xdg-open trace.html`。
-无桌面的服务器可以将 HTML 复制到本机浏览器打开。这些原生命令示例尚未在 Linux/macOS
-验证；本次实际构建与浏览器验证在 Windows 完成。
+On macOS, open it with `open trace.html`; on a Linux desktop, use `xdg-open trace.html`.
+On a server without a desktop, copy the HTML to a local browser. These native command examples have not been validated on Linux/macOS;
+the actual build and browser validation were performed on Windows.
 
-如果需要重新生成合成 STDF 和演示报告，可使用可选的 Python 3 脚本：
+To regenerate the synthetic STDF and demonstration report, use the optional Python 3 script:
 
 ```powershell
 python .\examples\traceability\generate_demo.py --cli .\target\release\zstdf-cli.exe
 Invoke-Item .\examples\traceability\generated\demo.html
 ```
 
-完整判定规则、资源预算和证据字段见 [追溯报告说明](docs/traceability.md)。本地验证包括
-291 项 Rust 测试、Release 构建、Python binding 编译，以及桌面/手机尺寸的浏览器交互验证；
-测试使用合成 STDF，实际产品流程及 tester 数据需单独验证。
+See the [traceability report guide](docs/traceability.md) for complete decision rules, resource budgets, and evidence fields. Local validation included
+291 Rust tests, a Release build, Python binding compilation, and browser interaction at desktop/mobile sizes.
+These tests used synthetic STDF; actual product flows and tester data require separate validation.
 
 ## Command and Parameter Reference
 
@@ -897,9 +897,9 @@ files, rows, fragments = _zstdf.write_parquet_partitioned(
 | File not found when generating a dashboard | Confirm conversion succeeded and supply the actual generated Parquet path. |
 | Unknown `convert-partitioned` command | Ensure your checkout includes Phase 10C.1 and rebuild the release CLI. |
 | Unknown `traceability` command | Update the checkout to a revision containing traceability, then run `cargo build --release -p stdf-cli --locked`. Use the executable from that checkout. |
-| 追溯报告显示“步骤未识别” | 检查实际 MIR 字段与 `matches` 的大小写、程序版本和字段值；避免同一记录匹配多个步骤。 |
-| 末尾步骤显示“待测” | 这是未关闭流程的正常状态；只有确认流程结束后才提供对应关闭清单。 |
-| 回退身份关联受限 / 身份未解析 | 检查 wafer/PRR 坐标与 PTR 坐标候选；需要跨命名空间关联时提供完整身份映射。 |
+| Traceability report shows an unidentified step | Check actual MIR fields against the case, program version, and values in `matches`; avoid matching a record to multiple steps. |
+| Trailing step appears as pending | This is normal for an open flow. Supply the corresponding closure list only after confirming that the flow is complete. |
+| Fallback identity association is limited / identity is unresolved | Check wafer/PRR coordinates and PTR coordinate candidates; provide complete identity mappings when cross-namespace association is needed. |
 | Traceability resource limit exceeded | Adjust the reported limit together with related memory/disk/report constraints, or split inputs by the intended flow population. No partial report is published. |
 | `cargo: command not found` on Linux/macOS | Run `. "$HOME/.cargo/env"` or reopen your terminal after rustup installation. |
 | `cc` or `clang` not found | On RHEL install GCC/build utilities; on macOS install the Command Line Tools and verify `xcode-select -p`. |

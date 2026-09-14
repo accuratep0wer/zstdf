@@ -1,8 +1,10 @@
-//! Base v4 wire layouts. Array counts name an earlier field. No v4-2007 extensions.
+//! Wire layouts. Array counts name an earlier field; selected extensions are extraction-only.
 pub fn layout(record: &str) -> Option<&'static str> {
     Some(match record {
         "FAR"=>"CPU_TYPE:U1 STDF_VER:U1",
         "ATR"=>"MOD_TIM:U4 CMD_LINE:Cn?",
+        "ATER"=>"REC_CUSTM:Cn EVT_SRC:Cn HEAD_NUM:U1 SITE_NUM:U1 ACTIVITY:Cn",
+        "CDR"=>"CONT_FLG:B1 CDR_INDX:U2 CHN_NAM:Cn CHN_LEN:U4 SIN_PIN:U2 SOUT_PIN:U2 MSTR_CNT:U1 M_CLKS:U2@MSTR_CNT SLAV_CNT:U1 S_CLKS:U2@SLAV_CNT INV_VAL:U1 LST_CNT:U2 CELL_LST:Sn@LST_CNT",
         "MIR"=>"SETUP_T:U4 START_T:U4 STAT_NUM:U1 MODE_COD:C1 RTST_COD:C1 PROT_COD:C1 BURN_TIM:U2 CMOD_COD:C1 LOT_ID:Cn PART_TYP:Cn NODE_NAM:Cn TSTR_TYP:Cn JOB_NAM:Cn JOB_REV:Cn? SBLOT_ID:Cn? OPER_NAM:Cn? EXEC_TYP:Cn? EXEC_VER:Cn? TEST_COD:Cn? TST_TEMP:Cn? USER_TXT:Cn? AUX_FILE:Cn? PKG_TYP:Cn? FAMLY_ID:Cn? DATE_COD:Cn? FACIL_ID:Cn? FLOOR_ID:Cn? PROC_ID:Cn? OPER_FRQ:Cn? SPEC_NAM:Cn? SPEC_VER:Cn? FLOW_ID:Cn? SETUP_ID:Cn? DSGN_REV:Cn? ENG_ID:Cn? ROM_COD:Cn? SERL_NUM:Cn? SUPR_NAM:Cn?",
         "MRR"=>"FINISH_T:U4 DISP_COD:C1? USR_DESC:Cn? EXC_DESC:Cn?",
         "PCR"=>"HEAD_NUM:U1 SITE_NUM:U1 PART_CNT:U4 RTST_CNT:U4? ABRT_CNT:U4? GOOD_CNT:U4? FUNC_CNT:U4?",

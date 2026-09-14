@@ -12,6 +12,8 @@ pub enum ByteOrder {
 pub enum RecordType {
     Far,
     Atr,
+    Cdr,
+    Ater,
     Mir,
     Mrr,
     Pcr,
@@ -43,6 +45,8 @@ impl RecordType {
         match (typ, sub) {
             (0, 10) => Self::Far,
             (0, 20) => Self::Atr,
+            (1, 94) => Self::Cdr,
+            (137, 10) => Self::Ater,
             (1, 10) => Self::Mir,
             (1, 20) => Self::Mrr,
             (1, 30) => Self::Pcr,
@@ -74,6 +78,8 @@ impl RecordType {
         match self {
             Self::Far => (0, 10),
             Self::Atr => (0, 20),
+            Self::Cdr => (1, 94),
+            Self::Ater => (137, 10),
             Self::Mir => (1, 10),
             Self::Mrr => (1, 20),
             Self::Pcr => (1, 30),
@@ -101,11 +107,13 @@ impl RecordType {
         }
     }
 
-    /// Human-readable 3-letter mnemonic.
+    /// Human-readable record mnemonic.
     pub fn mnemonic(&self) -> &'static str {
         match self {
             Self::Far => "FAR",
             Self::Atr => "ATR",
+            Self::Cdr => "CDR",
+            Self::Ater => "ATER",
             Self::Mir => "MIR",
             Self::Mrr => "MRR",
             Self::Pcr => "PCR",

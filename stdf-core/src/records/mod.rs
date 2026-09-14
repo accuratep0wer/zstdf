@@ -1,5 +1,8 @@
+pub mod ater;
 pub mod atr;
 pub mod bps;
+pub mod cdr;
+pub mod characterization;
 pub mod dtr;
 pub mod eps;
 pub mod far;
@@ -24,8 +27,10 @@ pub mod wcr;
 pub mod wir;
 pub mod wrr;
 
+pub use ater::Ater;
 pub use atr::Atr;
 pub use bps::Bps;
+pub use cdr::Cdr;
 pub use dtr::Dtr;
 pub use eps::Eps;
 pub use far::Far;
@@ -60,6 +65,8 @@ use crate::types::{ByteOrder, RecordType, VarData};
 pub enum StdfRecord {
     Far(Far),
     Atr(Atr),
+    Ater(Ater),
+    Cdr(Cdr),
     Mir(Mir),
     Mrr(Mrr),
     Pcr(Pcr),
@@ -97,6 +104,8 @@ impl StdfRecord {
         match self {
             Self::Far(_) => RecordType::Far,
             Self::Atr(_) => RecordType::Atr,
+            Self::Ater(_) => RecordType::Ater,
+            Self::Cdr(_) => RecordType::Cdr,
             Self::Mir(_) => RecordType::Mir,
             Self::Mrr(_) => RecordType::Mrr,
             Self::Pcr(_) => RecordType::Pcr,
@@ -227,11 +236,16 @@ impl StdfRecord {
                 fmt_opt_str(r.test_txt.as_deref()),
                 r.passed()
             ),
-            Self::Gdr(r) => format!(
-                "GDR FLD_CNT={} GEN_DATA={}",
-                r.fld_cnt,
-                r.gen_data.iter().map(format_var_data).collect::<Vec<_>>().join(",")
-            ),
+            Self::Gdr(r) => {
+                let custom = match r.characterization() {
+                    Ok(Some(c)) => format!(" CUSTOM_RECORD={} {}", c.record_name,
+                        c.fields.iter().map(|f| format!("{}={}",f.name,format_var_data(&f.value))).collect::<Vec<_>>().join(" ")),
+                    Err(e) => format!(" CUSTOM_DECODE_ERROR={e}"),
+                    _ => String::new(),
+                };
+                format!("GDR FLD_CNT={} GEN_DATA={}{}", r.fld_cnt,
+                    r.gen_data.iter().map(format_var_data).collect::<Vec<_>>().join(","), custom)
+            },
             Self::Dtr(r) => format!("DTR TEXT_DAT={}", r.text_dat),
             Self::Unknown { typ, sub, data } => {
                 format!("UNKNOWN REC_TYP={} REC_SUB={} LEN={}", typ, sub, data.len())
@@ -287,6 +301,8 @@ pub fn decode_record(
     match header.record_type() {
         RecordType::Far => Ok(StdfRecord::Far(Far::parse(reader)?)),
         RecordType::Atr => Ok(StdfRecord::Atr(Atr::parse(reader)?)),
+        RecordType::Ater => Ok(StdfRecord::Ater(Ater::parse(reader)?)),
+        RecordType::Cdr => Ok(StdfRecord::Cdr(Cdr::parse(reader)?)),
         RecordType::Mir => Ok(StdfRecord::Mir(Mir::parse(reader)?)),
         RecordType::Mrr => Ok(StdfRecord::Mrr(Mrr::parse(reader)?)),
         RecordType::Pcr => Ok(StdfRecord::Pcr(Pcr::parse(reader)?)),

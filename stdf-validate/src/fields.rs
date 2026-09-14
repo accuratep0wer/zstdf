@@ -7,7 +7,58 @@ mod defaults;
 mod schema;
 pub use defaults::{definition_fields, resolve_defaults};
 pub use schema::layout;
-pub const RULE_VERSION: &str = "sanity-fields-v1";
+pub const RULE_VERSION: &str = "sanity-fields-v2";
+
+/// These records are extracted, but excluded from field and profile sanity checks.
+pub fn sanity_exempt(record: &str) -> bool {
+    matches!(record, "ATR" | "CDR" | "ATER" | "CTSR" | "CTRR")
+}
+
+/// Extract named characterization fields without semantic validation. Offsets
+/// still address the original GDR body, including its count and V*n tags.
+pub fn characterization_fields(body: &[u8], order: ByteOrder) -> Result<Vec<Field>, String> {
+    let mut r = FieldReader::new(body, order);
+    let gdr = stdf_core::records::Gdr::parse(&mut r).map_err(|e| e.to_string())?;
+    if r.remaining() != 0 {
+        return Err("unparsed bytes after GDR values".into());
+    }
+    let custom = gdr
+        .characterization()
+        .map_err(|e| e.to_string())?
+        .ok_or("not a characterization GDR")?;
+    let mut r = FieldReader::new(body, order);
+    r.read_u2().map_err(|e| e.to_string())?;
+    let mut wire = Vec::new();
+    for _ in 0..gdr.fld_cnt {
+        let start = r.position();
+        let v = scalar(&mut r, "Vn")?;
+        wire.push((start, r.position() - start, v));
+    }
+    let mut fields = unchecked_gdr_fields(body, order);
+    fields.extend(custom.fields.into_iter().map(|f| {
+        let (start, len, v) = &wire[f.index];
+        Field {
+            name: f.name,
+            kind: v["kind"].as_str().unwrap().into(),
+            byte_start: *start,
+            byte_len: *len,
+            presence: "present".into(),
+            origin: "explicit".into(),
+            raw: v["value"].clone(),
+            effective: v["value"].clone(),
+            status: "not_checked".into(),
+            matches_default: None,
+            inherited_from: None,
+            issues: Vec::new(),
+        }
+    }));
+    Ok(fields)
+}
+
+/// Raw typed evidence fallback when a recognized custom layout cannot be decoded.
+pub fn unchecked_gdr_fields(body: &[u8], order: ByteOrder) -> Vec<Field> {
+    inspect_impl("GDR", body, order, true)
+}
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Field {
@@ -40,6 +91,7 @@ fn scalar(r: &mut FieldReader<'_>, kind: &str) -> Result<Value, String> {
         "I4" => read!(read_i4),
         "C1" => json!(char::from(r.read_u1().map_err(|e| e.to_string())?).to_string()),
         "Cn" => read!(read_cn),
+        "Sn" => read!(read_sn),
         "Bn" => read!(read_bn),
         "Dn" => {
             let (bits, bytes) = r.read_dn().map_err(|e| e.to_string())?;
@@ -91,6 +143,10 @@ fn scalar(r: &mut FieldReader<'_>, kind: &str) -> Result<Value, String> {
 /// Field names/types are in wire order; `?` denotes an omittable trailing field.
 /// All original bytes remain in the source evidence; offsets include length prefixes.
 pub fn inspect(record: &str, body: &[u8], order: ByteOrder) -> Vec<Field> {
+    inspect_impl(record, body, order, sanity_exempt(record))
+}
+
+fn inspect_impl(record: &str, body: &[u8], order: ByteOrder, unchecked: bool) -> Vec<Field> {
     let Some(spec) = layout(record) else {
         return Vec::new();
     };
@@ -172,7 +228,7 @@ pub fn inspect(record: &str, body: &[u8], order: ByteOrder) -> Vec<Field> {
             } else {
                 r.position() - start
             };
-            if !broken && (kind == "Cn" || kind == "C1") {
+            if !unchecked && !broken && (kind == "Cn" || kind == "C1") {
                 let bytes = &body[start + usize::from(kind == "Cn")..r.position()];
                 if bytes.iter().any(|b| *b >= 128) {
                     f.status = "invalid".into();
@@ -181,7 +237,8 @@ pub fn inspect(record: &str, body: &[u8], order: ByteOrder) -> Vec<Field> {
                     f.effective = Value::Null;
                 }
             }
-            if !broken
+            if !unchecked
+                && !broken
                 && kind == "N1"
                 && count.unwrap_or(0) % 2 == 1
                 && body[r.position() - 1] & 0xf0 != 0
@@ -189,6 +246,11 @@ pub fn inspect(record: &str, body: &[u8], order: ByteOrder) -> Vec<Field> {
                 f.status = "invalid".into();
                 f.issues.push("nonzero nibble padding".into());
             }
+        }
+        if unchecked {
+            f.status = "not_checked".into();
+            fields.push(f);
+            continue;
         }
         let default = missing_default(record, name, kind);
         if let Some(d) = default {
@@ -232,6 +294,12 @@ pub fn inspect(record: &str, body: &[u8], order: ByteOrder) -> Vec<Field> {
             inherited_from: None,
             issues: vec!["unparsed bytes after known record layout".into()],
         });
+    }
+    if unchecked {
+        for f in &mut fields {
+            f.status = "not_checked".into();
+        }
+        return fields;
     }
     let flag = number(&fields, "TEST_FLG").unwrap_or(0);
     let opt = number(&fields, "OPT_FLAG");

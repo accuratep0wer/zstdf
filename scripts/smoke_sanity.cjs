@@ -8,7 +8,7 @@ const { chromium } = require('playwright');
   const report = path.resolve(process.argv[2] || 'examples/sanity/generated/cp-report/report.html');
   const browser = await chromium.launch({ channel: 'msedge', headless: true });
   try {
-    const page = await browser.newPage({ acceptDownloads: true });
+    const page = await browser.newPage({ acceptDownloads: true, timezoneId: 'America/New_York' });
     const errors = [], requests = [];
     page.on('pageerror', e => errors.push(e.message));
     page.on('request', r => { if (/^https?:/.test(r.url())) requests.push(r.url()); });
@@ -17,11 +17,44 @@ const { chromium } = require('playwright');
       await page.goto(pathToFileURL(report).href);
       assert.match(await page.locator('#status').innerText(), /checks passed/);
       assert.match(await page.locator('#metadata').innerText(), /LOT001/);
+      assert.match(await page.locator('#record-summary').innerText(), /MIR @/);
+      const valid = page.locator('#record-summary .status-entry[data-status="valid"]').filter({ hasText: 'LOT_ID' }).first();
+      const missing = page.locator('#record-summary .status-entry[data-status="missing"]').first();
+      assert(await missing.count());
+      assert.equal(await valid.evaluate(n => getComputedStyle(n).backgroundColor), 'rgb(198, 239, 206)');
+      assert.equal(await missing.evaluate(n => getComputedStyle(n).backgroundColor), 'rgb(229, 231, 235)');
+      const nameBox = await valid.locator('.entry-name').boundingBox();
+      const cellBox = await valid.boundingBox();
+      assert(nameBox.x >= cellBox.x && nameBox.y >= cellBox.y);
+      assert(nameBox.y + nameBox.height <= cellBox.y + cellBox.height);
+      assert(cellBox.height <= 40, 'Single-line entries use compact spreadsheet cells');
+      if(viewport.width === 390) {
+        const rows = await page.locator('#record-summary .record-group').filter({ hasText: 'MIR @' }).locator('.status-entry').evaluateAll(ns => new Set(ns.map(n=>Math.round(n.getBoundingClientRect().top))).size);
+        assert(rows > 1, 'Narrow cross-table entries wrap to multiple rows');
+      }
+      await valid.hover();
+      assert.equal(await page.locator('#entry-tooltip').innerText(), 'LOT001');
+      const targetId = await valid.getAttribute('data-target');
+      await valid.click();
+      assert.equal(await page.evaluate(() => document.activeElement.id), targetId);
+      const target = page.locator('[id="' + targetId + '"]');
+      assert.match(await target.getAttribute('class'), /entry-focus/);
+      assert(await target.locator('pre').isVisible());
+      await missing.focus();
+      await page.keyboard.press('Enter');
+      assert.equal(await page.evaluate(() => document.activeElement.id), await missing.getAttribute('data-target'));
+
       assert.equal(await page.locator('#units tr').count(), 3);
       await page.locator('#units tr').first().click();
       assert.match(await page.locator('#preview').innerText(), /PTR · showing 2\/3/);
       assert.match(await page.locator('#preview').innerText(), /MPR · showing 2\/3/);
       assert.match(await page.locator('#preview').innerText(), /1\.25/);
+      const previewBlock = page.locator('#unit-summary .status-entry').filter({ hasText: 'RESULT @' }).first();
+      assert(await previewBlock.count());
+      await previewBlock.click();
+      assert.equal(await page.evaluate(() => document.activeElement.id), await previewBlock.getAttribute('data-target'));
+      await page.locator('#preview tr[data-record-type="PTR"]').first().locator('summary').click();
+
       const ptr = page.locator('#preview tr[data-record-type="PTR"]').first();
       assert.equal(await ptr.locator('.measurement-value').innerText(), '1.25');
       assert.equal(await ptr.locator('pre').isVisible(), false);
@@ -59,8 +92,63 @@ const { chromium } = require('playwright');
     assert.equal(data.schema, 'sanity-v1');
     const embedded = JSON.parse(fs.readFileSync(report, 'utf8').split('id="sanity-data" type="application/json">')[1].split('</script>')[0]);
     assert.deepEqual(data, embedded); // Display formatting must not alter evidence or precision.
+    assert.deepEqual(await page.evaluate(() => {
+      const f = {name:'START_T',kind:'U4',status:'valid'};
+      return [timestampUtc(f,1700000000), timestampUtc(f,4294967295),
+        timestampUtc(f,0), timestampUtc(f,-1), timestampUtc(f,1.5), timestampUtc(f,4294967296),
+        timestampUtc({...f,status:'missing'},1700000000), timestampUtc({...f,name:'TEST_T'},1700000000)];
+    }), ['2023-11-14 22:13:20 UTC','2106-02-07 06:28:15 UTC',null,null,null,null,null,null]);
+    await page.evaluate(() => {
+      const f = data.runs[0].metadata.find(m=>m.type==='MIR').fields.find(f=>f.name==='START_T');
+      f.raw=1700000000; f.effective=1700000100; f.status='valid'; $('run').selectedIndex=0;run();
+    });
+    const timeBlock = page.locator('#record-summary .status-entry').filter({hasText:'START_T'}).first();
+    await timeBlock.hover();
+    assert.equal(await page.locator('#entry-tooltip').innerText(), '2023-11-14 22:13:20 UTC');
+    await timeBlock.click();
+    const timeRow = page.locator('[id="'+await timeBlock.getAttribute('data-target')+'"]');
+    assert.match(await timeRow.innerText(), /1700000000/);
+    assert.match(await timeRow.innerText(), /2023-11-14 22:13:20 UTC/);
+    await page.evaluate(() => {
+      const f = data.runs[0].metadata.find(m=>m.type==='MIR').fields.find(f=>f.name==='LOT_ID');
+      f.raw='RAW ONLY'; f.effective='PROCESSED VALUE'; run();
+    });
+    const rawBlock=page.locator('#record-summary .status-entry').filter({hasText:'LOT_ID'}).first();
+    await rawBlock.hover();
+    assert.equal(await page.locator('#entry-tooltip').innerText(),'RAW ONLY');
+    assert.equal(await rawBlock.getAttribute('title'),'RAW ONLY');
+    await page.evaluate(() => {
+      const f=data.runs[0].metadata.find(m=>m.type==='MIR').fields.find(f=>f.name==='LOT_ID');
+      f.raw=null; f.effective='INHERITED VALUE'; run();
+    });
+    await rawBlock.hover();
+    assert.equal(await page.locator('#entry-tooltip').innerText(),'[null]');
+    assert.equal(await rawBlock.getAttribute('title'),'[null]');
+    await rawBlock.focus();
+    assert.equal(await page.locator('#entry-tooltip').innerText(),'[null]');
+
+    await page.evaluate(() => {
+      const f = data.runs[0].metadata.find(m => m.type === 'MIR').fields.find(f => f.name === 'LOT_ID');
+      f.status = 'invalid'; f.raw = f.effective = '<img src=x onerror=alert(1)>\\nBAD';
+      $('run').selectedIndex = 0; run();
+    });
+    const invalid = page.locator('#record-summary .status-entry[data-status="invalid"]').filter({ hasText: 'LOT_ID' }).first();
+    assert.equal(await invalid.evaluate(n => getComputedStyle(n).backgroundColor), 'rgb(255, 199, 206)');
+    await invalid.hover();
+    assert.match(await page.locator('#entry-tooltip').innerText(), /<img src=x/);
+    assert.equal(await page.locator('#entry-tooltip img').count(), 0);
+    await invalid.click();
+    assert.equal(await page.evaluate(() => document.activeElement.id), await invalid.getAttribute('data-target'));
+    // A semantically valid value that violates a product profile must not remain green.
+    await page.evaluate(() => {
+      const r = data.runs[0], m = r.metadata.find(m => m.type === 'MIR'), f = m.fields.find(f => f.name === 'LOT_ID');
+      f.status = 'valid';
+      profileIndex.set(JSON.stringify([r.source,m.offset,f.name]), [{rule:'profile',field:f.name,message:'Product mismatch'}]);
+      run();
+    });
+    assert.equal(await page.locator('#record-summary .status-entry[data-status="invalid"]').filter({ hasText: 'LOT_ID' }).count(), 1);
     assert.deepEqual(errors, []);
     assert.deepEqual(requests, []);
-    console.log('PASS: run switching/fields, unit selection/filtering, first-two previews, JSON export, desktop/mobile, offline (' + runs + ' runs)');
+    console.log('PASS: colored cells/wrapped labels/UTC dates/tooltips/keyboard/jumps/injection safety, run switching/fields, unit selection/filtering, first-two previews, JSON export, desktop/mobile, offline (' + runs + ' runs)');
   } finally { await browser.close(); }
 })().catch(e => { console.error(e); process.exitCode = 1; });

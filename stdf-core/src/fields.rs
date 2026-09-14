@@ -138,6 +138,12 @@ impl<'a> FieldReader<'a> {
         Ok(String::from_utf8_lossy(bytes).into_owned())
     }
 
+    /// S*n — V4-2007 string with an endian-aware U*2 byte length.
+    pub fn read_sn(&mut self) -> Result<String> {
+        let len = self.read_u2()? as usize;
+        Ok(String::from_utf8_lossy(self.read_bytes(len)?).into_owned())
+    }
+
     /// C*f — fixed-length string
     pub fn read_cf(&mut self, len: usize) -> Result<String> {
         let bytes = self.read_bytes(len)?;

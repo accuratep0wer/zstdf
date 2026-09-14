@@ -18,7 +18,8 @@ fn selected(profile: &Profile, record: &str, fields: &[Field]) -> Vec<Field> {
             .collect();
     }
     let names=match record {
-        "MIR"=>"LOT_ID PART_TYP JOB_NAM JOB_REV SBLOT_ID TEST_COD OPER_NAM FLOW_ID TST_TEMP SETUP_T START_T STAT_NUM MODE_COD RTST_COD NODE_NAM TSTR_TYP DATE_COD FACIL_ID FLOOR_ID PROC_ID",
+        "MIR"=>"LOT_ID PART_TYP JOB_NAM JOB_REV SBLOT_ID TEST_COD OPER_NAM FLOW_ID TST_TEMP SETUP_T START_T STAT_NUM MODE_COD RTST_COD NODE_NAM TSTR_TYP DATE_COD FACIL_ID FLOOR_ID PROC_ID USER_TXT",
+        "PRR"=>"HEAD_NUM SITE_NUM PART_ID PART_FLG HARD_BIN SOFT_BIN X_COORD Y_COORD",
         "SDR"=>"HEAD_NUM SITE_GRP SITE_CNT SITE_NUM HAND_TYP HAND_ID CARD_TYP CARD_ID LOAD_TYP LOAD_ID DIB_TYP DIB_ID CONT_TYP CONT_ID EXTR_ID",
         _=>"",
     };
@@ -33,6 +34,9 @@ fn preview(record: &str, offset: usize, fields: &[Field]) -> Value {
         "PTR" => "RESULT",
         "MPR" => "RTN_RSLT",
         "DTR" => "TEXT_DAT",
+        "ATER" => "ACTIVITY",
+        "CTRR" => "CELL_RSLT",
+        "CTSR" => "CHAR_NAM",
         "GDR" => "GEN_DATA",
         "FTR" => "TEST_FLG",
         _ => "",
@@ -73,7 +77,12 @@ fn preview(record: &str, offset: usize, fields: &[Field]) -> Value {
     } else {
         f.map(|f| f.status.as_str()).unwrap_or("unknown")
     };
-    json!({"type":record,"offset":offset.to_string(),"test_num":number(fields,"TEST_NUM"),"test_name":text(fields,"TEST_TXT"),"units":field(fields,"UNITS"),"field":name,"value":value,"ordinal":ordinal,"element_count":count,"status":status,"origin":f.map(|f|f.origin.as_str()),"inherited_from":f.and_then(|f|f.inherited_from.clone())})
+    let preview_raw = if record == "FTR" {
+        f.map(|f| f.raw.clone()).unwrap_or(Value::Null)
+    } else {
+        value.clone()
+    };
+    json!({"raw":preview_raw,"type":record,"offset":offset.to_string(),"test_num":number(fields,"TEST_NUM"),"test_name":text(fields,"TEST_TXT"),"units":field(fields,"UNITS"),"field":name,"value":value,"ordinal":ordinal,"element_count":count,"status":status,"origin":f.map(|f|f.origin.as_str()),"inherited_from":f.and_then(|f|f.inherited_from.clone())})
 }
 fn apply_profile(
     profile: &Profile,
@@ -84,6 +93,9 @@ fn apply_profile(
     source: &str,
     offset: usize,
 ) -> CliResult<()> {
+    if fields::sanity_exempt(record) {
+        return Ok(());
+    }
     for rule in profile.rules.iter().filter(|r| r.record == record) {
         let f = field(fields, &rule.field).expect("validated rule");
         let v = &f.effective;
@@ -117,6 +129,13 @@ fn apply_profile(
                     rule.field, profile.id
                 ),
             )?;
+            let finding = report
+                .findings
+                .last_mut()
+                .expect("just added profile finding");
+            finding["record"] = json!(record);
+            finding["field"] = json!(rule.field);
+            budget.charge(record.len() + rule.field.len() + 32)?;
         }
     }
     Ok(())
@@ -153,6 +172,7 @@ pub(super) fn scan(
     let mut sites: BTreeMap<Site, (u8, String)> = BTreeMap::new();
     let mut defaults: BTreeMap<(String, u64), (usize, Vec<Field>)> = BTreeMap::new();
     let mut sequence = 0u64;
+    let mut setups: BTreeMap<(u64, usize), Vec<String>> = BTreeMap::new();
     let mut lot = String::new();
     let mut complete = true;
     let mut mirs = 0;
@@ -179,7 +199,13 @@ pub(super) fn scan(
                 break;
             }
         };
-        let record = format!("{:?}", e.header.record_type()).to_uppercase();
+        let mut record = format!("{:?}", e.header.record_type()).to_uppercase();
+        if let Ok(stdf_core::StdfRecord::Gdr(gdr)) = &e.decoded {
+            if let Some(name) = gdr.custom_record_name() {
+                record = name.into();
+            }
+        }
+        let unchecked = fields::sanity_exempt(&record);
         if record == "FAR" && offset != 0 {
             issue(
                 report,
@@ -192,7 +218,37 @@ pub(super) fn scan(
             )?;
         }
         *report.records.entry(record.clone()).or_default() += 1;
-        let mut fields = fields::inspect(&record, &e.body, order);
+        let mut fields = if matches!(record.as_str(), "CTSR" | "CTRR") {
+            match fields::characterization_fields(&e.body, order) {
+                Ok(f) => f,
+                Err(error) => {
+                    issue(
+                        report,
+                        budget,
+                        source,
+                        offset,
+                        "error",
+                        "decode",
+                        format!("{record}: {error}"),
+                    )?;
+                    fields::unchecked_gdr_fields(&e.body, order)
+                }
+            }
+        } else {
+            fields::inspect(&record, &e.body, order)
+        };
+        if let Ok(stdf_core::StdfRecord::Ater(ater)) = &e.decoded {
+            if let Some(activity) = field(&fields, "ACTIVITY") {
+                let mut bytes = activity.clone();
+                bytes.name = "ACTIVITY_BYTES".into();
+                bytes.kind = "Binary".into();
+                bytes.byte_start += 1;
+                bytes.byte_len = ater.activity_bytes.len();
+                bytes.raw = json!(ater.activity_bytes);
+                bytes.effective = bytes.raw.clone();
+                fields.push(bytes);
+            }
+        }
         if record == "MIR" {
             profile = match profiles.select(source, offset, &fields) {
                 Ok(p) => p,
@@ -213,7 +269,7 @@ pub(super) fn scan(
         if serde_json::to_vec(&fields)?.len() > budget.max {
             return Err("single record exceeds report working budget".into());
         }
-        if fields::layout(&record).is_none() {
+        if fields::layout(&record).is_none() && !unchecked {
             issue(
                 report,
                 budget,
@@ -309,6 +365,11 @@ pub(super) fn scan(
                 issues: Vec::new(),
             });
         }
+        if unchecked {
+            for f in &mut wire_fields {
+                f.status = "not_checked".into();
+            }
+        }
         evidence.append(source, offset, &record, &wire_fields)?;
         let value_ref = format!("{source}:{offset}");
         if record == "MIR" {
@@ -326,6 +387,7 @@ pub(super) fn scan(
                 active.clear();
             }
             defaults.clear();
+            setups.clear();
             sites.clear();
             wafers.clear();
             lot = text(&fields, "LOT_ID").unwrap_or("").into();
@@ -369,6 +431,26 @@ pub(super) fn scan(
                     "run_context",
                     format!("{record} outside MIR/MRR"),
                 )?;
+            }
+        }
+        if matches!(record.as_str(), "ATR" | "CDR" | "CTSR") {
+            let v = json!({"source":source,"type":record,"offset":offset.to_string(),"fields":fields,"sanity":"not_checked"});
+            budget.charge(serde_json::to_vec(&v)?.len() + 512)?;
+            if let Some(i) = run {
+                report.runs[i].metadata.push(v);
+            } else {
+                report.file_records.push(v);
+            }
+            if record == "CTSR" {
+                if let Some(id) = text(&fields, "CHAR_ID").and_then(characterization_id) {
+                    for a in active.values() {
+                        budget.charge(128 + value_ref.len())?;
+                        setups
+                            .entry((id, a.index))
+                            .or_default()
+                            .push(value_ref.clone());
+                    }
+                }
             }
         }
         if record == "SDR" {
@@ -503,7 +585,7 @@ pub(super) fn scan(
                     unit.part_id = text(&fields, "PART_ID").map(str::to_owned);
                     unit.closed = true;
                     let flag = number(&fields, "PART_FLG");
-                    let summary = json!({"offset":offset.to_string(),"x":x,"y":y,"part_flg":flag,"passed":flag.and_then(|f|(f&0x14==0).then_some(f&8==0)),"hard_bin":number(&fields,"HARD_BIN"),"soft_bin":number(&fields,"SOFT_BIN")});
+                    let summary = json!({"fields":selected(profile,"PRR",&fields),"offset":offset.to_string(),"x":x,"y":y,"part_flg":flag,"passed":flag.and_then(|f|(f&0x14==0).then_some(f&8==0)),"hard_bin":number(&fields,"HARD_BIN"),"soft_bin":number(&fields,"SOFT_BIN")});
                     budget.charge(serde_json::to_vec(&summary)?.len() + 256)?;
                     unit.prr = Some(summary);
                     if unit.merge_key.is_none() {
@@ -530,17 +612,41 @@ pub(super) fn scan(
                 )?;
             }
         }
-        if matches!(record.as_str(), "PTR" | "MPR" | "FTR" | "DTR" | "GDR") {
+        if matches!(
+            record.as_str(),
+            "PTR" | "MPR" | "FTR" | "DTR" | "GDR" | "ATER" | "CTRR"
+        ) {
             let target = if matches!(record.as_str(), "DTR" | "GDR") {
                 if active.len() == 1 {
                     active.keys().next().copied()
                 } else {
                     None
                 }
+            } else if record == "CTRR" {
+                number(&fields, "HEAD_NUM")
+                    .and_then(|h| u8::try_from(h).ok())
+                    .zip(number(&fields, "SITE_NUM").and_then(|s| u8::try_from(s).ok()))
             } else {
                 site
             };
             let mut p = preview(&record, offset, &fields);
+            if unchecked {
+                p["head_num"] = json!(number(&fields, "HEAD_NUM"));
+                p["site_num"] = json!(number(&fields, "SITE_NUM"));
+                p["fields"] = json!(fields);
+                p["ownership"] = json!("unresolved");
+                if record == "CTRR" {
+                    let refs = number(&fields, "CHAR_ID_REF")
+                        .zip(target.and_then(|s| active.get(&s)))
+                        .and_then(|(id, a)| setups.get(&(id, a.index)));
+                    p["setup_refs"] = json!(refs.cloned().unwrap_or_default());
+                    p["setup_association"] = json!(match refs.map(Vec::len) {
+                        Some(1) => "resolved",
+                        Some(n) if n > 1 => "ambiguous",
+                        _ => "unresolved",
+                    });
+                }
+            }
             if definition_only {
                 p["definition_only"] = json!(true);
             }
@@ -556,6 +662,9 @@ pub(super) fn scan(
                         a.coordinates.observe(name, Some(v));
                     }
                 }
+                if unchecked {
+                    p["ownership"] = json!("explicit_head_site");
+                }
                 let unit = &mut report.units[a.index];
                 *unit.counts.entry(record.clone()).or_default() += 1;
                 let values = unit.previews.entry(record.clone()).or_default();
@@ -567,13 +676,16 @@ pub(super) fn scan(
                 if let Some(i) = run {
                     budget.charge(serde_json::to_vec(&p)?.len() + 256)?;
                     report.runs[i].unassigned.push(p);
+                } else if unchecked {
+                    budget.charge(serde_json::to_vec(&p)?.len() + 256)?;
+                    report.file_records.push(json!({"source":source,"type":record,"offset":offset.to_string(),"fields":fields,"sanity":"not_checked"}));
                 }
                 let severity = if matches!(record.as_str(), "DTR" | "GDR") {
                     "warning"
                 } else {
                     "error"
                 };
-                if !definition_only {
+                if !definition_only && !unchecked {
                     issue(
                         report,
                         budget,
@@ -675,4 +787,13 @@ pub(super) fn scan(
         .unwrap()
         .scan_complete = complete;
     Ok(())
+}
+
+// The vendor table uses C*n for CHAR_ID; examples display hexadecimal IDs.
+fn characterization_id(value: &str) -> Option<u64> {
+    value
+        .strip_prefix("0x")
+        .or_else(|| value.strip_prefix("0X"))
+        .map(|v| u64::from_str_radix(v, 16).ok())
+        .unwrap_or_else(|| value.parse().ok())
 }

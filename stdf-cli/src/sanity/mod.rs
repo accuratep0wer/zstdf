@@ -13,6 +13,7 @@ use stdf_validate::fields::{self, Field};
 mod profiles;
 mod scan;
 mod storage;
+mod text;
 use profiles::Profiles;
 #[cfg(test)]
 mod tests;
@@ -27,8 +28,19 @@ pub struct Arguments {
     profile: Option<PathBuf>,
     #[arg(long)]
     run_profiles: Option<PathBuf>,
-    #[arg(long)]
-    output_dir: PathBuf,
+    /// Publish an offline HTML report and its evidence bundle.
+    #[arg(
+        long,
+        required_unless_present = "text_summary",
+        conflicts_with = "text_summary"
+    )]
+    output_dir: Option<PathBuf>,
+    /// Write a full-file invalid/missing field summary as UTF-8 text, without an HTML bundle.
+    #[arg(long, conflicts_with = "output_dir")]
+    text_summary: Option<PathBuf>,
+    /// Return a failure when the text summary contains missing fields, including optional fields.
+    #[arg(long, requires = "text_summary", conflicts_with = "output_dir")]
+    fail_on_missing: bool,
     #[arg(long, default_value_t = 2)]
     preview_records_per_type: usize,
     #[arg(long, default_value_t = 32)]
@@ -123,6 +135,9 @@ impl Profile {
             return Err("profile version/domain mismatch or empty id".into());
         }
         for rule in &mut self.rules {
+            if fields::sanity_exempt(&rule.record) {
+                continue;
+            }
             let layout = fields::layout(&rule.record).ok_or("unsupported profile record")?;
             if !layout
                 .split_whitespace()
@@ -164,6 +179,8 @@ struct Report {
     units: Vec<Unit>,
     findings: Vec<Value>,
     records: BTreeMap<String, u64>,
+    #[serde(default)]
+    file_records: Vec<Value>,
     preview_records_per_type: usize,
     validation_failed: bool,
 }
@@ -293,6 +310,9 @@ pub fn execute(args: Arguments, out: &mut impl Write) -> CliResult<()> {
     generate(&args, out)
 }
 fn generate(args: &Arguments, out: &mut impl Write) -> CliResult<()> {
+    if args.fail_on_missing && args.text_summary.is_none() {
+        return Err("--fail-on-missing requires --text-summary".into());
+    }
     if args.preview_records_per_type == 0
         || args.preview_records_per_type > 100
         || args.max_report_mib == 0
@@ -316,13 +336,40 @@ fn generate(args: &Arguments, out: &mut impl Write) -> CliResult<()> {
     if paths.is_empty() {
         return Err("no STDF inputs".into());
     }
+    if args.output_dir.is_some() == args.text_summary.is_some() {
+        return Err("choose exactly one of --output-dir or --text-summary".into());
+    }
+    if let Some(output) = &args.text_summary {
+        if output.exists() {
+            let target = output.canonicalize()?;
+            for path in paths
+                .iter()
+                .chain(args.profile.iter())
+                .chain(args.run_profiles.iter())
+            {
+                if path.canonicalize()? == target {
+                    return Err(
+                        "text summary must not overwrite an input STDF or configuration".into(),
+                    );
+                }
+            }
+        }
+    }
+    let root = args.output_dir.as_deref().unwrap_or_else(|| {
+        args.text_summary
+            .as_ref()
+            .unwrap()
+            .parent()
+            .filter(|p| !p.as_os_str().is_empty())
+            .unwrap_or(Path::new("."))
+    });
     let mut stage = storage::Stage::new(
-        &args.output_dir,
+        root,
         args.disk_limit_mib
             .checked_mul(1024 * 1024)
             .ok_or("disk budget overflow")?,
     )?;
-    let mut report=Report{schema:"sanity-v1".into(),rule_version:fields::RULE_VERSION.into(),profile:serde_json::to_value(&profile)?,profile_hash:format!("{:x}",Sha256::digest(serde_json::to_vec(&profile)?)),coverage:vec!["Base-v4 field layouts; raw bytes preserved for every source".into(),"Not a complete STDF conformance certification: vendor extensions and all enum/count rules remain unsupported".into()],preview_records_per_type:args.preview_records_per_type,..Default::default()};
+    let mut report=Report{schema:"sanity-v1".into(),rule_version:fields::RULE_VERSION.into(),profile:serde_json::to_value(&profile)?,profile_hash:format!("{:x}",Sha256::digest(serde_json::to_vec(&profile)?)),coverage:vec!["Base-v4 field layouts plus extraction of ATR, CDR, ATER, CTSR and CTRR; these five record types skip field/profile sanity checks (not_checked). Framing/decode errors still fail; raw bytes preserved for every source".into(),"Not a complete STDF conformance certification: unlisted vendor extensions and some enum/count rules remain unsupported".into()],preview_records_per_type:args.preview_records_per_type,..Default::default()};
     let mut evidence = storage::EvidenceWriter::new(stage.file("record_fields.parquet")?)?;
     let mut hashes: BTreeMap<String, usize> = BTreeMap::new();
     for (index, path) in paths.iter().enumerate() {
@@ -374,6 +421,29 @@ fn generate(args: &Arguments, out: &mut impl Write) -> CliResult<()> {
         )?;
     }
     evidence.finish()?;
+    if let Some(output) = &args.text_summary {
+        let (summary, missing) = text::render(&stage.path, &report, &mut budget)?;
+        stage.publish_text(output, &summary, || {
+            budget.check().map_err(|e| e.to_string())
+        })?;
+        writeln!(
+            out,
+            "sources={} runs={} units={} validation_failed={} missing_fields={}\ntext_summary={}",
+            report.sources.len(),
+            report.runs.len(),
+            report.units.len(),
+            report.validation_failed,
+            missing,
+            output.display()
+        )?;
+        if report.validation_failed {
+            return Err("sanity validation failed; diagnostic text summary published".into());
+        }
+        if args.fail_on_missing && missing > 0 {
+            return Err("sanity missing fields found; diagnostic text summary published".into());
+        }
+        return Ok(());
+    }
     let data = serde_json::to_vec(&report)?;
     if data.len() > budget.max {
         return Err("serialized report size limit exceeded".into());
@@ -405,7 +475,11 @@ fn generate(args: &Arguments, out: &mut impl Write) -> CliResult<()> {
         report.units.len(),
         report.findings.len(),
         report.validation_failed,
-        args.output_dir.join("report.html").display()
+        args.output_dir
+            .as_ref()
+            .unwrap()
+            .join("report.html")
+            .display()
     )?;
     if report.validation_failed {
         return Err("sanity validation failed; diagnostic report published".into());

@@ -361,6 +361,16 @@ impl AsciiDumper {
             StdfRecord::Eps(_) => out.push_str("EPS Record\n"),
             StdfRecord::Gdr(r) => {
                 out.push_str("GDR Record\n");
+                match r.characterization() {
+                    Ok(Some(custom)) => {
+                        field_str(&mut out, "CUSTOM_RECORD", custom.record_name);
+                        for f in custom.fields {
+                            field_line(&mut out, &f.name, &fmt_custom_field(&f.value));
+                        }
+                    }
+                    Err(e) => field_line(&mut out, "CUSTOM_DECODE_ERROR", &e.to_string()),
+                    _ => {}
+                }
                 field_u(&mut out, "FLD_CNT", r.fld_cnt);
                 for (idx, field) in r.gen_data.iter().enumerate() {
                     let _ = writeln!(out, "  Field # {:>2}:    {}", idx + 1, fmt_gdr_field(field));
@@ -370,6 +380,35 @@ impl AsciiDumper {
                 out.push_str("DTR Record\n");
                 field_str(&mut out, "TEXT_DAT", &r.text_dat);
             }
+            StdfRecord::Ater(r) => {
+                out.push_str("ATER Record\n");
+                field_str(&mut out, "REC_CUSTM", &r.rec_custm);
+                field_str(&mut out, "EVT_SRC", &r.evt_src);
+                field_u(&mut out, "HEAD_NUM", r.head_num);
+                field_u(&mut out, "SITE_NUM", r.site_num);
+                field_str(&mut out, "ACTIVITY", &r.activity);
+                field_line(
+                    &mut out,
+                    "ACTIVITY_BYTES",
+                    &format!("{:02x?}", r.activity_bytes),
+                );
+            }
+            StdfRecord::Cdr(r) => {
+                out.push_str("CDR Record\n");
+                field_u(&mut out, "CONT_FLG", r.cont_flg);
+                field_u(&mut out, "CDR_INDX", r.cdr_indx);
+                field_str(&mut out, "CHN_NAM", &r.chn_nam);
+                field_u(&mut out, "CHN_LEN", r.chn_len);
+                field_u(&mut out, "SIN_PIN", r.sin_pin);
+                field_u(&mut out, "SOUT_PIN", r.sout_pin);
+                field_u(&mut out, "MSTR_CNT", r.mstr_cnt);
+                field_line(&mut out, "M_CLKS", &format!("{:?}", r.m_clks));
+                field_u(&mut out, "SLAV_CNT", r.slav_cnt);
+                field_line(&mut out, "S_CLKS", &format!("{:?}", r.s_clks));
+                field_u(&mut out, "INV_VAL", r.inv_val);
+                field_u(&mut out, "LST_CNT", r.lst_cnt);
+                field_line(&mut out, "CELL_LST", &format!("{:?}", r.cell_lst));
+            }
             StdfRecord::Unknown { typ, sub, .. } => {
                 let _ = writeln!(out, "UNK Record (typ={typ}, sub={sub})");
             }
@@ -378,6 +417,14 @@ impl AsciiDumper {
             }
         }
         out
+    }
+}
+
+// Characterization intervals may be smaller than the legacy nine-decimal display.
+fn fmt_custom_field(value: &VarData) -> String {
+    match value {
+        VarData::R8(v) => format!("R8: {v}"),
+        _ => fmt_gdr_field(value),
     }
 }
 

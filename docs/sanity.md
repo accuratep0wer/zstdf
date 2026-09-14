@@ -1,8 +1,17 @@
 # CP/FT source sanity
 
-`sanity` reads STDF files, directories and gzip inputs directly. It checks every
-record, displays important run metadata, and offers compact per-unit previews.
+`sanity` reads STDF files, directories and gzip inputs directly. It scans every
+record, checks supported non-exempt fields, displays important run metadata, and offers compact per-unit previews.
 It does not change Dashboard yield or the `traceability` command.
+
+## Records extracted without sanity checks
+
+ATR, CDR, ATER, CTSR and CTRR are retained and displayed as **Not checked**.
+No default/enum/range/ASCII or product-profile sanity checks are applied to
+these records, and their fields are excluded from TXT invalid/missing/unknown
+totals. Framing and structural decoding errors remain diagnostics. ATER/CTRR
+use explicit head/site ownership; unresolved associations remain visible.
+See [record formats, compatibility and demo](vendor-records.md).
 
 ## Installation and execution
 
@@ -31,6 +40,63 @@ Start-Process C:\reports\cp-sanity\report.html
 
 On Linux/macOS, use `target/release/zstdf-cli` with the same arguments.
 
+## Text summaries for scripts
+
+Check one file by name and write a UTF-8 text summary without publishing an HTML bundle:
+
+```powershell
+.\target\release\zstdf-cli.exe sanity "C:\data\ft\lot-001.stdf.gz" `
+  --test-domain ft --text-summary "C:\reports\lot-001.sanity.txt"
+```
+
+`--text-summary` and `--output-dir` are mutually exclusive. Text mode accepts the same
+files, directories, gzip, profiles, and mixed-run configuration as HTML mode. It checks
+**all supported non-exempt fields in all scanned records**, not only important fields or the preview's first
+two records. The summary lists invalid, missing, and unknown field values, source hashes
+and all filename aliases, decompressed record/field offsets, raw/effective values,
+presence/origin, and structural/product-profile diagnostics. Values and paths are
+JSON-escaped so embedded tabs, newlines, and control characters cannot forge text rows.
+A completed file ends with `END scan_complete=...`; incomplete scans never claim full coverage.
+
+Exit code 0 means the configured checks passed; optional missing fields and unknown values
+are still listed. Exit code 1 indicates validation failure, an operational error, or missing
+fields when `--fail-on-missing` is enabled. Argument errors return 2. Add
+`--fail-on-missing` only when every missing field, including optional STDF fields, should
+fail the script. Missing fields and product-rule failures remain separately identified.
+
+The summary is atomically replaced only after scanning and rendering complete. Corrupt
+input can publish an explicitly incomplete diagnostic summary and exit 1. Configuration,
+I/O, cancellation, or resource failures preserve the previous summary; a previous file's
+existence alone does not establish that the current invocation succeeded. Input STDF
+cannot be used as the output path. Text mode uses temporary raw/Parquet evidence beneath
+the output parent and removes it on normal completion/failure. Existing disk and report
+budgets apply; exceeding them fails rather than truncating the summary.
+
+For a directory, this PowerShell example produces one text file per input and preserves
+relative subdirectories to avoid duplicate-basename collisions:
+
+```powershell
+$inputRoot = (Resolve-Path "C:\data\ft").Path.TrimEnd('\')
+$outputRoot = "C:\reports\ft-sanity"
+$failed = 0
+Get-ChildItem -LiteralPath $inputRoot -Recurse -File |
+  Where-Object { $_.Name -match '\.(stdf|std)(\.gz)?$' } |
+  ForEach-Object {
+    $relative = $_.FullName.Substring($inputRoot.Length + 1)
+    $summary = Join-Path $outputRoot ($relative + ".sanity.txt")
+    & .\target\release\zstdf-cli.exe sanity $_.FullName `
+      --test-domain ft --text-summary $summary
+    if ($LASTEXITCODE -ne 0) {
+      $failed++
+      Write-Warning "Sanity check failed: $($_.FullName)"
+    }
+  }
+if ($failed -gt 0) { throw "$failed STDF checks failed; review summaries and command errors." }
+```
+
+Use `--test-domain cp` for CP data or the appropriate `--run-profiles` configuration
+for mixed runs. On Linux/macOS, use `target/release/zstdf-cli` with the same arguments.
+
 ## Runnable synthetic examples
 
 ```powershell
@@ -49,6 +115,29 @@ the first-two-record preview, but full-file validation must report the error and
 return exit code 1. This verifies that previews do not hide later anomalies.
 
 ## Report contents
+
+Section 1 groups entries by record type and record offset. Each field or first-value
+preview has a compact colored cell: **green valid**, **red invalid**, **grey missing**.
+Unknown/empty entries use a dashed grey cell and their own labels; they are never
+presented as valid. Hover or keyboard-focus a cell to see only its raw value (UTC date/time for timestamps). Click or press Enter to scroll to and focus the matching row in
+section 2, opening its raw evidence. Repeated records retain separate targets.
+
+Section 2 contains the detailed run-field tables, run-level test records, unit selector,
+PRR fields, and compact per-type previews. Selecting a unit updates its cells in
+section 1. Section 3 retains full-file diagnostics. Product-profile failures on valid
+fields appear red with the underlying semantic status preserved. Green describes
+field validity under implemented checks, not the device Pass/Fail outcome or complete
+standards certification. Entry names sit inside flat, background-colored cells in a compact spreadsheet-style grid.
+Record types label the rows; cells wrap onto additional rows as needed.
+The default MIR summary includes USER_TXT, SETUP_T, and START_T. Valid timestamp fields
+show their original integer alongside `YYYY-MM-DD HH:mm:ss UTC` in details.
+Section 1 tooltips show only the raw value, with timestamps converted to UTC;
+they do not include status, processed values, or the full evidence JSON.
+A null raw value displays as `[null]`, even when an effective value was inherited.
+STDF v4 calls the run/wafer end timestamp FINISH_T; MOD_TIM is also recognized, as is
+END_T if supplied by a supported record. Missing/invalid timestamps show no fabricated
+epoch date. Durations such as TEST_T and TEST_TIM are never converted to calendar dates.
+Raw JSON and Parquet values remain unchanged.
 
 - **Per run**: FAR CPU_TYPE/STDF_VER; MIR lot/sublot, product, program/revision,
   step, operator, temperature, times, STAT_NUM, MODE_COD, RTST_COD, DATE_COD,
@@ -197,3 +286,12 @@ node scripts\smoke_sanity.cjs examples\sanity\generated\cp-report\report.html
 
 Rule reference: [Teradyne STDF v4 specification](https://storage.googleapis.com/google-code-archive-downloads/v2/code.google.com/stdf-eclipse/Stdf-V4-spec.pdf).
 See [Phase 10D.4–10D.5](../PHASED_EXECUTION_SPEC.md) for the complete remaining deliverables.
+
+
+Raw value is the value decoded from the source bytes (or null when omitted).
+Effective value is the value after defaults/inheritance and validity rules have
+been applied. They usually agree for ordinary explicit valid fields. An omitted
+limit may have a null raw value but inherit an effective limit from its earlier
+definition; a sentinel or invalid result can retain its raw value while its
+effective value is null. The section 1 tooltip uses the raw value in both cases.
+Full evidence remains available by clicking a cell to open its detail row.

@@ -29,6 +29,11 @@ For device histories and retests, follow [Install and Run Traceability Reports](
 after building the CLI. This includes a ready-to-run synthetic example and
 configuration for your own CP/FT data.
 
+Selected records **ATR, CDR, ATER, CTSR and CTRR** are extracted and displayed,
+but excluded from field/profile sanity checks (`not_checked`). Framing and
+decode errors remain visible. See [vendor records and runnable demo](docs/vendor-records.md)
+for V93000 activity traces and shmoo/margin setup/results.
+
 ## Build on Windows
 
 These instructions target **64-bit Windows 10/11**. Python is optional for the
@@ -73,7 +78,7 @@ If moving from another computer, ensure the changes you need have been committed
 and pushed there first. Cloning only retrieves changes available on GitHub.
 
 ```powershell
-git clone https://github.com/zefangzh/zstdf.git
+git clone https://github.com/accuratep0wer/zstdf.git
 cd zstdf
 ```
 
@@ -132,7 +137,7 @@ gcc --version
 Clone, test, and build from the repository root:
 
 ```bash
-git clone https://github.com/zefangzh/zstdf.git
+git clone https://github.com/accuratep0wer/zstdf.git
 cd zstdf
 cargo test --workspace --exclude stdf-py --locked
 cargo build --release -p stdf-cli --locked
@@ -179,7 +184,7 @@ cargo --version
 Clone, test, and build:
 
 ```bash
-git clone https://github.com/zefangzh/zstdf.git
+git clone https://github.com/accuratep0wer/zstdf.git
 cd zstdf
 cargo test --workspace --exclude stdf-py --locked
 cargo build --release -p stdf-cli --locked
@@ -315,6 +320,24 @@ Configure product-specific formats with `--profile .\my-cp-profile.json`.
 The lot and program names in the [CP example](examples/sanity/cp-profile.json) and [FT example](examples/sanity/ft-profile.json)
 are for synthetic data. Adapt them before using the profiles with product data.
 
+For a full-file invalid/missing/unknown field summary suitable for automation:
+
+```powershell
+.\target\release\zstdf-cli.exe sanity "C:\data\ft\lot-001.stdf.gz" `
+  --test-domain ft --text-summary "C:\reports\lot-001.sanity.txt"
+```
+
+Choose either `--text-summary` or `--output-dir`. Add `--fail-on-missing` to return a
+failure for missing fields, including optional fields. Text output includes all scanned
+fields and structural/profile diagnostics, beyond the HTML preview. See the
+[text-summary and directory-script instructions](docs/sanity.md#text-summaries-for-scripts)
+for exit codes, atomic replacement, resource limits, and one-summary-per-file automation.
+
+The HTML report starts with record-type rows and compact status cells with field names inside: valid green,
+invalid red, missing grey; unknown/empty remain separately labeled. Hover for content,
+or click/press Enter to jump to the corresponding detail row in section 2. Selecting a
+unit updates its PRR and first-record preview cells.
+
 ### 3. Run synthetic examples and a mixed CP/FT report
 
 The following uses the Python 3 standard library to generate STDF; the Python binding is not required:
@@ -375,7 +398,7 @@ First install Git, Rust, MSVC C++ Build Tools, and the Windows SDK following the
 [Windows build instructions](#build-on-windows) above. Then run these commands in Developer PowerShell:
 
 ```powershell
-git clone https://github.com/zefangzh/zstdf.git
+git clone https://github.com/accuratep0wer/zstdf.git
 cd zstdf
 cargo test --workspace --exclude stdf-py --locked
 cargo build --release -p stdf-cli --locked

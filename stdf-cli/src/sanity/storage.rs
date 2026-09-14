@@ -134,6 +134,25 @@ impl Stage {
         self.published = true;
         Ok(())
     }
+    pub fn publish_text(
+        &self,
+        output: &Path,
+        text: &[u8],
+        check: impl FnOnce() -> Result<(), String>,
+    ) -> CliResult<()> {
+        {
+            let mut q = self.quota.lock().unwrap();
+            if text.len() as u64 > q.1.saturating_sub(q.0) {
+                return Err("disk budget cannot hold atomic text summary".into());
+            }
+            q.0 += text.len() as u64;
+        }
+        stdf_parquet::catalog::atomic_write_checked(output, text, || {
+            check().map_err(std::io::Error::other)
+        })?;
+        // Text mode publishes one file; temporary raw/Parquet evidence is removed on drop.
+        Ok(())
+    }
 }
 impl Drop for Stage {
     fn drop(&mut self) {

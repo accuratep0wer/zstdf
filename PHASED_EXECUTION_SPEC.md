@@ -756,7 +756,7 @@ profile configures important fields; defaults include:
 | Record/context | Important fields shown by default |
 | --- | --- |
 | FAR | CPU_TYPE, STDF_VER |
-| MIR | LOT_ID, PART_TYP, JOB_NAM, JOB_REV, SBLOT_ID, TEST_COD, OPER_NAM, FLOW_ID, TST_TEMP, SETUP_T, START_T, STAT_NUM, MODE_COD, RTST_COD, NODE_NAM, TSTR_TYP, DATE_COD, FACIL_ID, FLOOR_ID, PROC_ID |
+| MIR | LOT_ID, PART_TYP, JOB_NAM, JOB_REV, SBLOT_ID, TEST_COD, OPER_NAM, FLOW_ID, TST_TEMP, SETUP_T, START_T, STAT_NUM, MODE_COD, RTST_COD, NODE_NAM, TSTR_TYP, DATE_COD, FACIL_ID, FLOOR_ID, PROC_ID, USER_TXT |
 | SDR | HEAD_NUM, SITE_GRP, SITE_NUM, SITE_CNT, HAND_TYP, HAND_ID, EXTR_ID |
 | WIR/WRR/WCR (when applicable) | Wafer ID, head/site group, start/end times, counts, coordinate system/wafer configuration; identify the source record for each field |
 | SBR | HEAD_NUM, SITE_NUM, SBIN_NUM, SBIN_CNT, SBIN_PF, SBIN_NAM |
@@ -795,6 +795,29 @@ diagnostics; retain all raw records/array details in the field-evidence export.
 Also provide a full-file record inventory, field-status distributions, anomaly lists, and CP/FT, run,
 record, field, and severity filters. Errors must drill down to source/record/field offsets.
 Safely display control characters, invalid encodings, and `</script>` in HTML; export raw bytes separately as hex.
+
+The initial implementation also provides a linked two-section inspection view. Section 1
+names each record type and shows compact colored cells per displayed field/preview entry:
+green valid, red invalid, and grey missing. Unknown/empty entries use dashed grey cells
+and explicit labels. Hover or keyboard focus shows entry content; click or Enter opens
+and focuses its unique detail-table row in section 2. Repeated records and units retain
+independent targets. Entry names appear inside background-colored cells in a compact cross-table-style grid,
+wrapping onto multiple rows when necessary. Valid U*4 timestamp fields (SETUP_T, START_T,
+FINISH_T, MOD_TIM, and any supported END_T alias) show only the converted raw UTC
+date/time in tooltips, and both the integer and date/time in detail tables. Other
+tooltips show only the raw value; full evidence is available after clicking. Missing/invalid timestamps do not become epoch dates;
+durations such as PRR.TEST_T are not timestamps. Profile failures remain visible without
+overwriting raw semantic states.
+Full-file diagnostics remain available separately; the cells do not claim complete coverage.
+
+For automated file checks, `sanity <filename> --test-domain cp|ft --text-summary <file.txt>`
+writes a bounded UTF-8 invalid/missing/unknown field summary from every scanned record,
+including fields outside the preview. It includes source aliases/hashes, record/field offsets,
+raw/effective values, provenance, and structural/profile diagnostics. This output mode is
+exclusive with `--output-dir`; optional `--fail-on-missing` makes missing fields fail the
+command. Operational failures preserve the old file; validation failures may publish clearly
+failed/incomplete diagnostics. See [the Sanity guide](docs/sanity.md#text-summaries-for-scripts)
+for directory automation and exit-code semantics.
 
 #### 10D.4.4 Implementation sequence, interfaces, and failure semantics
 
@@ -1645,3 +1668,20 @@ readpoints and stage review**. The first runnable milestone for the new prerequi
 checks plus important run fields and first-value previews of each unit's first two records per type.”
 The first evidence-dataset milestone remains “rebuild the same traceability report from a pinned
 evidence snapshot after removing original STDF.” Empty tables or command placeholders are insufficient delivery.
+
+
+### Selected record extraction follow-up: ATR/CDR/ATER/CTSR/CTRR
+
+- Decode CDR (1/94), ATER (137/10), and named CTSR/CTRR views over GDR (50/10),
+  preserving native types, GDR values, binary activity bytes and source offsets.
+- Keep ATR support; exclude all five record types from field/product-profile
+  sanity checks. Report `not_checked`, not valid or missing. Framing/decode
+  failures still produce diagnostics; ordinary records retain existing checks.
+- Preserve CTRR U*4 sites without truncation. Associate ATER/CTRR with explicit
+  active head/site instances; scope CTSR references to the current attempt.
+- Verify both endian orders, truncation, binary text, long CDR strings, shmoo and
+  margin branches, optional tracking fields, interleaved sites, retests, field
+  evidence, TXT exclusions and offline HTML display/export.
+- Preserve `eav-v2` and existing yield/traceability semantics. CDR chain assembly
+  and shmoo plot reconstruction are outside this extraction increment.
+- Implementation notes and executable synthetic example: [vendor records](docs/vendor-records.md).

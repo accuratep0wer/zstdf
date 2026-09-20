@@ -311,9 +311,8 @@ fn generate(args: &Arguments, out: &mut impl Write, cancel: Arc<AtomicBool>) -> 
     }
     json.extend_from_slice(b"]}");
     // Bound escaping too: adversarial '<' strings can expand sixfold.
-    let (prefix, suffix) = include_str!("report.html")
-        .split_once("__TRACE_DATA__")
-        .unwrap();
+    let template = crate::report_ui::decorate(include_str!("report.html").to_owned());
+    let (prefix, suffix) = template.split_once("__TRACE_DATA__").unwrap();
     let mut html = Vec::new();
     let mut writer = LimitedWriter {
         bytes: &mut html,

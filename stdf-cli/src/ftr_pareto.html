@@ -1,0 +1,82 @@
+<!-- Copyright 2026 zstdf contributors. SPDX-License-Identifier: Apache-2.0 -->
+<style>
+#fp{font:13px/1.45 system-ui,sans-serif;color:#162b40;background:#f4f7fb;padding:20px;box-sizing:border-box;min-width:0}#fp *{box-sizing:border-box}#fp h1{font-size:24px;margin:0}#fp h2{font-size:16px;margin:12px 0}#fp p{margin:8px 0;color:#53677a}#fp .fp-tools{display:flex;gap:10px;flex-wrap:wrap;align-items:end;margin:14px 0}#fp label{display:grid;gap:4px;font-weight:600}#fp input,#fp select,#fp button{font:inherit;color:inherit;background:white;border:1px solid #b8c7d5;border-radius:4px;padding:5px 8px;max-width:230px}#fp button{cursor:pointer}#fp button:hover{background:#e4eef8}#fp button:focus-visible,#fp input:focus-visible,#fp select:focus-visible{outline:2px solid #156ec0}#fp .fp-kpis{display:flex;flex-wrap:wrap;gap:8px}#fp .fp-kpi{background:white;border:1px solid #d2dce7;border-top:3px solid #236a9d;padding:10px 16px;min-width:132px}#fp .fp-kpi strong{display:block;font-size:24px}#fp .fp-card{background:white;border:1px solid #d2dce7;padding:12px;margin-top:14px;min-width:0}#fp .fp-scroll{overflow:auto;max-height:600px}#fp table{border-collapse:collapse;white-space:nowrap;width:100%;font-variant-numeric:tabular-nums}#fp th,#fp td{border:1px solid #d5dfe8;padding:2px 8px;height:24px;text-align:right}#fp th{background:#e9f0f6;position:sticky;top:0;z-index:1}#fp th button{border:0;background:none;padding:0;font-weight:600;max-width:none}#fp td:first-child,#fp th:first-child{text-align:left}#fp tbody tr:nth-child(even){background:#f7f9fc}#fp .fp-fail{color:#981e2c;background:#ffe9ec;font-weight:700}#fp .fp-pass{color:#166546;background:#e3f5e9}#fp .fp-unknown{color:#865200;background:#fff0d6}#fp .fp-pattern{max-width:380px;overflow:hidden;text-overflow:ellipsis}#fp .fp-pattern button{max-width:360px;overflow:hidden;text-overflow:ellipsis;border:0;background:none;padding:0;text-align:left;text-decoration:underline}#fp .fp-chart-row{display:grid;grid-template-columns:minmax(110px,260px) minmax(80px,1fr) 120px;gap:10px;align-items:center;height:26px}#fp .fp-chart-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}#fp .fp-track{background:#edf1f5;height:13px;position:relative}#fp .fp-bar{height:13px;background:#c64752}#fp .fp-dot{position:absolute;width:9px;height:9px;border-radius:50%;background:#225eac;top:2px;transform:translateX(-50%)}#fp .fp-foot{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:10px}#fp pre{max-height:250px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;font-size:11px}#fp .fp-muted{color:#60758a}#fp dialog{width:min(1100px,94vw);max-height:85vh;border:1px solid #adbfcf;border-radius:6px;padding:18px;color:inherit}#fp dialog::backdrop{background:#122a4566}#fp .fp-modal-title{overflow-wrap:anywhere}#fp .fp-detail-table{min-width:850px}@media(max-width:600px){#fp{padding:10px}#fp .fp-kpi{flex:1;min-width:110px;padding:8px}#fp .fp-chart-row{grid-template-columns:110px minmax(50px,1fr) 95px;font-size:11px}}
+</style>
+<div id="fp">
+<h1 data-i18n="FTR · Test pattern yield &amp; failure Pareto">FTR · Test pattern yield &amp; failure Pareto</h1>
+<p class="muted" data-i18n="One complete VECT_NAM per pattern; each FTR counts once, including retests. Yield = Pass / (Pass + Fail); unknown and not-executed results are excluded. NUM_FAIL is a pin count.">One complete VECT_NAM per pattern; each FTR counts once, including retests. Yield = Pass / (Pass + Fail); unknown and not-executed results are excluded. NUM_FAIL is a pin count.</p>
+<p class="muted" data-i18n="FTR filters apply to the supplied STDF inputs. Identical decompressed files count once. Missing names appear as [null], without inheritance or inferred splitting.">FTR filters apply to the supplied STDF inputs. Identical decompressed files count once. Missing names appear as [null], without inheritance or inferred splitting.</p>
+<div class="fp-tools">
+<label><span data-i18n="Pattern search">Pattern search</span><input id="fp-search" type="search" placeholder="All patterns" data-i18n-placeholder="All patterns"></label>
+<label><span data-i18n="Lot">Lot</span><select id="fp-lot"></select></label><label><span data-i18n="Program">Program</span><select id="fp-program"></select></label><label><span data-i18n="Revision">Revision</span><select id="fp-revision"></select></label><label><span data-i18n="Head / site">Head / site</span><select id="fp-site"></select></label><label><span data-i18n="Test number">Test number</span><select id="fp-test"></select></label>
+<button id="fp-reset" type="button" data-i18n="Reset filters">Reset filters</button><button id="fp-json" type="button" data-i18n="Export evidence JSON">Export evidence JSON</button><button id="fp-csv" type="button" data-i18n="Export filtered CSV">Export filtered CSV</button>
+</div>
+<div id="fp-kpis" class="fp-kpis" aria-live="polite"></div>
+<div class="fp-card"><h2 data-i18n="Failure Pareto">Failure Pareto</h2><p class="muted" data-i18n="Red bars: failures scaled to the maximum. Blue dots: cumulative failure share (0–100%). Missing-name failures are included.">Red bars: failures scaled to the maximum. Blue dots: cumulative failure share (0–100%). Missing-name failures are included.</p><p id="fp-chart-note"></p><div id="fp-chart" role="list" aria-label="Pattern failure Pareto"></div></div>
+<div class="fp-card"><h2 data-i18n="All patterns · Yield table">All patterns · Yield table</h2><p class="muted" data-i18n="Sort by headings; select a pattern for details. Green: all valid attempts passed. Red: failures. Amber: incomplete. Zero-failure patterns are included.">Sort by headings; select a pattern for details. Green: all valid attempts passed. Red: failures. Amber: incomplete. Zero-failure patterns are included.</p>
+<div class="fp-scroll"><table id="fp-table"><thead><tr></tr></thead><tbody></tbody></table></div><div class="fp-foot"><button id="fp-prev" data-i18n="Previous">Previous</button><span id="fp-page"></span><button id="fp-next" data-i18n="Next">Next</button><span data-i18n="100 rows per page; CSV includes all matching patterns.">100 rows per page; CSV includes all matching patterns.</span></div></div>
+<details class="fp-card"><summary data-i18n="Source evidence and calculation policy">Source evidence and calculation policy</summary><p id="fp-sources"></p><p class="muted" data-i18n="TEST_FLG bits 1/2/3/5/6 mark unknown results; bit 4 means not executed. Alarms (bit 0) are counted separately. Offsets bound each group, not a contiguous range. No final-device yield is inferred.">TEST_FLG bits 1/2/3/5/6 mark unknown results; bit 4 means not executed. Alarms (bit 0) are counted separately. Offsets bound each group, not a contiguous range. No final-device yield is inferred.</p><pre id="fp-source-list"></pre></details>
+<dialog id="fp-detail"><button id="fp-close" type="button" data-i18n="Close">Close</button><h2 class="fp-modal-title" id="fp-detail-title"></h2><div class="fp-scroll"><table class="fp-detail-table"><thead><tr><th data-i18n="Source SHA-256">Source SHA-256</th><th data-i18n="Run">Run</th><th data-i18n="Lot">Lot</th><th data-i18n="Program / revision">Program / revision</th><th data-i18n="Head / site">Head / site</th><th data-i18n="Test #">Test #</th><th data-i18n="Attempts">Attempts</th><th data-i18n="Pass">Pass</th><th data-i18n="Fail">Fail</th><th data-i18n="Unknown">Unknown</th><th data-i18n="Not executed">Not executed</th><th data-i18n="First / last offset">First / last offset</th></tr></thead><tbody id="fp-detail-body"></tbody></table></div><pre id="fp-detail-paths"></pre></dialog>
+</div>
+<script type="application/json" id="fp-data">__FTR_DATA__</script>
+<script>
+(()=>{'use strict';
+const T=window.ReportUI.t;
+const report=JSON.parse(document.getElementById('fp-data').textContent), $=id=>document.getElementById('fp-'+id);
+const esc=v=>String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const name=p=>p===null?T('[null] (missing VECT_NAM)'):p;
+const raw=report.sources.flatMap(s=>s.groups.map(g=>({...g,sha256:s.sha256,paths:s.paths})));
+const fields=['attempts','pass','fail','unknown','not_executed','alarms'];
+const dims={lot:g=>g.lot,program:g=>g.program,revision:g=>g.revision,site:g=>g.head+'/'+g.site,test:g=>String(g.test_num)};
+let detailPattern=null;
+let selected=[], rows=[], page=0, sort='fail',desc=true;
+const columns=[['pattern','VECT_NAM'],['attempts','Attempts'],['pass','Pass'],['fail','Fail'],['unknown','Unknown'],['not_executed','Not executed'],['alarms','Alarms'],['yield','Yield %'],['failure_rate','Fail %'],['share','Failure share %'],['cumulative','Cumulative %']];
+const pct=(n,d)=>d?n/d*100:null, fmt=n=>n===null?'N/A':n.toFixed(2);
+for(const [id,get] of Object.entries(dims)){
+ const select=$(id);select.append(new Option(T('All'),''));
+ [...new Set(raw.map(get))].sort((a,b)=>a.localeCompare(b,undefined,{numeric:true})).forEach(v=>select.append(new Option(v||'[empty]',JSON.stringify(v))));
+ select.addEventListener('change',()=>{page=0;refresh()});
+}
+const thead=$('table').querySelector('thead tr');
+for(const [key,label] of columns){const th=document.createElement('th'),b=document.createElement('button');b.type='button';b.textContent=T(label);b.onclick=()=>{desc=sort===key?!desc:key!=='pattern';sort=key;page=0;drawTable()};th.append(b);th.dataset.key=key;thead.append(th)}
+function refresh(){
+ const q=$('search').value.toLowerCase();
+ selected=raw.filter(g=>(!q||(g.pattern??'[null]').toLowerCase().includes(q))&&Object.entries(dims).every(([id,get])=>!$(id).value||get(g)===JSON.parse($(id).value)));
+ const map=new Map();
+ for(const g of selected){const key=JSON.stringify(g.pattern);if(!map.has(key))map.set(key,{pattern:g.pattern,...Object.fromEntries(fields.map(k=>[k,0]))});const r=map.get(key);fields.forEach(k=>r[k]+=g[k])}
+ rows=[...map.values()].sort((a,b)=>b.fail-a.fail||name(a.pattern).localeCompare(name(b.pattern)));
+ const total=Object.fromEntries(fields.map(k=>[k,rows.reduce((n,r)=>n+r[k],0)]));let cumulative=0;
+ for(const r of rows){cumulative+=r.fail;r.yield=pct(r.pass,r.pass+r.fail);r.failure_rate=pct(r.fail,r.pass+r.fail);r.share=pct(r.fail,total.fail);r.cumulative=pct(cumulative,total.fail)}
+ $('kpis').innerHTML=[['Patterns',rows.length],['FTR attempts',total.attempts],['Failed attempts',total.fail],['Valid yield',fmt(pct(total.pass,total.pass+total.fail))+'%'],['Unknown',total.unknown],['Not executed',total.not_executed]].map(([k,v])=>'<div class="fp-kpi">'+esc(T(k))+'<strong>'+esc(v==='N/A%'?'N/A':v)+'</strong></div>').join('');
+ const failures=rows.filter(r=>r.fail>0), chart=failures.slice(0,30),max=chart[0]?.fail||1;
+ $('chart-note').textContent=failures.length?T('Showing {shown} of {total} failing patterns. Full results are in the table and CSV.',{shown:chart.length,total:failures.length}):T('No failed attempts in the selected scope.');
+ $('chart').innerHTML=chart.map(r=>'<div class="fp-chart-row" role="listitem"><span class="fp-chart-name" title="'+esc(name(r.pattern))+'">'+esc(name(r.pattern))+'</span><div class="fp-track"><div class="fp-bar" style="width:'+r.fail/max*100+'%"></div><span class="fp-dot" style="left:'+r.cumulative+'%"></span></div><span>'+r.fail+' · '+fmt(r.cumulative)+'%</span></div>').join('');
+ drawTable();
+}
+function sorted(){return [...rows].sort((a,b)=>{let x=a[sort],y=b[sort];if(sort==='pattern'){x=name(x);y=name(y)}if(x===null)return y===null?0:1;if(y===null)return -1;const c=typeof x==='string'?x.localeCompare(y,undefined,{numeric:true}):x-y;return (desc?-c:c)||name(a.pattern).localeCompare(name(b.pattern))})}
+function drawTable(){
+ const ordered=sorted(),pages=Math.max(1,Math.ceil(ordered.length/100));page=Math.min(page,pages-1);
+ for(const th of thead.children){const active=th.dataset.key===sort;th.setAttribute('aria-sort',active?(desc?'descending':'ascending'):'none');th.firstChild.textContent=T(columns.find(c=>c[0]===th.dataset.key)[1])+(active?(desc?' ▼':' ▲'):'')}
+ const body=$('table').querySelector('tbody');body.replaceChildren();
+ for(const r of ordered.slice(page*100,page*100+100)){const tr=document.createElement('tr');for(const [key] of columns){const td=document.createElement('td');if(key==='pattern'){td.className='fp-pattern';const b=document.createElement('button');b.textContent=name(r.pattern);b.title=name(r.pattern);b.onclick=()=>detail(r.pattern);td.append(b)}else{td.textContent=fields.includes(key)?r[key]:fmt(r[key]);if(key==='fail'&&r.fail)td.className='fp-fail';if(key==='yield'&&r.yield===100)td.className='fp-pass';if(['unknown','not_executed'].includes(key)&&r[key])td.className='fp-unknown'}tr.append(td)}body.append(tr)}
+ if(!ordered.length){const tr=document.createElement('tr'),td=document.createElement('td');td.colSpan=columns.length;td.textContent=T('No matching FTR patterns.');tr.append(td);body.append(tr)}
+ $('page').textContent=T('Page {page} / {pages} · {n} patterns',{page:page+1,pages,n:ordered.length});$('prev').disabled=page===0;$('next').disabled=page>=pages-1;
+}
+function detail(pattern){
+ detailPattern=pattern;
+ const groups=selected.filter(g=>g.pattern===pattern);$('detail-title').textContent=name(pattern);
+ $('detail-body').innerHTML=groups.map(g=>'<tr>'+[g.sha256,g.run,g.lot,g.program+' / '+g.revision,g.head+'/'+g.site,g.test_num,g.attempts,g.pass,g.fail,g.unknown,g.not_executed,g.first_offset+' / '+g.last_offset].map(v=>'<td>'+esc(v)+'</td>').join('')+'</tr>').join('');
+ $('detail-paths').textContent=[...new Set(groups.flatMap(g=>g.paths))].join('\n');if(!$('detail').open)$('detail').showModal();
+}
+function download(text,type,file){const url=URL.createObjectURL(new Blob([text],{type})),a=document.createElement('a');a.href=url;a.download=file;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
+ $('json').onclick=()=>download(JSON.stringify(report,null,2),'application/json','ftr-pattern-evidence.json');
+ $('csv').onclick=()=>{const cell=v=>'"'+String(v??'').replace(/"/g,'""')+'"';const keys=['pattern','pattern_missing',...columns.slice(1).map(c=>c[0])];download([keys.map(cell).join(','),...sorted().map(r=>keys.map(k=>{let v=k==='pattern_missing'?r.pattern===null:r[k];if(k==='pattern'&&typeof v==='string'&&/^[=+@\-\t\r\n]/.test(v))v="'"+v;return cell(v)}).join(','))].join('\r\n'),'text/csv;charset=utf-8','ftr-patterns.csv')};
+ $('search').oninput=()=>{page=0;refresh()};$('reset').onclick=()=>{$('search').value='';Object.keys(dims).forEach(k=>$(k).value='');page=0;refresh()};$('prev').onclick=()=>{page--;drawTable()};$('next').onclick=()=>{page++;drawTable()};$('close').onclick=()=>$('detail').close();
+ function labels(){
+ $('sources').textContent=T('{n} unique sources; {paths} source paths. JSON exports all evidence, independent of filters.',{n:report.sources.length,paths:report.sources.reduce((n,s)=>n+s.paths.length,0)});
+ Object.keys(dims).forEach(id=>$(id).options[0].textContent=T('All'));
+ }
+ window.addEventListener('report-ui-change',()=>{labels();refresh();if($('detail').open)detail(detailPattern)});labels();
+ $('source-list').textContent=report.sources.map(s=>s.sha256+'\n'+s.paths.join('\n')).join('\n\n');refresh();
+})();
+</script>

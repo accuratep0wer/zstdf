@@ -33,7 +33,7 @@ function fixture(lot, passed) {
     const first = path.join(root, 'one.stdf'), second = path.join(root, 'two.stdf');
     fs.writeFileSync(first, fixture('LOT1', true)); fs.writeFileSync(second, fixture('LOT2', false));
     const dataset = path.join(root, 'dataset'), output = path.join(root, 'dashboard.html');
-    execFileSync(cli, ['convert-partitioned', '--output-dir', dataset, '--row-group-rows', '1', first, second]);
+    execFileSync(cli, ['convert', '--layout', 'catalog', '--output-dir', dataset, '--row-group-rows', '1', first, second]);
     execFileSync(cli, ['verify-dataset', dataset]);
     execFileSync(cli, ['dashboard-dir', dataset, output]);
     browser = await chromium.launch({ channel: 'msedge', headless: true });

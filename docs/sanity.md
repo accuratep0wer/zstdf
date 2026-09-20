@@ -1,17 +1,86 @@
 # CP/FT source sanity
 
 `sanity` reads STDF files, directories and gzip inputs directly. It scans every
-record, checks supported non-exempt fields, displays important run metadata, and offers compact per-unit previews.
+record, checks CSV-selected fields, displays important run metadata, and offers compact per-unit previews.
 It does not change Dashboard yield or the `traceability` command.
 
-## Records extracted without sanity checks
+## Optional records and default exclusions
 
-ATR, CDR, ATER, CTSR and CTRR are retained and displayed as **Not checked**.
-No default/enum/range/ASCII or product-profile sanity checks are applied to
-these records, and their fields are excluded from TXT invalid/missing/unknown
-totals. Framing and structural decoding errors remain diagnostics. ATER/CTRR
-use explicit head/site ownership; unresolved associations remain visible.
+ATR, CDR, ATER, CTSR and CTRR are optional records. If absent, they have no
+placeholder cells or missing-record findings. If present, their values are
+extracted and displayed. Their CSV rows are commented out by default, so their
+fields appear as **Not checked** and stay out of TXT field totals. Uncomment
+individual rows to enable checks. Framing and structural decoding errors always
+remain diagnostics. ATER/CTRR retain explicit head/site ownership.
 See [record formats, compatibility and demo](vendor-records.md).
+
+## CSV field checklist
+
+[config/sanity-checks.csv](../config/sanity-checks.csv) lists the supported body
+fields in wire order, including disabled fields as commented rows. A copy is
+embedded at build time for execution from any working directory. Pass an edited
+copy explicitly; files in the current directory are never loaded implicitly.
+
+```powershell
+Copy-Item .\config\sanity-checks.csv .\my-checks.csv
+.\target\release\zstdf-cli.exe sanity C:\data\sample.stdf.gz `
+  --test-domain ft --checks-csv .\my-checks.csv `
+  --output-dir .\reports\sample
+```
+
+The four columns, in order, are `record,field,flow,format`:
+
+```csv
+record,field,flow,format
+MRR,FINISH_T,CP|FT,U*4
+# MRR,DISP_COD,CP|FT,C*1
+# MRR,USR_DESC,CP|FT,C*n
+# MRR,EXC_DESC,CP|FT,C*n
+# ATR,MOD_TIM,CP|FT,U*4
+# CDR,CHN_NAM,CP|FT,C*n
+# CTSR,CHAR_NAM,CP|FT,C*n
+# CTSR,AXES[].RNG_RESO,CP|FT,R*8
+```
+
+- Active rows require a usable effective value whenever the record appears.
+  Missing, blank, invalid or unresolved selected values produce a finding and
+  exit 1. A valid inherited value satisfies the check and retains its provenance.
+  Selecting a result also requires a usable result from definition-only or
+  not-executed PTR/MPR records; disable that field if such records are expected.
+- A `#` at the start of a line disables it. Disabled fields still retain their
+  raw/effective evidence, but have status `not_checked` and no field or profile
+  findings. An empty checklist (header only) disables semantic field checks.
+- `CP`, `FT`, and `CP|FT` select flows. Mixed-input runs use the profile selected
+  for each MIR. FAR/ATR precede MIR and must use `CP|FT`. Before a run is known,
+  only shared `CP|FT` checks execute; unresolved routing is itself an error.
+- Formats are STDF type labels: `U*1`, `U*2`, `U*4`, `I*1`, `I*2`, `I*4`, `R*4`,
+  `R*8`, `C*1`, `C*n`, `B*1`, `B*n`, `D*n`, `N*1`, `V*n`, plus extension `S*n`.
+  Arrays use `kx`, e.g. `kxR*4` for MPR.RTN_RSLT. Counts come from the decoded
+  wire layout; an encoded zero-count array is present and may be empty. The format must match that layout; it is not a cast or regex.
+- CTSR paths use `AXES[]` and `TRACKING[]` for all actual members. Zero-member
+  arrays do not invent a member. Enabling a conditional field such as EXE_ORDER,
+  RSC_MOD or MARGIN_VAL requires it on every applicable record/member; select
+  only fields expected in your shmoo/margin logging variant. Formats for vendor
+  fields follow the supplied vendor layout, not a claim of base-v4 membership.
+- Active JSON profile rules add naming/range constraints only to CSV-selected
+  fields. CSV selection takes precedence. `important_fields` only changes the
+  displayed run-field subset; it does not limit checking or Parquet evidence.
+- Structural checks, decoding, run/unit closure, configured CP wafer requirements
+  and identity resolution remain independent of the CSV. Disabling a field check
+  does not make invalid coordinates safe for merging.
+
+Defaults enable core run/part/test identifiers, result fields and relevant CP
+wafer fields. MRR enables **FINISH_T only**. The CSV is a configurable engineering
+checklist, not a list of every mandatory record in the STDF standard or full
+conformance certification. Unknown records/fields, wrong types, bad flows,
+duplicate overlapping rows and malformed CSV fail before output replacement.
+Files are UTF-8 (including a BOM), LF or CRLF; standard CSV quoting is supported.
+Comments must begin in column one. CSV size is limited to 1 MiB.
+
+The HTML **Checks CSV** download and bundle `checks.csv` contain the exact input
+snapshot. JSON includes the snapshot, active rows and SHA-256; the manifest and
+TXT header include the checklist hash. Raw values and timestamps retain the
+existing hover behavior (`[null]` for null; UTC date/time for valid timestamps).
 
 ## Installation and execution
 
@@ -51,18 +120,18 @@ Check one file by name and write a UTF-8 text summary without publishing an HTML
 
 `--text-summary` and `--output-dir` are mutually exclusive. Text mode accepts the same
 files, directories, gzip, profiles, and mixed-run configuration as HTML mode. It checks
-**all supported non-exempt fields in all scanned records**, not only important fields or the preview's first
+**all CSV-selected fields in all scanned records**, not only important fields or the preview's first
 two records. The summary lists invalid, missing, and unknown field values, source hashes
 and all filename aliases, decompressed record/field offsets, raw/effective values,
 presence/origin, and structural/product-profile diagnostics. Values and paths are
 JSON-escaped so embedded tabs, newlines, and control characters cannot forge text rows.
 A completed file ends with `END scan_complete=...`; incomplete scans never claim full coverage.
 
-Exit code 0 means the configured checks passed; optional missing fields and unknown values
-are still listed. Exit code 1 indicates validation failure, an operational error, or missing
-fields when `--fail-on-missing` is enabled. Argument errors return 2. Add
-`--fail-on-missing` only when every missing field, including optional STDF fields, should
-fail the script. Missing fields and product-rule failures remain separately identified.
+Exit code 0 means the configured checks passed. Exit code 1 indicates selected
+missing/invalid/unresolved fields, structural validation failure or an operational
+error. Argument errors return 2. `--fail-on-missing` remains accepted for existing
+scripts, but selected missing fields already fail and disabled fields remain
+excluded. Missing fields and product-rule failures are separately identified.
 
 The summary is atomically replaced only after scanning and rendering complete. Corrupt
 input can publish an explicitly incomplete diagnostic summary and exit 1. Configuration,
@@ -205,6 +274,7 @@ numeric values. Rules evaluate records that actually occur; they do not require
 arbitrary record types to exist. Structural rules handle run/MIR/MRR and unit
 closure, and CP wafer requirements.
 
+Enable `MIR,JOB_REV,CP|FT,C*n` in the CSV for the rule below.
 For example, display selected MIR fields without changing full-field inspection/export:
 
 ```json
@@ -219,6 +289,7 @@ For example, display selected MIR fields without changing full-field inspection/
 
 | Parameter | Default | Purpose |
 | --- | --- | --- |
+| `--checks-csv` | Embedded default CSV | Select required fields by CP/FT flow |
 | `--preview-records-per-type` | 2 | Preview records per type in each unit; range 1–100 |
 | `--max-report-mib` | 32 | Retained-summary budget and serialized-report limit; not a hard process RSS limit |
 | `--disk-limit-mib` | 1024 | Write budget for new raw evidence, Parquet, summary, and publication copies |
@@ -295,3 +366,11 @@ limit may have a null raw value but inherit an effective limit from its earlier
 definition; a sentinel or invalid result can retain its raw value while its
 effective value is null. The section 1 tooltip uses the raw value in both cases.
 Full evidence remains available by clicking a cell to open its detail row.
+
+## Display settings
+
+The report includes top-right selectors for five styles and five languages.
+Switching preserves filters and selected-device details; original field values,
+identifiers, diagnostic evidence, and JSON exports remain unchanged. See
+[shared report display settings](report-ui.md). Regenerate older HTML reports
+with the updated CLI to receive these controls.

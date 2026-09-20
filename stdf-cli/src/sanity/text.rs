@@ -20,7 +20,15 @@ pub(super) fn render(
         report.rule_version, report.profile_hash, report.sources.len(), report.runs.len(),
         report.units.len(), report.validation_failed, budget.args.fail_on_missing
     ))?;
-    append(&mut output, budget, "ATR, CDR, ATER, CTSR and CTRR are extracted but not sanity checked; excluded from field totals. Framing/decode errors remain diagnostics. Missing optional fields do not imply validation failure. Unknown is not valid. Offsets refer to decompressed bytes. Values and paths are JSON-escaped.\n")?;
+    append(&mut output, budget, "Only active checks CSV fields are included in field totals. Selected missing/unusable values fail validation. Unselected fields remain extractable. Optional records are not required to exist. Framing/decode errors remain diagnostics. Unknown is not valid. Offsets refer to decompressed bytes. Values and paths are JSON-escaped.\n")?;
+    append(
+        &mut output,
+        budget,
+        &format!(
+            "checks_hash={}\n",
+            report.checks["hash"].as_str().unwrap_or("unknown")
+        ),
+    )?;
     for source in &report.sources {
         append(
             &mut output,

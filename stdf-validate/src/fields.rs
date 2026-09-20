@@ -146,6 +146,22 @@ pub fn inspect(record: &str, body: &[u8], order: ByteOrder) -> Vec<Field> {
     inspect_impl(record, body, order, sanity_exempt(record))
 }
 
+/// Inspect even normally exempt records when explicitly selected by a caller.
+pub fn inspect_checked(record: &str, body: &[u8], order: ByteOrder) -> Vec<Field> {
+    inspect_impl(record, body, order, false)
+}
+
+/// Decode-only evidence for unconditional structural diagnostics.
+pub fn inspect_structure(record: &str, body: &[u8], order: ByteOrder) -> Vec<Field> {
+    inspect_impl(record, body, order, true)
+}
+
+/// Basic value checks for named fields extracted from custom GDR layouts.
+pub fn check_extracted(f: &mut Field) {
+    f.status = "valid".into();
+    check_value(f);
+}
+
 fn inspect_impl(record: &str, body: &[u8], order: ByteOrder, unchecked: bool) -> Vec<Field> {
     let Some(spec) = layout(record) else {
         return Vec::new();

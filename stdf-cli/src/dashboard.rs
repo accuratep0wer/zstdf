@@ -20,6 +20,7 @@ pub struct DashboardOptions {
     pub title: String,
     pub max_correlation_tests: usize,
     pub max_items: usize,
+    pub ftr_inputs: Vec<std::path::PathBuf>,
 }
 
 impl Default for DashboardOptions {
@@ -28,6 +29,7 @@ impl Default for DashboardOptions {
             title: "zstdf DataView".to_string(),
             max_correlation_tests: 16,
             max_items: 40,
+            ftr_inputs: Vec::new(),
         }
     }
 }
@@ -289,7 +291,12 @@ pub fn generate_dashboard(
         parts: data.kpis.parts,
         yield_percent: data.kpis.yield_percent,
     };
-    std::fs::write(output, render_html(&data))?;
+    if output.canonicalize().ok().as_ref() == Some(&input.canonicalize()?) {
+        return Err(invalid_data("dashboard output must not overwrite input Parquet").into());
+    }
+    let html = crate::ftr_pareto::attach(render_html(&data), &options.ftr_inputs, output)?;
+    let html = crate::report_ui::decorate(html);
+    stdf_parquet::catalog::atomic_write(output, html.as_bytes())?;
     Ok(summary)
 }
 
@@ -1362,71 +1369,74 @@ tr:hover td { background: rgba(87, 242, 209, .05); }
     <div>
       <div class="eyebrow">STDF spectrum dataview</div>
       <h1 id="title"></h1>
-      <p class="subtitle">Parts merge by valid wafer + positive PRR X/Y; otherwise by lot + positive PTR X/Y. Unresolved attempts stay separate. Yield uses all-pass merging; it is not final-retest yield.</p>
+      <p class="muted" data-i18n="Parts merge by coordinate identity; unresolved attempts remain separate. Device yield uses all-pass merging, not final-retest yield.">Parts merge by coordinate identity; unresolved attempts remain separate. Device yield uses all-pass merging, not final-retest yield.</p>
     </div>
     <div class="controls">
-      <input id="search" type="search" placeholder="Filter tests or groups">
-      <select id="lot-select" aria-label="Lot selection" hidden></select>
-      <select id="commonality-dimension" aria-label="Commonality dimension"></select>
-      <input id="min-fails" type="number" min="0" value="0" aria-label="Minimum failures">
+      <input id="search" type="search" placeholder="Filter tests or groups" data-i18n-placeholder="Filter tests or groups">
+      <select id="lot-select" aria-label="Lot selection" hidden data-i18n-label="Lot selection"></select>
+      <select id="commonality-dimension" aria-label="Commonality dimension" data-i18n-label="Commonality dimension"></select>
+      <input id="min-fails" type="number" min="0" value="0" aria-label="Minimum failures" data-i18n-label="Minimum failures">
     </div>
   </header>
   <p id="dataset-status" role="status" hidden></p>
 
-  <nav class="tabs" aria-label="Dashboard sections">
-    <button class="tab active" data-tab="overview">Overview</button>
-    <button class="tab" data-tab="pareto">Pareto</button>
-    <button class="tab" data-tab="commonality">Commonality</button>
-    <button class="tab" data-tab="correlation">Correlation</button>
-    <button class="tab" data-tab="spatial">Spatial</button>
-    <button class="tab" data-tab="quality">Quality</button>
+  <nav class="tabs" aria-label="Dashboard sections" data-i18n-label="Dashboard sections">
+    <button class="tab active" data-tab="overview" data-i18n="Overview">Overview</button>
+    <button class="tab" data-tab="pareto" data-i18n="Pareto">Pareto</button>
+    <button class="tab" data-tab="commonality" data-i18n="Commonality">Commonality</button>
+    <button class="tab" data-tab="correlation" data-i18n="Correlation">Correlation</button>
+    <button class="tab" data-tab="spatial" data-i18n="Spatial">Spatial</button>
+    <button class="tab" data-tab="quality" data-i18n="Quality">Quality</button>
   </nav>
 
   <section id="overview" class="section active">
     <div id="kpis" class="grid kpis"></div>
     <div class="grid two" style="margin-top:14px">
-      <div class="panel"><h2>Yield By Site</h2><canvas id="site-yield-chart"></canvas></div>
-      <div class="panel"><h2>Hard Bin Distribution</h2><canvas id="hard-bin-chart"></canvas></div>
+      <div class="panel"><h2 data-i18n="Yield By Site">Yield By Site</h2><canvas id="site-yield-chart"></canvas></div>
+      <div class="panel"><h2 data-i18n="Hard Bin Distribution">Hard Bin Distribution</h2><canvas id="hard-bin-chart"></canvas></div>
     </div>
   </section>
 
   <section id="pareto" class="section">
     <div class="grid two">
-      <div class="panel"><h2>Failure Pareto</h2><canvas id="pareto-chart"></canvas></div>
-      <div class="panel"><h2>Test Detail</h2><div id="test-detail" class="detail">Click a Pareto bar or row to inspect limits and distribution.</div></div>
+      <div class="panel"><h2 data-i18n="Failure Pareto">Failure Pareto</h2><canvas id="pareto-chart"></canvas></div>
+      <div class="panel"><h2 data-i18n="Test Detail">Test Detail</h2><div id="test-detail" class="detail"><span data-i18n="Click a Pareto bar or row to inspect limits and distribution.">Click a Pareto bar or row to inspect limits and distribution.</span></div></div>
     </div>
-    <div class="panel" style="margin-top:14px"><h2>Tests</h2><div id="pareto-table"></div></div>
+    <div class="panel" style="margin-top:14px"><h2 data-i18n="Tests">Tests</h2><div id="pareto-table"></div></div>
+    <!-- FTR_PATTERN_ANALYSIS -->
   </section>
 
   <section id="commonality" class="section" data-feature="failure-commonality">
     <div class="grid two">
-      <div class="panel"><h2>Failure Commonality</h2><canvas id="commonality-chart"></canvas></div>
-      <div class="panel"><h2>Interpretation</h2><div id="commonality-note" class="detail"></div></div>
+      <div class="panel"><h2 data-i18n="Failure Commonality">Failure Commonality</h2><canvas id="commonality-chart"></canvas></div>
+      <div class="panel"><h2 data-i18n="Interpretation">Interpretation</h2><div id="commonality-note" class="detail"></div></div>
     </div>
   </section>
 
   <section id="correlation" class="section">
     <div class="grid two">
-      <div class="panel"><h2>Correlation Heatmap</h2><canvas id="correlation-heatmap"></canvas></div>
-      <div class="panel"><h2>Strongest Relationships</h2><div id="correlation-table"></div></div>
+      <div class="panel"><h2 data-i18n="Correlation Heatmap">Correlation Heatmap</h2><canvas id="correlation-heatmap"></canvas></div>
+      <div class="panel"><h2 data-i18n="Strongest Relationships">Strongest Relationships</h2><div id="correlation-table"></div></div>
     </div>
   </section>
 
   <section id="spatial" class="section">
     <div class="grid two">
-      <div class="panel"><h2>Wafer / XY Failure Map</h2><canvas id="xy-map"></canvas></div>
-      <div class="panel"><h2>Wafer Yield</h2><canvas id="wafer-yield-chart"></canvas></div>
+      <div class="panel"><h2 data-i18n="Wafer / XY Failure Map">Wafer / XY Failure Map</h2><canvas id="xy-map"></canvas></div>
+      <div class="panel"><h2 data-i18n="Wafer Yield">Wafer Yield</h2><canvas id="wafer-yield-chart"></canvas></div>
     </div>
   </section>
 
   <section id="quality" class="section">
     <div class="grid two">
-      <div class="panel"><h2>Data Completeness</h2><canvas id="quality-chart"></canvas></div>
-      <div class="panel"><h2>Process Windows</h2><div id="process-table"></div></div>
+      <div class="panel"><h2 data-i18n="Data Completeness">Data Completeness</h2><canvas id="quality-chart"></canvas></div>
+      <div class="panel"><h2 data-i18n="Process Windows">Process Windows</h2><div id="process-table"></div></div>
     </div>
   </section>
 </main>
 <script>
+const T=window.ReportUI.t, C=name=>window.ReportUI.color(name);
+let currentDetail=null;
 const snapshot = JSON.parse(document.getElementById('dashboard-data').textContent);
 let data = snapshot.all || snapshot;
 const state = { tab: 'overview', query: '', minFails: 0 };
@@ -1464,21 +1474,21 @@ if (snapshot.lots) {
   });
   const status = document.getElementById('dataset-status');
   status.hidden = false;
-  status.textContent = `Catalog revision ${snapshot.revision}; latest run: ${snapshot.run_status}. ` +
-    (snapshot.run_status === 'complete' ? 'Showing current successful source versions.' : 'Warning: incomplete run. Showing last successfully published versions; failed updates may retain older data.');
+  updateDatasetStatus();
   lotSelect.addEventListener('change', () => {
     data = Number(lotSelect.value) === 0 ? snapshot.all : snapshot.lots[Number(lotSelect.value) - 1].data;
     dimensionSelect.innerHTML = '<option value="">all dimensions</option>' +
       [...new Set(data.commonality.map(item => item.dimension))].map(value => `<option value="${esc(value)}">${esc(value)}</option>`).join('');
-    document.getElementById('test-detail').innerHTML = '';
+    document.getElementById('test-detail').innerHTML = '';currentDetail=null;
     render();
   });
 }
 
+function updateDatasetStatus(){if(!snapshot.lots)return;document.getElementById('dataset-status').textContent=T('Catalog revision {revision}; latest run: {status}.',{revision:snapshot.revision,status:snapshot.run_status})+' '+T(snapshot.run_status==='complete'?'Showing current successful source versions.':'Incomplete run: failed updates may retain older source versions.');}
 function render() {
   renderKpis();
-  renderBar('site-yield-chart', data.site_yield.slice(0, 16), item => item.label, item => item.yield_percent, item => item.yield_percent < 90 ? '#ff6b5f' : '#57f2d1', '%');
-  renderBar('hard-bin-chart', data.hard_bins.slice(0, 16), item => item.label, item => item.total, item => item.fail ? '#ffbf5f' : '#57f2d1', ' parts');
+  renderBar('site-yield-chart', data.site_yield.slice(0, 16), item => item.label, item => item.yield_percent, item => item.yield_percent < 90 ? C('bad-ink') : C('good-ink'), '%');
+  renderBar('hard-bin-chart', data.hard_bins.slice(0, 16), item => item.label, item => item.total, item => item.fail ? C('warn-ink') : C('good-ink'), ' '+T('parts'));
   renderPareto();
   renderCommonality();
   renderCorrelation();
@@ -1489,18 +1499,18 @@ function render() {
 function renderKpis() {
   const k = data.kpis;
   document.getElementById('kpis').innerHTML = [
-    card('Yield', fmtPct(k.yield_percent), `${k.passed_parts}/${k.parts} parts passed`),
-    card('Fail Parts', k.failed_parts.toLocaleString(), `${k.failing_tests} failing tests`),
-    card('Rows', k.rows.toLocaleString(), 'EAV test result rows'),
-    card('Tests', k.tests.toLocaleString(), 'unique test numbers'),
-    card('Wafers', k.wafers.toLocaleString(), `${k.lots} lots`),
-    card('Sites', k.sites.toLocaleString(), 'head / site combinations'),
+    card('Yield', fmtPct(k.yield_percent), T('{pass}/{total} parts passed',{pass:k.passed_parts,total:k.parts})),
+    card('Fail Parts', k.failed_parts.toLocaleString(), T('{n} failing tests',{n:k.failing_tests})),
+    card('Rows', k.rows.toLocaleString(), T('EAV test result rows')),
+    card('Tests', k.tests.toLocaleString(), T('unique test numbers')),
+    card('Wafers', k.wafers.toLocaleString(), T('{n} lots',{n:k.lots})),
+    card('Sites', k.sites.toLocaleString(), T('head / site combinations')),
   ].join('');
 }
 
 function renderPareto() {
   const items = filtered(data.pareto).filter(item => item.fail >= state.minFails);
-  renderBar('pareto-chart', items.slice(0, 18), item => item.label, item => item.fail, () => '#ff6b5f', ' fails', showTestDetail);
+  renderBar('pareto-chart', items.slice(0, 18), item => item.label, item => item.fail, () => C('bad-ink'), ' '+T('fails'), showTestDetail);
   table('pareto-table', items, [
     ['Test', item => `<button class="tablerow" data-test="${esc(item.label)}">${esc(item.label)}</button>`],
     ['Type', item => esc(item.test_type)],
@@ -1521,11 +1531,11 @@ function renderCommonality() {
     .filter(item => !selected || item.dimension === selected)
     .filter(item => item.count >= state.minFails)
     .slice(0, 24);
-  renderBar('commonality-chart', items, item => `${item.dimension}: ${item.label}`, item => item.count, () => '#ffbf5f', ' hits');
+  renderBar('commonality-chart', items, item => `${item.dimension}: ${item.label}`, item => item.count, () => C('warn-ink'), ' '+T('hits'));
   const top = items[0];
   document.getElementById('commonality-note').innerHTML = top
-    ? `Top common factor is <b>${esc(top.dimension)}</b>: <b>${esc(top.label)}</b> with ${top.count.toLocaleString()} failing observations. Use this to separate systemic process issues from isolated test noise.`
-    : '<div class="empty">No failure commonality after current filters.</div>';
+    ? esc(T('{dimension}: {label} · {n} failing observations.',{dimension:top.dimension,label:top.label,n:top.count.toLocaleString()}))
+    : `<div class="empty">${esc(T('No failure commonality after current filters.'))}</div>`;
 }
 
 function renderCorrelation() {
@@ -1541,11 +1551,11 @@ function renderCorrelation() {
 
 function renderSpatial() {
   renderXyMap(data.heatmap_points);
-  renderBar('wafer-yield-chart', data.wafer_yield.slice(0, 18), item => item.label, item => item.yield_percent, item => item.yield_percent < 90 ? '#ff6b5f' : '#57f2d1', '%');
+  renderBar('wafer-yield-chart', data.wafer_yield.slice(0, 18), item => item.label, item => item.yield_percent, item => item.yield_percent < 90 ? C('bad-ink') : C('good-ink'), '%');
 }
 
 function renderQuality() {
-  renderBar('quality-chart', data.data_quality, item => item.label, item => item.fail, item => item.fail ? '#ffbf5f' : '#57f2d1', ' missing');
+  renderBar('quality-chart', data.data_quality, item => T(item.label), item => item.fail, item => item.fail ? C('warn-ink') : C('good-ink'), ' '+T('missing'));
   table('process-table', data.process_windows.slice(0, 24), [
     ['Test', item => esc(item.label)],
     ['Mean', item => fmt(item.mean)],
@@ -1586,12 +1596,12 @@ function renderBar(id, items, label, value, color, suffix, onPick) {
       text += '…';
     }
     ctx.textAlign = 'left';
-    ctx.fillStyle = '#8fb5ac';
+    ctx.fillStyle = C('muted');
     ctx.fillText(text, 10, y + barH / 2);
     ctx.fillStyle = color(item);
     roundRect(ctx, left, y, Math.max(w, 2), barH, Math.min(6, barH / 2, Math.max(w, 2) / 2));
     ctx.fill();
-    ctx.fillStyle = '#effff8';
+    ctx.fillStyle = C('ink');
     ctx.textAlign = 'right';
     ctx.fillText(values[index], width - 10, y + barH / 2);
   });
@@ -1621,7 +1631,7 @@ function renderCorrelationHeatmap(items) {
       ctx.fillStyle = corrColor(v);
       ctx.fillRect(ox + i * cell, oy + j * cell, cell - 1, cell - 1);
     });
-    ctx.fillStyle = '#8fb5ac';
+    ctx.fillStyle = C('muted');
     ctx.fillText(trim(a, 12), 4, oy + i * cell + cell * .7);
   });
 }
@@ -1637,14 +1647,14 @@ function renderXyMap(points) {
   for (const point of points) {
     const x = pad + (point.x - minX) / Math.max(1, maxX - minX) * (canvas.width - 2 * pad);
     const y = canvas.height - pad - (point.y - minY) / Math.max(1, maxY - minY) * (canvas.height - 2 * pad);
-    ctx.fillStyle = point.fail ? '#ff6b5f' : '#57f2d1';
+    ctx.fillStyle = point.fail ? C('bad-ink') : C('good-ink');
     ctx.globalAlpha = .45 + .55 * Math.min(1, point.fail / Math.max(1, point.total));
     ctx.beginPath();
     ctx.arc(x, y, 5 + Math.sqrt(point.total), 0, Math.PI * 2);
     ctx.fill();
   }
   ctx.globalAlpha = 1;
-  ctx.fillStyle = '#8fb5ac';
+  ctx.fillStyle = C('muted');
   ctx.fillText(`X ${minX}..${maxX} / Y ${minY}..${maxY}`, 14, 22);
 }
 
@@ -1660,19 +1670,20 @@ function setupCanvas(id) {
 function table(id, items, columns) {
   const element = document.getElementById(id);
   if (!items.length) {
-    element.innerHTML = '<div class="empty">No data for current filters.</div>';
+    element.innerHTML = `<div class="empty">${esc(T('No data for current filters.'))}</div>`;
     return;
   }
-  element.innerHTML = `<table><thead><tr>${columns.map(([h]) => `<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${items.map(item => `<tr>${columns.map(([, f]) => `<td>${f(item)}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+  element.innerHTML = `<table><thead><tr>${columns.map(([h]) => `<th>${esc(T(h))}</th>`).join('')}</tr></thead><tbody>${items.map(item => `<tr>${columns.map(([, f]) => `<td>${f(item)}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
 }
 
 function showTestDetail(item) {
   if (!item) return;
+  currentDetail=item;
   document.getElementById('test-detail').innerHTML = `
     <div class="label">${esc(item.test_type)} ${esc(item.units || '')}</div>
     <div class="value">${esc(item.label)}</div>
-    <p>Fail ${item.fail.toLocaleString()} / total ${item.total.toLocaleString()}, test yield ${fmtPct(item.yield_percent)}. Limit failures: ${item.limit_fail.toLocaleString()}.</p>
-    <p>Mean ${fmt(item.mean)}, sigma ${fmt(item.sigma)}, observed range ${fmt(item.min)} to ${fmt(item.max)}.</p>`;
+    <p>${esc(T('Fail {fail} / total {total}; yield {yield}; limit failures {limits}.',{fail:item.fail,total:item.total,yield:fmtPct(item.yield_percent),limits:item.limit_fail}))}</p>
+    <p>${esc(T('Mean {mean}; sigma {sigma}; range {min} to {max}.',{mean:fmt(item.mean),sigma:fmt(item.sigma),min:fmt(item.min),max:fmt(item.max)}))}</p>`;
 }
 
 function filtered(items) {
@@ -1681,7 +1692,7 @@ function filtered(items) {
 }
 
 function card(label, value, sub) {
-  return `<div class="kpi"><div class="label">${esc(label)}</div><div class="value">${esc(value)}</div><div class="sub">${esc(sub)}</div></div>`;
+  return `<div class="kpi"><div class="label">${esc(T(label))}</div><div class="value">${esc(value)}</div><div class="sub">${esc(sub)}</div></div>`;
 }
 
 function pill(value, tone) { return `<span class="pill ${tone}">${Number(value).toLocaleString()}</span>`; }
@@ -1694,10 +1705,10 @@ function corrColor(v) {
   return v < 0 ? `rgba(107,183,255,${0.15 + a * .85})` : `rgba(255,191,95,${0.15 + a * .85})`;
 }
 function emptyCanvas(ctx, canvas, text) {
-  ctx.fillStyle = '#8fb5ac';
+  ctx.fillStyle = C('muted');
   ctx.font = '15px Segoe UI';
   ctx.textAlign = 'center';
-  ctx.fillText(text, canvas.width / 2, canvas.height / 2);
+  ctx.fillText(T(text), canvas.width / 2, canvas.height / 2);
   ctx.textAlign = 'left';
 }
 function roundRect(ctx, x, y, w, h, r) {
@@ -1709,7 +1720,10 @@ function roundRect(ctx, x, y, w, h, r) {
   ctx.arcTo(x, y, x + w, y, r);
   ctx.closePath();
 }
+const requestedTab=new URLSearchParams(location.search).get('tab');
+if(['overview','pareto','commonality','correlation','spatial','quality'].includes(requestedTab))document.querySelector('[data-tab="'+requestedTab+'"]').click();
 window.addEventListener('resize', render);
+window.addEventListener('report-ui-change',()=>{dimensionSelect.options[0].textContent=T('all dimensions');if(snapshot.lots)lotSelect.options[0].textContent=T('All lots');render();if(currentDetail)showTestDetail(currentDetail);else document.getElementById('test-detail').textContent=T('Click a Pareto bar or row to inspect limits and distribution.');updateDatasetStatus();});
 render();
 </script>
 </body>

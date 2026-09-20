@@ -33,7 +33,7 @@ function Measure-Conversion([string]$Name, [int]$Count, [bool]$Incomplete) {
     $stderrPath = Join-Path $temporaryRoot ($Name + '.stderr')
     Write-Sample $inputPath $Count $Incomplete
     $pendingLimit = if ($Incomplete) { 128 } else { 1000 }
-    $commandArgs = @('convert-partitioned', '--output-dir', ('"' + $outputPath + '"'), '--memory-limit-mib', '16', '--max-output-files', '1000', '--max-open-writers', '2', '--row-group-rows', '1024', '--max-pending-tests', $pendingLimit, ('"' + $inputPath + '"'))
+    $commandArgs = @('convert', '--layout', 'catalog', '--output-dir', ('"' + $outputPath + '"'), '--memory-limit-mib', '16', '--max-output-files', '1000', '--max-open-writers', '2', '--row-group-rows', '1024', '--max-pending-tests', $pendingLimit, ('"' + $inputPath + '"'))
     $process = Start-Process -FilePath $cli -ArgumentList $commandArgs -WindowStyle Hidden -PassThru -RedirectStandardOutput $stdoutPath -RedirectStandardError $stderrPath
     $peak = 0L
     try {

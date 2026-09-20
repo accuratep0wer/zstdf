@@ -10,6 +10,7 @@ use std::io::{Read, Seek, SeekFrom, Write};
 use std::path::{Path, PathBuf};
 use stdf_validate::fields::{self, Field};
 
+mod checks;
 mod profiles;
 mod scan;
 mod storage;
@@ -28,6 +29,9 @@ pub struct Arguments {
     profile: Option<PathBuf>,
     #[arg(long)]
     run_profiles: Option<PathBuf>,
+    /// CSV required-field selection; defaults to the bundled config/sanity-checks.csv.
+    #[arg(long)]
+    checks_csv: Option<PathBuf>,
     /// Publish an offline HTML report and its evidence bundle.
     #[arg(
         long,
@@ -38,7 +42,7 @@ pub struct Arguments {
     /// Write a full-file invalid/missing field summary as UTF-8 text, without an HTML bundle.
     #[arg(long, conflicts_with = "output_dir")]
     text_summary: Option<PathBuf>,
-    /// Return a failure when the text summary contains missing fields, including optional fields.
+    /// Compatibility flag: selected missing fields already fail; disabled fields stay excluded.
     #[arg(long, requires = "text_summary", conflicts_with = "output_dir")]
     fail_on_missing: bool,
     #[arg(long, default_value_t = 2)]
@@ -135,10 +139,7 @@ impl Profile {
             return Err("profile version/domain mismatch or empty id".into());
         }
         for rule in &mut self.rules {
-            if fields::sanity_exempt(&rule.record) {
-                continue;
-            }
-            let layout = fields::layout(&rule.record).ok_or("unsupported profile record")?;
+            let layout = checks::layout(&rule.record).ok_or("unsupported profile record")?;
             if !layout
                 .split_whitespace()
                 .any(|s| s.split(':').next() == Some(rule.field.as_str()))
@@ -173,6 +174,8 @@ struct Report {
     rule_version: String,
     profile: Value,
     profile_hash: String,
+    #[serde(default)]
+    checks: Value,
     coverage: Vec<String>,
     sources: Vec<Source>,
     runs: Vec<Run>,
@@ -323,6 +326,7 @@ fn generate(args: &Arguments, out: &mut impl Write) -> CliResult<()> {
         return Err("sanity limits must be positive; preview count must be <=100".into());
     }
     let profile = Profiles::load(args)?;
+    let checks = checks::Checks::load(args.checks_csv.as_deref())?;
     let mut budget = Budget {
         args,
         retained: 0,
@@ -332,6 +336,7 @@ fn generate(args: &Arguments, out: &mut impl Write) -> CliResult<()> {
             .ok_or("report budget overflow")?,
     };
     budget.check()?;
+    budget.charge(serde_json::to_vec(&checks)?.len())?;
     let paths = inputs(args, &budget)?;
     if paths.is_empty() {
         return Err("no STDF inputs".into());
@@ -346,6 +351,7 @@ fn generate(args: &Arguments, out: &mut impl Write) -> CliResult<()> {
                 .iter()
                 .chain(args.profile.iter())
                 .chain(args.run_profiles.iter())
+                .chain(args.checks_csv.iter())
             {
                 if path.canonicalize()? == target {
                     return Err(
@@ -369,7 +375,7 @@ fn generate(args: &Arguments, out: &mut impl Write) -> CliResult<()> {
             .checked_mul(1024 * 1024)
             .ok_or("disk budget overflow")?,
     )?;
-    let mut report=Report{schema:"sanity-v1".into(),rule_version:fields::RULE_VERSION.into(),profile:serde_json::to_value(&profile)?,profile_hash:format!("{:x}",Sha256::digest(serde_json::to_vec(&profile)?)),coverage:vec!["Base-v4 field layouts plus extraction of ATR, CDR, ATER, CTSR and CTRR; these five record types skip field/profile sanity checks (not_checked). Framing/decode errors still fail; raw bytes preserved for every source".into(),"Not a complete STDF conformance certification: unlisted vendor extensions and some enum/count rules remain unsupported".into()],preview_records_per_type:args.preview_records_per_type,..Default::default()};
+    let mut report=Report{schema:"sanity-v1".into(),rule_version:fields::RULE_VERSION.into(),checks:serde_json::to_value(&checks)?,profile:serde_json::to_value(&profile)?,profile_hash:format!("{:x}",Sha256::digest(serde_json::to_vec(&profile)?)),coverage:vec!["CSV-selected required fields use implemented STDF wire/value rules. Unselected fields are extracted as not_checked. ATR/CDR/ATER/CTSR/CTRR are optional records, disabled by default. Framing/decode errors still fail; raw bytes preserved for every source".into(),"Not a complete STDF conformance certification: unlisted vendor extensions and some enum/count rules remain unsupported".into()],preview_records_per_type:args.preview_records_per_type,..Default::default()};
     let mut evidence = storage::EvidenceWriter::new(stage.file("record_fields.parquet")?)?;
     let mut hashes: BTreeMap<String, usize> = BTreeMap::new();
     for (index, path) in paths.iter().enumerate() {
@@ -415,6 +421,7 @@ fn generate(args: &Arguments, out: &mut impl Write) -> CliResult<()> {
             &stage.path.join(&archived),
             &hash,
             &profile,
+            &checks,
             &mut report,
             &mut evidence,
             &mut budget,
@@ -455,14 +462,17 @@ fn generate(args: &Arguments, out: &mut impl Write) -> CliResult<()> {
         .replace('>', "\\u003e")
         .replace('\u{2028}', "\\u2028")
         .replace('\u{2029}', "\\u2029");
-    let html = include_str!("report.html")
-        .replace("__GENERATION__", &stage.name)
-        .replace("__SANITY_DATA__", &safe);
+    let html = crate::report_ui::decorate(
+        include_str!("report.html")
+            .replace("__GENERATION__", &stage.name)
+            .replace("__SANITY_DATA__", &safe),
+    );
     if html.len() > budget.max {
         return Err("HTML report size limit exceeded".into());
     }
     stage.write("report.html", html.as_bytes())?;
-    stage.manifest(&report.profile_hash)?;
+    stage.write("checks.csv", checks.csv.as_bytes())?;
+    stage.manifest(&report.profile_hash, &checks.hash)?;
     budget.check()?;
     stage.publish(html.as_bytes(), || {
         budget.check().map_err(|e| e.to_string())

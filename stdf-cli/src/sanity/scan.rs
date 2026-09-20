@@ -68,7 +68,9 @@ fn preview(record: &str, offset: usize, fields: &[Field]) -> Value {
         }
         _ => (raw, None, None),
     };
-    let status = if value.is_null() {
+    let status = if f.is_some_and(|f| f.status == "not_checked") {
+        "not_checked"
+    } else if value.is_null() {
         if count == Some(0) {
             "empty"
         } else {
@@ -93,11 +95,20 @@ fn apply_profile(
     source: &str,
     offset: usize,
 ) -> CliResult<()> {
-    if fields::sanity_exempt(record) {
-        return Ok(());
-    }
-    for rule in profile.rules.iter().filter(|r| r.record == record) {
-        let f = field(fields, &rule.field).expect("validated rule");
+    for (rule, f) in profile
+        .rules
+        .iter()
+        .filter(|r| r.record == record)
+        .flat_map(|rule| {
+            fields
+                .iter()
+                .filter(move |f| checks::canonical(&f.name) == rule.field)
+                .map(move |f| (rule, f))
+        })
+    {
+        if f.status == "not_checked" {
+            continue;
+        }
         let v = &f.effective;
         let num = v.as_f64().or_else(|| {
             v.get("value")
@@ -126,7 +137,7 @@ fn apply_profile(
                 "profile",
                 format!(
                     "{record}.{} does not satisfy profile {}",
-                    rule.field, profile.id
+                    f.name, profile.id
                 ),
             )?;
             let finding = report
@@ -134,7 +145,7 @@ fn apply_profile(
                 .last_mut()
                 .expect("just added profile finding");
             finding["record"] = json!(record);
-            finding["field"] = json!(rule.field);
+            finding["field"] = json!(f.name);
             budget.charge(record.len() + rule.field.len() + 32)?;
         }
     }
@@ -145,6 +156,7 @@ pub(super) fn scan(
     path: &Path,
     source: &str,
     profiles: &Profiles,
+    checks: &checks::Checks,
     report: &mut Report,
     evidence: &mut storage::EvidenceWriter,
     budget: &mut Budget,
@@ -319,7 +331,43 @@ pub(super) fn scan(
                 }
             }
         }
-        for f in &fields {
+        // Keep internal effective values for identity/default resolution unchanged.
+        let checked_source = if unchecked && !matches!(record.as_str(), "CTSR" | "CTRR") {
+            let mut decoded = fields.clone();
+            for checked in fields::inspect_checked(&record, &e.body, order) {
+                if let Some(f) = decoded.iter_mut().find(|f| f.name == checked.name) {
+                    *f = checked;
+                }
+            }
+            decoded
+        } else {
+            fields.clone()
+        };
+        let mut checked_fields = checks.project(&record, &profile.domain, &checked_source);
+        for f in &mut checked_fields {
+            if f.status == "not_checked" {
+                if let Some(original) = field(&fields, &f.name) {
+                    *f = original.clone();
+                    f.status = "not_checked".into();
+                    f.issues.clear();
+                }
+            }
+        }
+        let check_status = if checked_fields.iter().any(|f| f.status != "not_checked") {
+            "checked"
+        } else {
+            "not_checked"
+        };
+        let structural = fields::inspect_structure(
+            if matches!(record.as_str(), "CTSR" | "CTRR") {
+                "GDR"
+            } else {
+                &record
+            },
+            &e.body,
+            order,
+        );
+        for f in structural.iter().chain(checked_fields.iter()) {
             for message in &f.issues {
                 issue(
                     report,
@@ -336,12 +384,21 @@ pub(super) fn scan(
                 )?;
             }
         }
-        apply_profile(profile, &record, &fields, report, budget, source, offset)?;
+        apply_profile(
+            profile,
+            &record,
+            &checked_fields,
+            report,
+            budget,
+            source,
+            offset,
+        )?;
         if record == "FAR" && offset == 0 {
-            far_metadata =
-                Some(json!({"type":"FAR","offset":"0","fields":selected(profile,"FAR",&fields)}));
+            far_metadata = Some(
+                json!({"type":"FAR","offset":"0","fields":selected(profile,"FAR",&checked_fields)}),
+            );
         }
-        let mut wire_fields = fields.clone();
+        let mut wire_fields = checked_fields.clone();
         for f in &mut wire_fields {
             f.byte_start += 4;
         }
@@ -359,16 +416,11 @@ pub(super) fn scan(
                 origin: "explicit".into(),
                 raw: json!(value),
                 effective: json!(value),
-                status: "valid".into(),
+                status: "not_checked".into(),
                 matches_default: None,
                 inherited_from: None,
                 issues: Vec::new(),
             });
-        }
-        if unchecked {
-            for f in &mut wire_fields {
-                f.status = "not_checked".into();
-            }
         }
         evidence.append(source, offset, &record, &wire_fields)?;
         let value_ref = format!("{source}:{offset}");
@@ -418,7 +470,7 @@ pub(super) fn scan(
             "MIR" | "SDR" | "WIR" | "WRR" | "WCR" | "MRR" | "PCR" | "SBR" | "HBR"
         ) {
             if let Some(i) = run {
-                let v = json!({"type":record,"offset":offset.to_string(),"fields":selected(profile,&record,&fields)});
+                let v = json!({"type":record,"offset":offset.to_string(),"fields":selected(profile,&record,&checked_fields)});
                 budget.charge(serde_json::to_vec(&v)?.len() + 512)?;
                 report.runs[i].metadata.push(v);
             } else if record != "PCR" {
@@ -434,7 +486,7 @@ pub(super) fn scan(
             }
         }
         if matches!(record.as_str(), "ATR" | "CDR" | "CTSR") {
-            let v = json!({"source":source,"type":record,"offset":offset.to_string(),"fields":fields,"sanity":"not_checked"});
+            let v = json!({"source":source,"type":record,"offset":offset.to_string(),"fields":checked_fields,"sanity":check_status});
             budget.charge(serde_json::to_vec(&v)?.len() + 512)?;
             if let Some(i) = run {
                 report.runs[i].metadata.push(v);
@@ -585,7 +637,7 @@ pub(super) fn scan(
                     unit.part_id = text(&fields, "PART_ID").map(str::to_owned);
                     unit.closed = true;
                     let flag = number(&fields, "PART_FLG");
-                    let summary = json!({"fields":selected(profile,"PRR",&fields),"offset":offset.to_string(),"x":x,"y":y,"part_flg":flag,"passed":flag.and_then(|f|(f&0x14==0).then_some(f&8==0)),"hard_bin":number(&fields,"HARD_BIN"),"soft_bin":number(&fields,"SOFT_BIN")});
+                    let summary = json!({"fields":selected(profile,"PRR",&checked_fields),"offset":offset.to_string(),"x":x,"y":y,"part_flg":flag,"passed":flag.and_then(|f|(f&0x14==0).then_some(f&8==0)),"hard_bin":number(&fields,"HARD_BIN"),"soft_bin":number(&fields,"SOFT_BIN")});
                     budget.charge(serde_json::to_vec(&summary)?.len() + 256)?;
                     unit.prr = Some(summary);
                     if unit.merge_key.is_none() {
@@ -629,11 +681,11 @@ pub(super) fn scan(
             } else {
                 site
             };
-            let mut p = preview(&record, offset, &fields);
+            let mut p = preview(&record, offset, &checked_fields);
             if unchecked {
                 p["head_num"] = json!(number(&fields, "HEAD_NUM"));
                 p["site_num"] = json!(number(&fields, "SITE_NUM"));
-                p["fields"] = json!(fields);
+                p["fields"] = json!(checked_fields);
                 p["ownership"] = json!("unresolved");
                 if record == "CTRR" {
                     let refs = number(&fields, "CHAR_ID_REF")
@@ -678,7 +730,7 @@ pub(super) fn scan(
                     report.runs[i].unassigned.push(p);
                 } else if unchecked {
                     budget.charge(serde_json::to_vec(&p)?.len() + 256)?;
-                    report.file_records.push(json!({"source":source,"type":record,"offset":offset.to_string(),"fields":fields,"sanity":"not_checked"}));
+                    report.file_records.push(json!({"source":source,"type":record,"offset":offset.to_string(),"fields":checked_fields,"sanity":check_status}));
                 }
                 let severity = if matches!(record.as_str(), "DTR" | "GDR") {
                     "warning"

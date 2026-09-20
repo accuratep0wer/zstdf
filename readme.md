@@ -30,9 +30,53 @@ after building the CLI. This includes a ready-to-run synthetic example and
 configuration for your own CP/FT data.
 
 Selected records **ATR, CDR, ATER, CTSR and CTRR** are extracted and displayed,
-but excluded from field/profile sanity checks (`not_checked`). Framing and
+but excluded from field/profile sanity checks by default (`not_checked`). Absent optional
+records stay hidden. Enable individual checks with `--checks-csv`. Framing and
 decode errors remain visible. See [vendor records and runnable demo](docs/vendor-records.md)
 for V93000 activity traces and shmoo/margin setup/results.
+
+## Report style and language
+
+Every generated Dashboard, Sanity, and Traceability HTML report has top-right
+style and language selectors. Styles: Excel classic, MES industrial blue, Night
+shift dark, Quality review, and High-contrast monitor. Languages: Chinese,
+Japanese, Korean, English, and German. Filters, sorting, selected units, and raw
+evidence are preserved. Regenerate old HTML reports with the updated CLI to add
+these controls. See [shared report display settings](docs/report-ui.md).
+
+Generate all synthetic report demos, including the integrated Pareto page:
+
+```powershell
+cargo build --release -p stdf-cli --locked
+python scripts/generate_report_demos.py
+```
+
+Open `examples/ftr-patterns/generated/dashboard.html` and select **Pareto**.
+The script also regenerates CP/FT/vendor Sanity and Traceability reports.
+
+
+## FTR pattern Pareto and yield
+
+Analyze every complete `VECT_NAM` separately, including zero-failure patterns,
+with failures, valid yield, failure share, and cumulative Pareto share. The report
+supports filters, sorting, source details, and CSV/JSON export. It reads raw STDF;
+existing `eav-v2` Parquet contains PTR measurements, not FTR pattern names.
+
+```powershell
+cargo build --release -p stdf-cli --locked
+# FTR pattern metrics appear below the existing Failure Pareto section:
+.\target\release\zstdf-cli.exe dashboard measurements.parquet dashboard.html --ftr-input C:\data
+# Optional standalone export when no measurement Parquet is available:
+.\target\release\zstdf-cli.exe ftr-pareto C:\data\run.stdf --output patterns.html
+# Reproducible synthetic demo:
+python examples/ftr-patterns/generate_demo.py
+.\target\release\zstdf-cli.exe ftr-pareto examples/ftr-patterns/generated --output examples/ftr-patterns/generated/report.html
+```
+
+Yield is `Pass / (Pass + Fail)` for valid executed FTR attempts; unknown and
+not-executed records remain visible. Repeated tests count as attempts; identical
+STDF/gzip copies count once. Existing device-yield calculations are unchanged.
+See [FTR pattern usage, calculation policy, and limits](docs/ftr-patterns.md).
 
 ## Build on Windows
 
@@ -207,13 +251,13 @@ conversion interfaces remain available. The following features are implemented; 
 | Existing single-file and batch validation | `check`, `batch-check` |
 | Single-file Parquet conversion, manifests, and retry reuse | `convert`, `--no-overwrite` |
 | Phase 10A single-file visualization | `dashboard` |
-| Phase 10B multi-file conversion and file-level partitioning | `convert-many` |
-| Phase 10C.1 row partitioning and conversion within resource budgets | `convert-partitioned` (currently supports PTR) |
+| Phase 10B multi-file conversion and file-level partitioning | `convert --output-dir` |
+| Phase 10C.1 row partitioning and conversion within resource budgets | `convert --layout catalog` (currently supports PTR) |
 | Phase 10C.2 dataset integrity, recovery, and multi-lot visualization | `verify-dataset`, `recover-dataset`, `dashboard-dir` |
 | Optional Python conversion interface | `_zstdf`; see [Optional Python Binding](#optional-python-binding) |
 
 The original `STDF → convert → dashboard` and
-`STDF → convert-partitioned → verify-dataset → dashboard-dir` workflows remain available.
+`STDF → convert --layout catalog → verify-dataset → dashboard-dir` workflows remain available.
 `sanity` reads STDF directly. Its `record_fields.parquet` output contains field-validation evidence and cannot serve as
 the measurement EAV Parquet required by `dashboard`. It neither runs conversion automatically nor changes Dashboard yield definitions.
 
@@ -248,7 +292,7 @@ successfully before generating the dashboard.
 For bounded, mixed-lot/wafer PTR conversion from a directory:
 
 ```powershell
-.\target\release\zstdf-cli.exe convert-partitioned --output-dir dataset C:\data\inputs
+.\target\release\zstdf-cli.exe convert --layout catalog --output-dir dataset C:\data\inputs
 ```
 
 This workflow writes multiple Parquet fragments and supports resource limits.
@@ -269,7 +313,7 @@ Use forward-slash paths and the native executable without `.exe`. Replace
 ./target/release/zstdf-cli info /path/to/input.stdf
 ./target/release/zstdf-cli convert /path/to/input.stdf output.parquet
 ./target/release/zstdf-cli dashboard output.parquet dashboard.html
-./target/release/zstdf-cli convert-partitioned --output-dir dataset /path/to/inputs
+./target/release/zstdf-cli convert --layout catalog --output-dir dataset /path/to/inputs
 ```
 
 Open the generated dashboard on macOS:
@@ -320,6 +364,29 @@ Configure product-specific formats with `--profile .\my-cp-profile.json`.
 The lot and program names in the [CP example](examples/sanity/cp-profile.json) and [FT example](examples/sanity/ft-profile.json)
 are for synthetic data. Adapt them before using the profiles with product data.
 
+The default field checklist is [config/sanity-checks.csv](config/sanity-checks.csv).
+Copy it and pass `--checks-csv` to customize which CP/FT fields are required.
+The CLI embeds the distributed defaults; editing a file takes effect when you pass its path.
+
+```csv
+record,field,flow,format
+MRR,FINISH_T,CP|FT,U*4
+# MRR,DISP_COD,CP|FT,C*1
+# ATR,MOD_TIM,CP|FT,U*4
+# CTSR,CHAR_NAM,CP|FT,C*n
+```
+
+Active rows require a usable value when the record appears. Commented rows are not checked;
+optional record types are never required to appear. `MRR.FINISH_T` is the only default MRR check.
+The format column must match the implemented STDF wire type; it cannot reinterpret the source bytes.
+See [CSV selection and precedence](docs/sanity.md#csv-field-checklist) for arrays and mixed runs.
+
+```powershell
+.\target\release\zstdf-cli.exe sanity "C:\data\ft\sample.stdf" `
+  --test-domain ft --checks-csv .\config\sanity-checks.csv `
+  --text-summary .\reports\sample.sanity.txt
+```
+
 For a full-file invalid/missing/unknown field summary suitable for automation:
 
 ```powershell
@@ -328,7 +395,7 @@ For a full-file invalid/missing/unknown field summary suitable for automation:
 ```
 
 Choose either `--text-summary` or `--output-dir`. Add `--fail-on-missing` to return a
-failure for missing fields, including optional fields. Text output includes all scanned
+failure for selected missing fields (these already fail under the CSV required-field policy). Text output includes all scanned
 fields and structural/profile diagnostics, beyond the HTML preview. See the
 [text-summary and directory-script instructions](docs/sanity.md#text-summaries-for-scripts)
 for exit codes, atomic replacement, resource limits, and one-summary-per-file automation.
@@ -656,6 +723,30 @@ Prints file/failure counts and the report path. Any failed input produces a
 nonzero exit status. More workers can increase memory usage, especially for gzip
 inputs; use one worker when diagnosing failures or working with limited RAM.
 
+### Conversion Command Selection
+
+All conversion uses `convert`. The former `convert-many` and
+`convert-partitioned` subcommands have been removed; migrate scripts as follows:
+
+| Previous command | Current command |
+| --- | --- |
+| `convert input.stdf output.parquet` | Unchanged |
+| `convert-many inputs --output-dir dataset` | `convert inputs --output-dir dataset` |
+| `convert-partitioned inputs --output-dir dataset` | `convert inputs --output-dir dataset --layout catalog` |
+
+With `--output-dir`, every positional path is an input. Without it, exactly two
+paths are required: one STDF input and one Parquet output. Directories and a
+second STDF filename are rejected as positional outputs to avoid accidentally
+overwriting inputs. Directory output defaults to `--layout files`; choose
+`--layout catalog` for bounded conversion and `dashboard-dir`. Resource limits
+and `--continue-on-error` require catalog layout; `--batch-size` and
+`--no-overwrite` apply only to file output. Invalid combinations fail before
+conversion creates any output.
+
+`dump` and `to-ascii` remain separate: `dump` prints compact record summaries to
+standard output, while `to-ascii` writes detailed named fields, formatted times,
+and inherited PTR scale/unit information to a text file.
+
 ### `convert`: Produce One Parquet File
 
 ```text
@@ -675,11 +766,11 @@ default an existing output may be replaced. The no-overwrite fast path requires
 a readable manifest but does not reopen the input or perform full integrity
 verification. It is not proof that an existing output matches a changed source.
 
-### `convert-many`: File-Level Partitioning
+### `convert --output-dir`: File-Level Partitioning
 
 ```text
-zstdf-cli convert-many <inputs>... --output-dir <dir> [--partition-by KEYS] [--batch-size N] [--no-overwrite]
-zstdf-cli convert-many inputs --output-dir dataset --partition-by lot-id,wafer-id
+zstdf-cli convert <inputs>... --output-dir <dir> [--partition-by KEYS] [--batch-size N] [--no-overwrite]
+zstdf-cli convert inputs --output-dir dataset --partition-by lot-id,wafer-id
 ```
 
 | Parameter | Default | Meaning |
@@ -692,14 +783,14 @@ zstdf-cli convert-many inputs --output-dir dataset --partition-by lot-id,wafer-i
 
 Canonical input paths are deduplicated. This produces one Parquet file per source;
 selected lot/wafer keys must be consistent within each source. Use
-`convert-partitioned` for a source containing multiple lots or wafers. Output names
+`convert --layout catalog` for a source containing multiple lots or wafers. Output names
 include source identity information; changed source content can create new files.
 
-### `convert-partitioned`: Bounded Dataset Conversion
+### `convert --layout catalog`: Bounded Dataset Conversion
 
 ```text
-zstdf-cli convert-partitioned <inputs>... --output-dir <dir> [options]
-zstdf-cli convert-partitioned inputs --output-dir dataset --memory-limit-mib 256 --row-group-rows 4096
+zstdf-cli convert --layout catalog <inputs>... --output-dir <dir> [options]
+zstdf-cli convert --layout catalog inputs --output-dir dataset --memory-limit-mib 256 --row-group-rows 4096
 ```
 
 | Parameter | Default | Meaning |
@@ -717,7 +808,7 @@ zstdf-cli convert-partitioned inputs --output-dir dataset --memory-limit-mib 256
 Resource limits must be positive. Currently supports PTR results; unsupported
 MPR/FTR expansion is an explicit error. Prints rows, fragments, writer/memory
 peaks, and failures. Inspect `_catalog.json` for run status and failed inputs.
-This command has no `--no-overwrite` option; dataset identity and current versions
+Catalog layout rejects `--no-overwrite` and `--batch-size`; dataset identity and current versions
 are managed through its catalog.
 
 ### `verify-dataset`: Check Dataset Integrity
@@ -779,7 +870,7 @@ zstdf-cli dashboard-dir dataset dashboard.html --title "Dataset DataView" --max-
 
 | Parameter | Default | Meaning |
 | --- | --- | --- |
-| `input` | Required | Catalog-backed dataset root from `convert-partitioned`, not an arbitrary folder of Parquet files. |
+| `input` | Required | Catalog-backed dataset root from `convert --layout catalog`, not an arbitrary folder of Parquet files. |
 | `output` | Required | Destination self-contained HTML dashboard with lot selection. |
 | `--title TEXT` | `zstdf Dataset DataView` | Dashboard title. |
 | `--memory-limit-mib N` | `256` | Accounted analysis-memory budget in MiB; minimum `1`. Not a hard RSS cap. |
@@ -918,7 +1009,7 @@ files, rows, fragments = _zstdf.write_parquet_partitioned(
 | Could not find `Cargo.toml` | Change directory to the cloned repository root before running Cargo. |
 | Python/PyO3 build errors | For CLI-only use, exclude `stdf-py` from workspace tests. For Python use, select the 64-bit Python 3.12 environment with `PYO3_PYTHON` as shown above. |
 | File not found when generating a dashboard | Confirm conversion succeeded and supply the actual generated Parquet path. |
-| Unknown `convert-partitioned` command | Ensure your checkout includes Phase 10C.1 and rebuild the release CLI. |
+| Old conversion command is unknown | Replace `convert-many` with `convert`, and `convert-partitioned` with `convert --layout catalog`. Rebuild the release CLI after updating. |
 | Unknown `traceability` command | Update the checkout to a revision containing traceability, then run `cargo build --release -p stdf-cli --locked`. Use the executable from that checkout. |
 | Traceability report shows an unidentified step | Check actual MIR fields against the case, program version, and values in `matches`; avoid matching a record to multiple steps. |
 | Trailing step appears as pending | This is normal for an open flow. Supply the corresponding closure list only after confirming that the flow is complete. |

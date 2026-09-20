@@ -213,3 +213,11 @@ Local verification on Windows, 2026-09-10: **291 workspace Rust tests passed**
 Rustfmt check, Python binding compile check and Release CLI build passed. The
 Release-generated demo passed the Edge/Playwright desktop and mobile smoke with
 no page errors or external network requests.
+
+## Display settings
+
+The report includes top-right selectors for five styles and five languages.
+Switching preserves filters and selected-device details; original field values,
+identifiers, diagnostic evidence, and JSON exports remain unchanged. See
+[shared report display settings](report-ui.md). Regenerate older HTML reports
+with the updated CLI to receive these controls.

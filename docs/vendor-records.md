@@ -1,15 +1,17 @@
 # Selected STDF and Advantest records
 
-zstdf extracts ATR, CDR, ATER, CTSR and CTRR without field or product-profile
-sanity checks. Their fields have `status: "not_checked"` in the sanity report
-and field Parquet evidence. They are excluded from invalid/missing/unknown
-text-summary totals, including `--fail-on-missing`. Other records keep their
-existing checks. Record framing, truncated payloads and undecodable structures
-still produce diagnostics; exclusion never means that corrupt data is valid.
+zstdf extracts ATR, CDR, ATER, CTSR and CTRR. These optional records are hidden
+when absent and have no enabled field checks in the default CSV. When present,
+they are displayed as `not_checked` and excluded from text-summary field totals.
+Uncomment selected rows in [config/sanity-checks.csv](../config/sanity-checks.csv)
+and pass `--checks-csv` to enable required-field/value checks. See
+[CSV policy](sanity.md#csv-field-checklist) for type notation and conditional fields.
+Record framing, truncated payloads and undecodable structures still produce
+diagnostics, even when all semantic checks are disabled.
 
 | Record | Wire identifier | Support |
 | --- | --- | --- |
-| ATR | 0 / 20 | Existing audit timestamp and command text decoder; extracted without sanity checks |
+| ATR | 0 / 20 | Existing audit timestamp and command text decoder; extracted; checks disabled by default |
 | CDR | 1 / 94 | V4-2007 chain index/name, length, pins, clocks, inversion, cell names and continuation flag |
 | ATER | 137 / 10 | V93000 activity source, head/site and activity; original activity payload bytes retained |
 | CTSR | GDR 50 / 10 | `REC_CUSTM` exactly `SHMOO` or `MARGIN`; summary, axes and tracking parameters |
@@ -66,7 +68,8 @@ links to a preceding CTSR with the matching characterization ID while the same
 unit is active. Decimal and `0x` hexadecimal text IDs are supported. Repeated
 matching setups are marked ambiguous; a setup from a previous attempt is not
 reused for a later retest. Missing setup/ownership links are displayed as
-unresolved without generating sanity findings for these excluded records.
+unresolved without association findings. CSV selection enables field checks,
+not setup-link or ownership validation.
 
 CDR continuation fragments are preserved as separate records. This release does
 not assemble chains, validate PMR references, reconstruct shmoo plots, or change
@@ -93,3 +96,27 @@ binary activities, multiple sites, repeated attempts, large CTRR site numbers,
 and sanity-exclusion behavior. The demo is synthetic, not validation against
 an actual V93000 capture. Existing reports must be regenerated to show the new
 fields and exclusion status; no `eav-v2` migration is required.
+
+## Enable selected optional field checks
+
+The [vendor checklist example](../examples/sanity/vendor-checks.csv) checks
+MRR.FINISH_T plus ATR.MOD_TIM, CDR.CHN_NAM, CTSR.CHAR_NAM and each axis's
+RNG_RESO. It intentionally selects only these fields; use the full default CSV
+as the starting point to retain the other core checks.
+
+```powershell
+.\target\release\zstdf-cli.exe sanity examples\sanity\generated\vendor.stdf `
+  --test-domain cp --checks-csv examples\sanity\vendor-checks.csv `
+  --output-dir examples\sanity\generated\vendor-checked-report
+```
+
+The same command succeeds without optional records: enabling their fields does
+not require those record types to exist. When present, selected cells show their
+validation status; remaining cells keep the neutral Not checked style.
+
+Browser regression after generating the checked example (Playwright must be on
+Node's module path and Microsoft Edge installed):
+
+```powershell
+node scripts/smoke_sanity_csv.cjs
+```

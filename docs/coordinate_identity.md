@@ -78,7 +78,7 @@ Reconvert from the original STDF to a new destination:
 cargo run -p stdf-cli -- convert input.stdf output-v2.parquet
 cargo run -p stdf-cli -- dashboard output-v2.parquet dashboard-v2.html
 
-cargo run -p stdf-cli -- convert-partitioned --output-dir dataset-v2 .\inputs
+cargo run -p stdf-cli -- convert --layout catalog --output-dir dataset-v2 .\inputs
 cargo run -p stdf-cli -- dashboard-dir dataset-v2 dashboard-v2.html
 ```
 

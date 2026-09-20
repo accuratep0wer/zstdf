@@ -28,6 +28,7 @@ impl Fixture {
             test_domain: Some("ft".into()),
             profile: None,
             run_profiles: None,
+            checks_csv: None,
             output_dir: Some(self.0.join("report")),
             text_summary: None,
             fail_on_missing: false,
@@ -763,7 +764,8 @@ fn definition_only_record_is_run_evidence_and_defaults_reset_at_mir() {
     b.extend(prr(1));
     finish(&mut b);
     let a = f.args(&b);
-    let v = f.report(&a, false);
+    // A selected RESULT is required; a definition-only record has no usable result.
+    let v = f.report(&a, true);
     assert_eq!(v["runs"][0]["unassigned"][0]["definition_only"], true);
     assert_eq!(v["units"].as_array().unwrap().len(), 2);
     assert_eq!(
@@ -799,7 +801,7 @@ fn text_summary_scans_beyond_previews_and_retains_missing_and_source_locations()
     assert!(txt.contains("sanity-text-v1"));
     assert!(txt.contains("input.stdf"));
     assert!(txt.contains(&format!("\t{invalid_offset}\tPTR\tRESULT\tinvalid\t")));
-    assert!(txt.contains("\tMIR\tUSER_TXT\tmissing\t"));
+    assert!(!txt.contains("\tMIR\tUSER_TXT\tmissing\t"));
     assert!(txt.contains("NaN"));
     assert!(txt.contains("scan_complete=true"));
     assert!(!f.0.join("report").exists());
@@ -819,10 +821,12 @@ fn text_summary_optional_missing_policy_and_failure_preservation() {
     a.text_summary = Some(output.clone());
     generate(&a, &mut Vec::new()).unwrap();
     a.fail_on_missing = true;
-    assert!(generate(&a, &mut Vec::new())
-        .unwrap_err()
-        .to_string()
-        .contains("missing fields"));
+    generate(&a, &mut Vec::new()).unwrap(); // Disabled fields never fail.
+    a.checks_csv = Some(f.write(
+        "checks.csv",
+        b"record,field,flow,format\nMIR,USER_TXT,FT,C*n\n",
+    ));
+    assert!(generate(&a, &mut Vec::new()).is_err());
     let old = fs::read(&output).unwrap();
     a.cancel_file = Some(f.write("cancel", b"stop"));
     assert!(generate(&a, &mut Vec::new()).is_err());
@@ -891,7 +895,7 @@ fn text_summary_limits_and_incomplete_scan_preserve_publication_contract() {
     let mut b = start();
     b.extend(pir(1));
     for _ in 0..1500 {
-        b.extend(ptr(1, 1.0));
+        b.extend(ptr(1, f32::NAN));
     }
     b.extend(prr(1));
     finish(&mut b);
@@ -925,4 +929,281 @@ fn text_summary_final_commit_cancellation_preserves_existing_file() {
         .publish_text(&output, b"new summary", || Ok(()))
         .is_err());
     assert_eq!(fs::read(&output).unwrap(), b"previous summary");
+}
+
+#[test]
+fn csv_default_only_checks_mrr_finish_and_does_not_expect_optional_records() {
+    let f = Fixture::new();
+    let v = f.report(&f.args(&simple()), false);
+    let mrr = v["runs"][0]["metadata"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|m| m["type"] == "MRR")
+        .unwrap();
+    for field in mrr["fields"].as_array().unwrap() {
+        assert_eq!(
+            field["status"],
+            if field["name"] == "FINISH_T" {
+                "valid"
+            } else {
+                "not_checked"
+            }
+        );
+    }
+    for name in ["ATR", "CDR", "CTSR"] {
+        assert!(v["records"].get(name).is_none());
+    }
+    assert_eq!(v["checks"]["csv"], checks::DEFAULT);
+    assert_eq!(
+        v["checks"]["hash"],
+        format!("{:x}", Sha256::digest(checks::DEFAULT))
+    );
+}
+
+#[test]
+fn csv_requires_selected_missing_values_and_honors_comments_and_flow() {
+    let f = Fixture::new();
+    let mut a = f.args(&simple());
+    a.checks_csv = Some(f.write(
+        "checks.csv",
+        b"record,field,flow,format\r\n\"MIR\",\"USER_TXT\",CP,C*n\r\n# MRR,DISP_COD,CP|FT,C*1\r\n",
+    ));
+    let original = f.report(&a, false);
+    a.test_domain = Some("cp".into());
+    a.profile = Some(f.write(
+        "profile.json",
+        br#"{"version":1,"id":"cp","domain":"cp","require_wafer":false}"#,
+    ));
+    let v = f.report(&a, true);
+    assert!(v["findings"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|x| x["message"].as_str().unwrap().contains("MIR.USER_TXT")));
+    assert_eq!(
+        original["units"][0]["merge_key"],
+        v["units"][0]["merge_key"]
+    );
+    let field = v["runs"][0]["metadata"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|x| x["type"] == "MIR")
+        .unwrap()["fields"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|x| x["name"] == "USER_TXT")
+        .unwrap();
+    assert!(field["raw"].is_null());
+    assert_eq!(field["status"], "missing");
+}
+
+#[test]
+fn csv_optional_record_opt_in_checks_present_records_only() {
+    let f = Fixture::new();
+    let policy = f.write("checks.csv", b"record,field,flow,format\nATR,MOD_TIM,CP|FT,U*4\nATR,CMD_LINE,CP|FT,C*n\nCTSR,CHAR_NAM,CP|FT,C*n\nCTSR,AXES[].MARGIN_VAL,CP|FT,R*8\nCDR,CHN_NAM,CP|FT,C*n\n");
+    let mut a = f.args(&simple());
+    a.checks_csv = Some(policy.clone());
+    f.report(&a, false); // No absent-record placeholders or failures.
+    let mut b = start();
+    b.extend(rec(0, 20, &10u32.to_le_bytes())); // CMD_LINE omitted.
+    b.extend(pir(1));
+    {
+        use stdf_core::types::VarData::*;
+        b.extend(custom_gdr(&[
+            Cn("SHMOO".into()),
+            Cn("0x59".into()),
+            Cn("plot".into()),
+            Cn("suite".into()),
+            Cn("title".into()),
+            Cn("horizontal".into()),
+            Cn("false".into()),
+            U1(1),
+            U1(1),
+            Cn("vcc".into()),
+            Cn("".into()),
+            Cn("specVariable".into()),
+            Cn("vcc".into()),
+            Cn("1".into()),
+            Cn("list".into()),
+            Cn("(1,2)".into()),
+            R8(0.0),
+            U4(1),
+            U4(0),
+            Cn("linear".into()),
+            U1(0),
+        ]));
+    }
+    b.extend(prr(1));
+    finish(&mut b);
+    let mut a = f.args(&b);
+    a.checks_csv = Some(policy);
+    let v = f.report(&a, true);
+    let findings = v["findings"].to_string();
+    assert!(findings.contains("ATR.CMD_LINE"));
+    assert!(findings.contains("CTSR.AXES[0].MARGIN_VAL"));
+    assert!(!findings.contains("CDR.CHN_NAM"));
+}
+
+#[test]
+fn csv_invalid_configuration_and_output_collision_preserve_evidence() {
+    let f = Fixture::new();
+    let mut a = f.args(&simple());
+    f.report(&a, false);
+    let path = a.output_dir.as_ref().unwrap().join("report.html");
+    let old = fs::read(&path).unwrap();
+    for body in [
+        "record,field,flow,format\nMRR,FINISH_T,FT,R*8\n",
+        "record,field,flow,format\nMRR,FINISH_T,CP|BAD,U*4\n",
+        "record,field,flow,format\nMRR,TYPO,FT,U*4\n",
+        "record,field,flow,format\nMRR,FINISH_T,CP|FT,U*4\nMRR,FINISH_T,FT,U*4\n",
+        "record,field,format,flow\n",
+        "record,field,flow,format\nATR,MOD_TIM,CP,U*4\n",
+        "record,field,flow,format\nMRR,FINISH_T,FT\n",
+    ] {
+        a.checks_csv = Some(f.write("checks.csv", body.as_bytes()));
+        assert!(generate(&a, &mut Vec::new()).is_err(), "{body}");
+        assert_eq!(fs::read(&path).unwrap(), old);
+    }
+    let csv = b"record,field,flow,format\nMRR,FINISH_T,FT,U*4\n";
+    a.checks_csv = Some(f.write("checks.csv", csv));
+    a.output_dir = None;
+    a.text_summary = a.checks_csv.clone();
+    assert!(generate(&a, &mut Vec::new())
+        .unwrap_err()
+        .to_string()
+        .contains("configuration"));
+    assert_eq!(fs::read(a.checks_csv.unwrap()).unwrap(), csv);
+}
+
+#[test]
+fn csv_disabled_semantic_checks_preserve_raw_identity_but_never_hide_decode_errors() {
+    let f = Fixture::new();
+    let mut b = start();
+    b.extend(pir(1));
+    b.extend(ptr(1, f32::NAN));
+    b.extend(prr(1));
+    finish(&mut b);
+    let mut a = f.args(&b);
+    let checked = f.report(&a, true);
+    a.checks_csv = Some(f.write(
+        "checks.csv",
+        b"record,field,flow,format\n# PTR,RESULT,CP|FT,R*4\n",
+    ));
+    let v = f.report(&a, false);
+    assert_eq!(v["units"][0]["merge_key"], checked["units"][0]["merge_key"]);
+    assert_eq!(
+        v["units"][0]["previews"]["PTR"][0]["raw"],
+        checked["units"][0]["previews"]["PTR"][0]["raw"]
+    );
+    assert_eq!(v["units"][0]["previews"]["PTR"][0]["status"], "not_checked");
+    let mut bad = start();
+    bad.extend(rec(1, 20, &[1]));
+    a.inputs = vec![f.write("bad.stdf", &bad)];
+    let v = f.report(&a, true);
+    assert!(v["findings"].to_string().contains("decode"));
+}
+
+#[test]
+fn csv_complete_inventory_has_correct_types_and_mixed_runs_select_per_mir() {
+    // Uncomment the distributed inventory to verify every documented selector/type.
+    let inventory = checks::DEFAULT
+        .lines()
+        .filter_map(|line| {
+            if line.starts_with("# ") && line.split(',').count() == 4 {
+                Some(line.trim_start_matches("# "))
+            } else if !line.starts_with('#') {
+                Some(line)
+            } else {
+                None
+            }
+        })
+        .collect::<Vec<_>>()
+        .join("\n");
+    let all = Fixture::new();
+    checks::Checks::load(Some(&all.write("all.csv", inventory.as_bytes()))).unwrap();
+    let f = Fixture::new();
+    let mut a = f.args(&simple());
+    let mut other = simple();
+    let at = other.windows(3).position(|s| s == b"JOB").unwrap();
+    other[at..at + 3].copy_from_slice(b"FT2");
+    a.inputs.push(f.write("ft.stdf", &other));
+    routed(
+        &f,
+        &mut a,
+        json!([
+            route("cp", "cp", json!([{"mir":{"JOB_NAM":"JOB"}}])),
+            route("ft", "ft", json!([{"mir":{"JOB_NAM":"FT2"}}]))
+        ]),
+    );
+    a.checks_csv = Some(f.write(
+        "checks.csv",
+        b"record,field,flow,format\nMIR,USER_TXT,CP,C*n\n",
+    ));
+    let v = f.report(&a, true);
+    let cp = v["runs"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|r| r["domain"] == "cp")
+        .unwrap();
+    assert!(v["findings"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|x| x["rule"] == "field")
+        .all(|x| x["source"] == cp["source"]));
+    a.inputs.reverse();
+    assert_eq!(v, f.report(&a, true));
+}
+
+#[test]
+fn csv_vendor_opt_in_checks_ascii_and_preserves_unchecked_values() {
+    let f = Fixture::new();
+    let mut b = start();
+    let mut atr = 10u32.to_le_bytes().to_vec();
+    atr.extend([1, 255]);
+    b.extend(rec(0, 20, &atr));
+    finish(&mut b);
+    let mut a = f.args(&b);
+    let v = f.report(&a, false);
+    let raw = v["runs"][0]["metadata"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|m| m["type"] == "ATR")
+        .unwrap()["fields"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|x| x["name"] == "CMD_LINE")
+        .unwrap()
+        .clone();
+    assert_eq!(raw["raw"], raw["effective"]);
+    assert_eq!(raw["status"], "not_checked");
+    a.checks_csv = Some(f.write(
+        "checks.csv",
+        "\u{feff}record,field,flow,format\r\nATR,CMD_LINE,CP|FT,C*n\r\n".as_bytes(),
+    ));
+    let v = f.report(&a, true);
+    assert!(v["findings"].to_string().contains("ATR.CMD_LINE"));
+}
+
+#[test]
+fn csv_disabled_unknown_preview_stays_not_checked() {
+    let f = Fixture::new();
+    let mut b = start();
+    b.extend(pir(1));
+    let mut body = 5u32.to_le_bytes().to_vec();
+    body.extend([1, 1, 0x40]);
+    b.extend(rec(15, 20, &body));
+    b.extend(prr(1));
+    finish(&mut b);
+    let mut a = f.args(&b);
+    a.checks_csv = Some(f.write("checks.csv", b"record,field,flow,format\n"));
+    let v = f.report(&a, false);
+    assert_eq!(v["units"][0]["previews"]["FTR"][0]["status"], "not_checked");
+    assert_eq!(v["units"][0]["previews"]["FTR"][0]["raw"], 64);
 }

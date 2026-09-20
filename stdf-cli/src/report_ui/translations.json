@@ -1,0 +1,2172 @@
+{
+  "Test flow traceability": [
+    "Test flow traceability",
+    "测试流程追溯",
+    "テスト工程トレーサビリティ",
+    "테스트 공정 추적성",
+    "Testablauf-Rückverfolgbarkeit"
+  ],
+  "Page style": [
+    "Page style",
+    "页面风格",
+    "表示スタイル",
+    "페이지 스타일",
+    "Darstellung"
+  ],
+  "Language": [
+    "Language",
+    "语言",
+    "言語",
+    "언어",
+    "Sprache"
+  ],
+  "01 · Excel classic": [
+    "01 · Excel classic",
+    "01 · Excel 经典",
+    "01 · Excel クラシック",
+    "01 · Excel 클래식",
+    "01 · Excel klassisch"
+  ],
+  "02 · MES industrial blue": [
+    "02 · MES industrial blue",
+    "02 · MES 工业蓝",
+    "02 · MES インダストリアルブルー",
+    "02 · MES 산업용 블루",
+    "02 · MES Industrieblau"
+  ],
+  "03 · Night shift dark": [
+    "03 · Night shift dark",
+    "03 · 夜班暗色",
+    "03 · 夜勤ダーク",
+    "03 · 야간 다크",
+    "03 · Nachtschicht dunkel"
+  ],
+  "04 · Quality review": [
+    "04 · Quality review",
+    "04 · 质量审阅",
+    "04 · 品質レビュー",
+    "04 · 품질 검토",
+    "04 · Qualitätsprüfung"
+  ],
+  "05 · High-contrast monitor": [
+    "05 · High-contrast monitor",
+    "05 · 高对比监控",
+    "05 · 高コントラスト監視",
+    "05 · 고대비 모니터링",
+    "05 · Kontrastreiche Überwachung"
+  ],
+  "Style and language changes preserve filters, sorting and the selected device. Raw data is not translated.": [
+    "Style and language changes preserve filters, sorting and the selected device. Raw data is not translated.",
+    "风格和语言切换保留筛选、排序及选中器件；原始数据不翻译。",
+    "スタイルと言語を変更しても、フィルター・並べ替え・選択デバイスは保持されます。元データは翻訳しません。",
+    "스타일과 언어를 변경해도 필터, 정렬, 선택한 디바이스가 유지됩니다. 원본 데이터는 번역하지 않습니다.",
+    "Stil- und Sprachwechsel behalten Filter, Sortierung und Geräteauswahl bei. Rohdaten werden nicht übersetzt."
+  ],
+  "{flow} / {version} · {count} unique STDF files · synthetic demo data": [
+    "{flow} / {version} · {count} unique STDF files · synthetic demo data",
+    "{flow} / {version} · {count} 份独立 STDF · 合成演示数据",
+    "{flow} / {version} · STDF {count} 件 · 合成デモデータ",
+    "{flow} / {version} · 고유 STDF {count}개 · 합성 데모 데이터",
+    "{flow} / {version} · {count} eindeutige STDF-Dateien · synthetische Demodaten"
+  ],
+  "Devices": [
+    "Devices",
+    "器件",
+    "デバイス",
+    "디바이스",
+    "Bauteile"
+  ],
+  "Tests / retests": [
+    "Tests / retests",
+    "测试 / 重测",
+    "テスト / 再テスト",
+    "테스트 / 재테스트",
+    "Tests / Wiederholungstests"
+  ],
+  "Retest differences": [
+    "Retest differences",
+    "重测差异",
+    "再テスト差異",
+    "재테스트 차이",
+    "Abweichende Wiederholungstests"
+  ],
+  "Missing steps": [
+    "Missing steps",
+    "缺失步骤",
+    "欠落ステップ",
+    "누락 단계",
+    "Fehlende Schritte"
+  ],
+  "Device × step matrix": [
+    "Device × step matrix",
+    "器件 × 步骤矩阵",
+    "デバイス × ステップ",
+    "디바이스 × 단계",
+    "Bauteil-Schritt-Matrix"
+  ],
+  "Density": [
+    "Density",
+    "密度",
+    "行間隔",
+    "행 밀도",
+    "Zeilendichte"
+  ],
+  "Compact · 30 px": [
+    "Compact · 30 px",
+    "紧凑 · 30 px",
+    "コンパクト · 30 px",
+    "조밀 · 30 px",
+    "Kompakt · 30 px"
+  ],
+  "Dense · 24 px": [
+    "Dense · 24 px",
+    "极紧凑 · 24 px",
+    "高密度 · 24 px",
+    "고밀도 · 24 px",
+    "Sehr kompakt · 24 px"
+  ],
+  "All devices": [
+    "All devices",
+    "全部器件",
+    "すべてのデバイス",
+    "모든 디바이스",
+    "Alle Bauteile"
+  ],
+  "Reset": [
+    "Reset",
+    "重置",
+    "リセット",
+    "초기화",
+    "Zurücksetzen"
+  ],
+  "Anomaly filter": [
+    "Anomaly filter",
+    "异常筛选",
+    "異常フィルター",
+    "이상 필터",
+    "Anomaliefilter"
+  ],
+  "Closed": [
+    "Closed",
+    "已关闭",
+    "クローズ済み",
+    "종료됨",
+    "Abgeschlossen"
+  ],
+  "Open": [
+    "Open",
+    "未关闭",
+    "未クローズ",
+    "미종료",
+    "Offen"
+  ],
+  "Closure": [
+    "Closure",
+    "关闭状态",
+    "クローズ状態",
+    "종료 상태",
+    "Abschluss"
+  ],
+  "Flags": [
+    "Flags",
+    "标记",
+    "フラグ",
+    "표시",
+    "Markierungen"
+  ],
+  "Result": [
+    "Result",
+    "判定",
+    "判定",
+    "판정",
+    "Ergebnis"
+  ],
+  "Program / revision": [
+    "Program / revision",
+    "程序 / 版本",
+    "プログラム / 版数",
+    "프로그램 / 버전",
+    "Programm / Revision"
+  ],
+  "Run start UTC": [
+    "Run start UTC",
+    "运行开始 UTC",
+    "開始時刻 UTC",
+    "실행 시작 UTC",
+    "Laufstart UTC"
+  ],
+  "Record offset": [
+    "Record offset",
+    "记录位置",
+    "レコード位置",
+    "레코드 위치",
+    "Datensatzposition"
+  ],
+  "Source file": [
+    "Source file",
+    "源文件",
+    "ソースファイル",
+    "원본 파일",
+    "Quelldatei"
+  ],
+  "Evidence": [
+    "Evidence",
+    "证据",
+    "エビデンス",
+    "증거",
+    "Nachweise"
+  ],
+  "Step": [
+    "Step",
+    "步骤",
+    "ステップ",
+    "단계",
+    "Schritt"
+  ],
+  "Test attempts": [
+    "Test attempts",
+    "测试尝试",
+    "テスト履歴",
+    "테스트 시도",
+    "Testversuche"
+  ],
+  "View ↗": [
+    "View ↗",
+    "查看 ↗",
+    "表示 ↗",
+    "보기 ↗",
+    "Anzeigen ↗"
+  ],
+  "Close": [
+    "Close",
+    "关闭",
+    "閉じる",
+    "닫기",
+    "Schließen"
+  ],
+  "Full source evidence": [
+    "Full source evidence",
+    "完整来源证据",
+    "完全なソースエビデンス",
+    "전체 원본 증거",
+    "Vollständige Quelldaten"
+  ],
+  "Unknown": [
+    "Unknown",
+    "未知",
+    "不明",
+    "알 수 없음",
+    "Unbekannt"
+  ],
+  "[Blank]": [
+    "[Blank]",
+    "[空白]",
+    "[空白]",
+    "[빈 값]",
+    "[Leer]"
+  ],
+  "Identity unresolved": [
+    "Identity unresolved",
+    "身份未解析",
+    "識別情報未解決",
+    "식별 정보 미해결",
+    "Identität ungeklärt"
+  ],
+  "Tested": [
+    "Tested",
+    "已测",
+    "テスト済み",
+    "테스트 완료",
+    "Getestet"
+  ],
+  "Retest consistent": [
+    "Retest consistent",
+    "重测一致",
+    "再テスト一致",
+    "재테스트 일치",
+    "Wiederholung konsistent"
+  ],
+  "Retest different": [
+    "Retest different",
+    "重测差异",
+    "再テスト差異",
+    "재테스트 차이",
+    "Wiederholung abweichend"
+  ],
+  "Missing": [
+    "Missing",
+    "缺失",
+    "欠落",
+    "누락",
+    "Fehlend"
+  ],
+  "Pending": [
+    "Pending",
+    "待测",
+    "テスト待ち",
+    "테스트 대기",
+    "Ausstehend"
+  ],
+  "Not applicable": [
+    "Not applicable",
+    "不适用",
+    "対象外",
+    "해당 없음",
+    "Nicht zutreffend"
+  ],
+  "Indeterminate": [
+    "Indeterminate",
+    "无法判定",
+    "判定不能",
+    "판정 불가",
+    "Nicht bestimmbar"
+  ],
+  "Fallback linkage limited": [
+    "Fallback linkage limited",
+    "回退身份关联受限",
+    "代替IDの関連付け制限",
+    "대체 식별자 연결 제한",
+    "Eingeschränkte Ersatz-ID-Verknüpfung"
+  ],
+  "Step unidentified": [
+    "Step unidentified",
+    "步骤未识别",
+    "未識別ステップ",
+    "단계 미식별",
+    "Schritt nicht erkannt"
+  ],
+  "Result incomplete": [
+    "Result incomplete",
+    "结果不完整",
+    "結果不完全",
+    "결과 불완전",
+    "Unvollständiges Ergebnis"
+  ],
+  "Order unknown": [
+    "Order unknown",
+    "顺序未知",
+    "順序不明",
+    "순서 알 수 없음",
+    "Reihenfolge unbekannt"
+  ],
+  "Verdict changed": [
+    "Verdict changed",
+    "判定变化",
+    "判定変化",
+    "판정 변경",
+    "Ergebnis geändert"
+  ],
+  "Hard bin changed": [
+    "Hard bin changed",
+    "Hard bin 变化",
+    "Hard bin 変化",
+    "Hard bin 변경",
+    "Hard-Bin geändert"
+  ],
+  "Soft bin changed": [
+    "Soft bin changed",
+    "Soft bin 变化",
+    "Soft bin 変化",
+    "Soft bin 변경",
+    "Soft-Bin geändert"
+  ],
+  "○ Optional step · L? Limited fallback linkage · ID? Unresolved identity · S? Unidentified step": [
+    "○ Optional step · L? Limited fallback linkage · ID? Unresolved identity · S? Unidentified step",
+    "○ 可选步骤 · L? 回退关联受限 · ID? 身份未解析 · S? 步骤未识别",
+    "○ 任意ステップ · L? 代替ID関連制限 · ID? 識別未解決 · S? ステップ未識別",
+    "○ 선택 단계 · L? 대체 ID 연결 제한 · ID? 식별 미해결 · S? 단계 미식별",
+    "○ Optionaler Schritt · L? Begrenzte Ersatz-ID-Verknüpfung · ID? Identität ungeklärt · S? Schritt unbekannt"
+  ],
+  "Cell: status symbol · P/F · test count | P pass · F fail · ? unknown | ΔV verdict change · ΔH/ΔS bin change · ~ unknown order · ? incomplete result": [
+    "Cell: status symbol · P/F · test count | P pass · F fail · ? unknown | ΔV verdict change · ΔH/ΔS bin change · ~ unknown order · ? incomplete result",
+    "单元格：状态符号 · P/F · 测试次数 | P 通过 · F 失败 · ? 未知 | ΔV 判定变化 · ΔH/ΔS bin 变化 · ~ 顺序未知 · ? 结果不完整",
+    "セル：状態記号 · P/F · テスト回数 | P 合格 · F 不合格 · ? 不明 | ΔV 判定変化 · ΔH/ΔS bin変化 · ~ 順序不明 · ? 結果不完全",
+    "셀: 상태 기호 · P/F · 테스트 횟수 | P 통과 · F 실패 · ? 알 수 없음 | ΔV 판정 변경 · ΔH/ΔS bin 변경 · ~ 순서 불명 · ? 결과 불완전",
+    "Zelle: Statussymbol · P/F · Testanzahl | P bestanden · F fehlgeschlagen · ? unbekannt | ΔV Ergebnisänderung · ΔH/ΔS Bin-Änderung · ~ Reihenfolge unbekannt · ? Ergebnis unvollständig"
+  ],
+  "Hover for details · click for all attempts": [
+    "Hover for details · click for all attempts",
+    "悬停查看说明 · 点击查看全部尝试",
+    "ホバーで説明 · クリックで全履歴",
+    "마우스를 올려 설명 보기 · 클릭하여 전체 시도 보기",
+    "Details beim Darüberfahren · Klick zeigt alle Versuche"
+  ],
+  "UTC times · expand source evidence on demand": [
+    "UTC times · expand source evidence on demand",
+    "UTC 时间 · 来源信息按需展开",
+    "UTC 時刻 · ソース情報は展開して表示",
+    "UTC 시간 · 원본 정보 펼쳐 보기",
+    "UTC-Zeiten · Quelldaten bei Bedarf öffnen"
+  ],
+  "{tests} tests / {retests} retests": [
+    "{tests} tests / {retests} retests",
+    "{tests} 次测试 / {retests} 次重测",
+    "テスト {tests} 回 / 再テスト {retests} 回",
+    "테스트 {tests}회 / 재테스트 {retests}회",
+    "{tests} Tests / {retests} Wiederholungen"
+  ],
+  "{count} tests": [
+    "{count} tests",
+    "{count}次",
+    "{count}回",
+    "{count}회",
+    "{count} Tests"
+  ],
+  "Observed results: {value}": [
+    "Observed results: {value}",
+    "判定集合：{value}",
+    "判定集合：{value}",
+    "판정 집합: {value}",
+    "Beobachtete Ergebnisse: {value}"
+  ],
+  "Order unknown; no final result inferred": [
+    "Order unknown; no final result inferred",
+    "顺序未知，不推断最终结果",
+    "順序不明のため最終結果は推定しません",
+    "순서를 알 수 없어 최종 결과를 추론하지 않습니다",
+    "Reihenfolge unbekannt; kein Endergebnis abgeleitet"
+  ],
+  "Order unknown; # is a display index only": [
+    "Order unknown; # is a display index only",
+    "顺序未知；# 仅为显示编号",
+    "順序不明。# は表示上の番号です",
+    "순서 불명; #는 표시용 번호입니다",
+    "Reihenfolge unbekannt; # ist nur eine Anzeige-Nummer"
+  ],
+  "All device steps shown; selected step highlighted": [
+    "All device steps shown; selected step highlighted",
+    "展示此器件所有步骤，所选步骤着色",
+    "全ステップを表示。選択ステップを強調表示",
+    "이 디바이스의 모든 단계 표시; 선택 단계 강조",
+    "Alle Schritte des Bauteils; ausgewählter Schritt hervorgehoben"
+  ],
+  "No matching records. Adjust or clear column filters.": [
+    "No matching records. Adjust or clear column filters.",
+    "没有匹配记录，请调整或清除列筛选。",
+    "一致するレコードがありません。フィルターを変更または解除してください。",
+    "일치하는 레코드가 없습니다. 열 필터를 변경하거나 해제하세요.",
+    "Keine passenden Datensätze. Spaltenfilter ändern oder löschen."
+  ],
+  "Clear column filters / sorting": [
+    "Clear column filters / sorting",
+    "清除全部列筛选 / 排序",
+    "列フィルター / 並べ替えをすべて解除",
+    "모든 열 필터 / 정렬 해제",
+    "Spaltenfilter / Sortierung löschen"
+  ],
+  "Showing {shown} / {total} rows": [
+    "Showing {shown} / {total} rows",
+    "显示 {shown} / {total} 行",
+    "{total} 行中 {shown} 行を表示",
+    "{total}행 중 {shown}행 표시",
+    "{shown} / {total} Zeilen angezeigt"
+  ],
+  "{count} columns filtered": [
+    "{count} columns filtered",
+    "{count} 列已筛选",
+    "{count} 列をフィルター中",
+    "{count}개 열 필터 적용",
+    "{count} Spalten gefiltert"
+  ],
+  "No column filters": [
+    "No column filters",
+    "无列筛选",
+    "列フィルターなし",
+    "열 필터 없음",
+    "Keine Spaltenfilter"
+  ],
+  "Sort and filter": [
+    "Sort and filter",
+    "排序与筛选",
+    "並べ替えとフィルター",
+    "정렬 및 필터",
+    "Sortieren und filtern"
+  ],
+  "Ascending": [
+    "Ascending",
+    "升序",
+    "昇順",
+    "오름차순",
+    "Aufsteigend"
+  ],
+  "Descending": [
+    "Descending",
+    "降序",
+    "降順",
+    "내림차순",
+    "Absteigend"
+  ],
+  "↑ Sort ascending · A → Z / low → high": [
+    "↑ Sort ascending · A → Z / low → high",
+    "↑ 升序排列 · A → Z / 小 → 大",
+    "↑ 昇順 · A → Z / 小 → 大",
+    "↑ 오름차순 · A → Z / 작은 값 → 큰 값",
+    "↑ Aufsteigend · A → Z / klein → groß"
+  ],
+  "↓ Sort descending · Z → A / high → low": [
+    "↓ Sort descending · Z → A / high → low",
+    "↓ 降序排列 · Z → A / 大 → 小",
+    "↓ 降順 · Z → A / 大 → 小",
+    "↓ 내림차순 · Z → A / 큰 값 → 작은 값",
+    "↓ Absteigend · Z → A / groß → klein"
+  ],
+  "Clear this column filter": [
+    "Clear this column filter",
+    "清除此列筛选",
+    "この列のフィルターを解除",
+    "이 열의 필터 해제",
+    "Filter dieser Spalte löschen"
+  ],
+  "Search values in this column": [
+    "Search values in this column",
+    "搜索此列的值",
+    "この列の値を検索",
+    "이 열의 값 검색",
+    "Werte dieser Spalte suchen"
+  ],
+  "Select all search results": [
+    "Select all search results",
+    "选择全部搜索结果",
+    "検索結果をすべて選択",
+    "검색 결과 모두 선택",
+    "Alle Suchergebnisse auswählen"
+  ],
+  "Counts reflect other column filters. Multiple columns combine with AND.": [
+    "Counts reflect other column filters. Multiple columns combine with AND.",
+    "括号为其他列筛选后的数量；多列条件按 AND 组合。",
+    "括弧内は他の列で絞り込んだ件数。複数列は AND 条件です。",
+    "괄호는 다른 열 필터 적용 후 개수입니다. 여러 열은 AND로 결합됩니다.",
+    "Anzahlen berücksichtigen andere Spaltenfilter. Mehrere Spalten werden mit UND verknüpft."
+  ],
+  "No matching values": [
+    "No matching values",
+    "没有匹配的值",
+    "一致する値がありません",
+    "일치하는 값 없음",
+    "Keine passenden Werte"
+  ],
+  "Cancel": [
+    "Cancel",
+    "取消",
+    "キャンセル",
+    "취소",
+    "Abbrechen"
+  ],
+  "Apply": [
+    "Apply",
+    "应用",
+    "適用",
+    "적용",
+    "Anwenden"
+  ],
+  "{shown} / {total} devices": [
+    "{shown} / {total} devices",
+    "{shown} / {total} 器件",
+    "{total} デバイス中 {shown}",
+    "{total}개 중 {shown}개 디바이스",
+    "{shown} / {total} Bauteile"
+  ],
+  "Standalone design preview with synthetic data. Background colors indicate step status, not chip Pass/Fail. The production template is unchanged; unknown ordering is not used to infer a final result.": [
+    "Standalone design preview with synthetic data. Background colors indicate step status, not chip Pass/Fail. The production template is unchanged; unknown ordering is not used to infer a final result.",
+    "独立视觉预览，使用合成演示数据。背景色表示步骤状态，不代表芯片 Pass/Fail。正式模板尚未修改；未知顺序不用于推断最终结果。",
+    "合成データによる独立デザイン案です。背景色はステップ状態を表し、チップの合否ではありません。正式テンプレートは未変更。順序不明時に最終結果は推定しません。",
+    "합성 데이터를 사용한 독립 디자인 미리보기입니다. 배경색은 단계 상태이며 칩의 통과/실패가 아닙니다. 정식 템플릿은 변경하지 않았으며 순서가 불명확하면 최종 결과를 추론하지 않습니다.",
+    "Unabhängige Designvorschau mit synthetischen Daten. Hintergrundfarben zeigen den Schrittstatus, nicht das Bestehen des Chips. Die produktive Vorlage bleibt unverändert; bei unbekannter Reihenfolge wird kein Endergebnis abgeleitet."
+  ],
+  "Overview": [
+    "Overview",
+    "概览",
+    "概要",
+    "개요",
+    "Übersicht"
+  ],
+  "Pareto": [
+    "Pareto",
+    "失败 Pareto",
+    "Fehler-Pareto",
+    "실패 Pareto",
+    "Fehler-Pareto"
+  ],
+  "Commonality": [
+    "Commonality",
+    "共同因素",
+    "共通要因",
+    "공통 요인",
+    "Gemeinsame Faktoren"
+  ],
+  "Correlation": [
+    "Correlation",
+    "相关性",
+    "相関",
+    "상관관계",
+    "Korrelation"
+  ],
+  "Spatial": [
+    "Spatial",
+    "空间分布",
+    "空間分布",
+    "공간 분포",
+    "Räumliche Verteilung"
+  ],
+  "Quality": [
+    "Quality",
+    "质量",
+    "品質",
+    "품질",
+    "Qualität"
+  ],
+  "Yield By Site": [
+    "Yield By Site",
+    "各 Site 良率",
+    "サイト別歩留まり",
+    "사이트별 수율",
+    "Ausbeute je Site"
+  ],
+  "Hard Bin Distribution": [
+    "Hard Bin Distribution",
+    "Hard Bin 分布",
+    "ハードビン分布",
+    "하드 빈 분포",
+    "Hard-Bin-Verteilung"
+  ],
+  "Failure Pareto": [
+    "Failure Pareto",
+    "失败 Pareto",
+    "不良パレート",
+    "실패 Pareto",
+    "Fehler-Pareto"
+  ],
+  "Test Detail": [
+    "Test Detail",
+    "测试详情",
+    "テスト詳細",
+    "테스트 상세",
+    "Testdetails"
+  ],
+  "Tests": [
+    "Tests",
+    "测试项",
+    "テスト項目",
+    "테스트 항목",
+    "Tests"
+  ],
+  "Failure Commonality": [
+    "Failure Commonality",
+    "失败共同因素",
+    "不良の共通要因",
+    "실패 공통 요인",
+    "Gemeinsame Fehlerfaktoren"
+  ],
+  "Interpretation": [
+    "Interpretation",
+    "解读",
+    "解釈",
+    "해석",
+    "Interpretation"
+  ],
+  "Correlation Heatmap": [
+    "Correlation Heatmap",
+    "相关性热图",
+    "相関ヒートマップ",
+    "상관관계 히트맵",
+    "Korrelationsmatrix"
+  ],
+  "Strongest Relationships": [
+    "Strongest Relationships",
+    "最强相关项",
+    "強い相関",
+    "가장 강한 상관관계",
+    "Stärkste Beziehungen"
+  ],
+  "Wafer / XY Failure Map": [
+    "Wafer / XY Failure Map",
+    "Wafer / XY 失败分布",
+    "ウェハー / XY 不良マップ",
+    "웨이퍼 / XY 실패 지도",
+    "Wafer-/XY-Fehlerkarte"
+  ],
+  "Wafer Yield": [
+    "Wafer Yield",
+    "Wafer 良率",
+    "ウェハー歩留まり",
+    "웨이퍼 수율",
+    "Wafer-Ausbeute"
+  ],
+  "Data Completeness": [
+    "Data Completeness",
+    "数据完整性",
+    "データ完全性",
+    "데이터 완전성",
+    "Datenvollständigkeit"
+  ],
+  "Process Windows": [
+    "Process Windows",
+    "工艺窗口",
+    "プロセスウィンドウ",
+    "공정 범위",
+    "Prozessfenster"
+  ],
+  "Filter tests or groups": [
+    "Filter tests or groups",
+    "筛选测试项或分组",
+    "テストまたはグループを検索",
+    "테스트 또는 그룹 필터",
+    "Tests oder Gruppen filtern"
+  ],
+  "Minimum failures": [
+    "Minimum failures",
+    "最少失败数",
+    "最小不良数",
+    "최소 실패 수",
+    "Minimale Fehleranzahl"
+  ],
+  "All lots": [
+    "All lots",
+    "全部 Lot",
+    "すべてのロット",
+    "모든 로트",
+    "Alle Lose"
+  ],
+  "all dimensions": [
+    "all dimensions",
+    "全部维度",
+    "すべての次元",
+    "모든 차원",
+    "Alle Dimensionen"
+  ],
+  "Yield": [
+    "Yield",
+    "良率",
+    "歩留まり",
+    "수율",
+    "Ausbeute"
+  ],
+  "Fail Parts": [
+    "Fail Parts",
+    "失败器件",
+    "不良デバイス",
+    "불량 디바이스",
+    "Fehlerhafte Bauteile"
+  ],
+  "Rows": [
+    "Rows",
+    "数据行",
+    "データ行",
+    "데이터 행",
+    "Datenzeilen"
+  ],
+  "Wafers": [
+    "Wafers",
+    "晶圆",
+    "ウェハー",
+    "웨이퍼",
+    "Wafer"
+  ],
+  "Sites": [
+    "Sites",
+    "测试 Site",
+    "サイト",
+    "사이트",
+    "Sites"
+  ],
+  "Test": [
+    "Test",
+    "测试项",
+    "テスト",
+    "테스트",
+    "Test"
+  ],
+  "Type": [
+    "Type",
+    "类型",
+    "種類",
+    "유형",
+    "Typ"
+  ],
+  "Fail": [
+    "Fail",
+    "失败",
+    "不合格",
+    "실패",
+    "Fehler"
+  ],
+  "Pass": [
+    "Pass",
+    "通过",
+    "合格",
+    "통과",
+    "Bestanden"
+  ],
+  "Mean": [
+    "Mean",
+    "均值",
+    "平均",
+    "평균",
+    "Mittelwert"
+  ],
+  "Sigma": [
+    "Sigma",
+    "标准差",
+    "標準偏差",
+    "표준편차",
+    "Standardabweichung"
+  ],
+  "Limits": [
+    "Limits",
+    "范围",
+    "範囲",
+    "범위",
+    "Grenzen"
+  ],
+  "Range": [
+    "Range",
+    "范围",
+    "範囲",
+    "범위",
+    "Bereich"
+  ],
+  "Limit Fails": [
+    "Limit Fails",
+    "超限次数",
+    "規格外回数",
+    "한계 초과 횟수",
+    "Grenzwertverletzungen"
+  ],
+  "Test A": [
+    "Test A",
+    "测试 A",
+    "テスト A",
+    "테스트 A",
+    "Test A"
+  ],
+  "Test B": [
+    "Test B",
+    "测试 B",
+    "テスト B",
+    "테스트 B",
+    "Test B"
+  ],
+  "Pairs": [
+    "Pairs",
+    "配对数",
+    "ペア数",
+    "쌍 수",
+    "Paare"
+  ],
+  "EAV test result rows": [
+    "EAV test result rows",
+    "EAV 测试结果行",
+    "EAV テスト結果行",
+    "EAV 테스트 결과 행",
+    "EAV-Testergebniszeilen"
+  ],
+  "unique test numbers": [
+    "unique test numbers",
+    "独立测试编号",
+    "固有テスト番号",
+    "고유 테스트 번호",
+    "Eindeutige Testnummern"
+  ],
+  "head / site combinations": [
+    "head / site combinations",
+    "Head / Site 组合",
+    "ヘッド / サイトの組合せ",
+    "헤드 / 사이트 조합",
+    "Head-/Site-Kombinationen"
+  ],
+  "{pass}/{total} parts passed": [
+    "{pass}/{total} parts passed",
+    "{pass}/{total} 个器件通过",
+    "{pass}/{total} 個合格",
+    "{pass}/{total} 개 통과",
+    "{pass}/{total} Bauteile bestanden"
+  ],
+  "{n} failing tests": [
+    "{n} failing tests",
+    "{n} 个失败测试项",
+    "{n} 個の不合格テスト",
+    "실패 테스트 {n}개",
+    "{n} fehlgeschlagene Tests"
+  ],
+  "{n} lots": [
+    "{n} lots",
+    "{n} 个 Lot",
+    "{n} ロット",
+    "로트 {n}개",
+    "{n} Lose"
+  ],
+  "No data for current filters": [
+    "No data for current filters",
+    "当前筛选无数据",
+    "現在の条件に一致するデータなし",
+    "현재 필터에 데이터 없음",
+    "Keine Daten für diese Filter"
+  ],
+  "No data for current filters.": [
+    "No data for current filters.",
+    "当前筛选无数据。",
+    "現在の条件に一致するデータはありません。",
+    "현재 필터에 데이터가 없습니다.",
+    "Keine Daten für diese Filter."
+  ],
+  "Need at least 3 matched parts across 2 variable tests": [
+    "Need at least 3 matched parts across 2 variable tests",
+    "需要两个变量测试之间至少 3 个配对器件",
+    "2つの変動テスト間で3個以上の対応デバイスが必要",
+    "변동 테스트 2개에서 일치하는 디바이스 3개 이상 필요",
+    "Mindestens 3 zugeordnete Bauteile bei 2 variablen Tests erforderlich"
+  ],
+  "No XY coordinates in Parquet rows": [
+    "No XY coordinates in Parquet rows",
+    "Parquet 数据中无 XY 坐标",
+    "Parquet に XY 座標がありません",
+    "Parquet에 XY 좌표 없음",
+    "Keine XY-Koordinaten in Parquet"
+  ],
+  "Click a Pareto bar or row to inspect limits and distribution.": [
+    "Click a Pareto bar or row to inspect limits and distribution.",
+    "点击 Pareto 条形或表格行查看详情。",
+    "パレート棒または行をクリックして詳細を表示。",
+    "Pareto 막대 또는 행을 클릭하여 상세 보기.",
+    "Pareto-Balken oder Zeile für Details anklicken."
+  ],
+  "No failure commonality after current filters.": [
+    "No failure commonality after current filters.",
+    "当前筛选下无失败共同因素。",
+    "現在の条件では不良の共通要因はありません。",
+    "현재 필터에 실패 공통 요인이 없습니다.",
+    "Keine gemeinsamen Fehlerfaktoren für diese Filter."
+  ],
+  "parts": [
+    "parts",
+    "器件",
+    "デバイス",
+    "디바이스",
+    "Bauteile"
+  ],
+  "fails": [
+    "fails",
+    "失败",
+    "不合格",
+    "실패",
+    "Fehler"
+  ],
+  "hits": [
+    "hits",
+    "次数",
+    "件",
+    "건",
+    "Treffer"
+  ],
+  "missing": [
+    "missing",
+    "缺失",
+    "欠落",
+    "누락",
+    "Fehlend"
+  ],
+  "Source sanity · CP / FT": [
+    "Source sanity · CP / FT",
+    "源文件检查 · CP / FT",
+    "ソース検査 · CP / FT",
+    "소스 검사 · CP / FT",
+    "Quelldatenprüfung · CP / FT"
+  ],
+  "Export JSON": [
+    "Export JSON",
+    "导出 JSON",
+    "JSON を出力",
+    "JSON 내보내기",
+    "JSON exportieren"
+  ],
+  "Field evidence · Parquet": [
+    "Field evidence · Parquet",
+    "字段证据 · Parquet",
+    "フィールド証拠 · Parquet",
+    "필드 증거 · Parquet",
+    "Feldnachweise · Parquet"
+  ],
+  "Manifest": [
+    "Manifest",
+    "清单",
+    "マニフェスト",
+    "매니페스트",
+    "Manifest"
+  ],
+  "Checks CSV": [
+    "Checks CSV",
+    "检查规则 CSV",
+    "検査ルール CSV",
+    "검사 규칙 CSV",
+    "Prüfregeln CSV"
+  ],
+  "Validation coverage and evidence": [
+    "Validation coverage and evidence",
+    "检查范围与证据",
+    "検査範囲と証拠",
+    "검사 범위 및 증거",
+    "Prüfumfang und Nachweise"
+  ],
+  "1 · Record status summary": [
+    "1 · Record status summary",
+    "1 · 记录状态汇总",
+    "1 · レコード状態概要",
+    "1 · 레코드 상태 요약",
+    "1 · Datensatzstatus"
+  ],
+  "Run": [
+    "Run",
+    "运行",
+    "実行",
+    "실행",
+    "Lauf"
+  ],
+  "Valid": [
+    "Valid",
+    "有效",
+    "有効",
+    "유효",
+    "Gültig"
+  ],
+  "Invalid": [
+    "Invalid",
+    "无效",
+    "無効",
+    "유효하지 않음",
+    "Ungültig"
+  ],
+  "Unknown / empty (unassessed)": [
+    "Unknown / empty (unassessed)",
+    "未知 / 空值（未评估）",
+    "不明 / 空欄（未評価）",
+    "알 수 없음 / 비어 있음 (미평가)",
+    "Unbekannt / leer (ungeprüft)"
+  ],
+  "Not checked (excluded)": [
+    "Not checked (excluded)",
+    "未检查（已排除）",
+    "未検査（対象外）",
+    "검사 안 함 (제외됨)",
+    "Nicht geprüft (ausgeschlossen)"
+  ],
+  "Run fields": [
+    "Run fields",
+    "运行字段",
+    "実行フィールド",
+    "실행 필드",
+    "Lauffelder"
+  ],
+  "Run-level test entries": [
+    "Run-level test entries",
+    "运行级测试记录",
+    "実行レベルのテスト記録",
+    "실행 수준 테스트 항목",
+    "Testeinträge auf Laufebene"
+  ],
+  "Selected unit entries": [
+    "Selected unit entries",
+    "选中器件记录",
+    "選択デバイスの記録",
+    "선택한 디바이스 항목",
+    "Einträge des gewählten Bauteils"
+  ],
+  "2 · Entry details": [
+    "2 · Entry details",
+    "2 · 记录详情",
+    "2 · レコード詳細",
+    "2 · 항목 상세",
+    "2 · Eintragsdetails"
+  ],
+  "Important run fields": [
+    "Important run fields",
+    "重要运行字段",
+    "重要な実行フィールド",
+    "중요 실행 필드",
+    "Wichtige Lauffelder"
+  ],
+  "Record / offset": [
+    "Record / offset",
+    "记录 / 偏移",
+    "レコード / オフセット",
+    "레코드 / 오프셋",
+    "Datensatz / Offset"
+  ],
+  "Field / type": [
+    "Field / type",
+    "字段 / 类型",
+    "フィールド / 型",
+    "필드 / 유형",
+    "Feld / Typ"
+  ],
+  "Raw value": [
+    "Raw value",
+    "原始值",
+    "生値",
+    "원시 값",
+    "Rohwert"
+  ],
+  "Effective value": [
+    "Effective value",
+    "有效取值",
+    "実効値",
+    "유효 값",
+    "Effektiver Wert"
+  ],
+  "Presence / origin": [
+    "Presence / origin",
+    "存在状态 / 来源",
+    "存在状態 / 由来",
+    "존재 상태 / 출처",
+    "Vorhandensein / Ursprung"
+  ],
+  "Validity": [
+    "Validity",
+    "有效性",
+    "妥当性",
+    "유효성",
+    "Gültigkeit"
+  ],
+  "Run-level definitions and unresolved unit ownership": [
+    "Run-level definitions and unresolved unit ownership",
+    "运行级定义与未确定归属记录",
+    "実行レベルの定義と所属不明の記録",
+    "실행 수준 정의 및 소유 디바이스 미확정 항목",
+    "Laufdefinitionen und ungeklärte Bauteilzuordnung"
+  ],
+  "Units / compact preview": [
+    "Units / compact preview",
+    "器件 / 简要预览",
+    "デバイス / 簡易プレビュー",
+    "디바이스 / 간략 미리보기",
+    "Bauteile / Kompaktvorschau"
+  ],
+  "Previous": [
+    "Previous",
+    "上一页",
+    "前へ",
+    "이전",
+    "Zurück"
+  ],
+  "Next": [
+    "Next",
+    "下一页",
+    "次へ",
+    "다음",
+    "Weiter"
+  ],
+  "Sequence / head / site": [
+    "Sequence / head / site",
+    "序号 / Head / Site",
+    "順序 / ヘッド / サイト",
+    "순서 / 헤드 / 사이트",
+    "Sequenz / Head / Site"
+  ],
+  "PART_ID / wafer": [
+    "PART_ID / wafer",
+    "PART_ID / 晶圆",
+    "PART_ID / ウェハー",
+    "PART_ID / 웨이퍼",
+    "PART_ID / Wafer"
+  ],
+  "Result / bins": [
+    "Result / bins",
+    "结果 / Bin",
+    "結果 / ビン",
+    "결과 / 빈",
+    "Ergebnis / Bins"
+  ],
+  "Identity / closure": [
+    "Identity / closure",
+    "身份 / 关闭状态",
+    "識別 / 終了状態",
+    "식별 / 종료 상태",
+    "Identität / Abschluss"
+  ],
+  "Select a unit": [
+    "Select a unit",
+    "选择器件",
+    "デバイスを選択",
+    "디바이스 선택",
+    "Bauteil auswählen"
+  ],
+  "3 · Full-file findings": [
+    "3 · Full-file findings",
+    "3 · 全文件检查发现",
+    "3 · ファイル全体の検査結果",
+    "3 · 전체 파일 검사 결과",
+    "3 · Befunde der gesamten Datei"
+  ],
+  "Severity": [
+    "Severity",
+    "严重程度",
+    "重大度",
+    "심각도",
+    "Schweregrad"
+  ],
+  "All": [
+    "All",
+    "全部",
+    "すべて",
+    "모두",
+    "Alle"
+  ],
+  "error": [
+    "error",
+    "错误",
+    "エラー",
+    "오류",
+    "Fehler"
+  ],
+  "warning": [
+    "warning",
+    "警告",
+    "警告",
+    "경고",
+    "Warnung"
+  ],
+  "Severity / rule": [
+    "Severity / rule",
+    "严重程度 / 规则",
+    "重大度 / ルール",
+    "심각도 / 규칙",
+    "Schweregrad / Regel"
+  ],
+  "Source / offset": [
+    "Source / offset",
+    "来源 / 偏移",
+    "ソース / オフセット",
+    "소스 / 오프셋",
+    "Quelle / Offset"
+  ],
+  "Message": [
+    "Message",
+    "消息",
+    "メッセージ",
+    "메시지",
+    "Meldung"
+  ],
+  "Not checked": [
+    "Not checked",
+    "未检查",
+    "未検査",
+    "검사 안 함",
+    "Nicht geprüft"
+  ],
+  "valid": [
+    "valid",
+    "有效",
+    "有効",
+    "유효",
+    "Gültig"
+  ],
+  "invalid": [
+    "invalid",
+    "无效",
+    "無効",
+    "유효하지 않음",
+    "Ungültig"
+  ],
+  "unknown": [
+    "unknown",
+    "未知",
+    "不明",
+    "알 수 없음",
+    "Unbekannt"
+  ],
+  "empty": [
+    "empty",
+    "空值",
+    "空欄",
+    "비어 있음",
+    "Leer"
+  ],
+  "Raw evidence": [
+    "Raw evidence",
+    "原始证据",
+    "生データの証拠",
+    "원시 증거",
+    "Rohnachweis"
+  ],
+  "Sources": [
+    "Sources",
+    "源文件",
+    "ソース",
+    "소스",
+    "Quellen"
+  ],
+  "Test runs": [
+    "Test runs",
+    "测试运行",
+    "テスト実行",
+    "테스트 실행",
+    "Testläufe"
+  ],
+  "Units": [
+    "Units",
+    "器件",
+    "デバイス",
+    "디바이스",
+    "Bauteile"
+  ],
+  "Findings": [
+    "Findings",
+    "检查发现",
+    "検査結果",
+    "검사 결과",
+    "Befunde"
+  ],
+  "Type / offset": [
+    "Type / offset",
+    "类型 / 偏移",
+    "種類 / オフセット",
+    "유형 / 오프셋",
+    "Typ / Offset"
+  ],
+  "Test / field": [
+    "Test / field",
+    "测试 / 字段",
+    "テスト / フィールド",
+    "테스트 / 필드",
+    "Test / Feld"
+  ],
+  "First value": [
+    "First value",
+    "首个值",
+    "最初の値",
+    "첫 번째 값",
+    "Erster Wert"
+  ],
+  "State / origin": [
+    "State / origin",
+    "状态 / 来源",
+    "状態 / 由来",
+    "상태 / 출처",
+    "Status / Ursprung"
+  ],
+  "Element count": [
+    "Element count",
+    "元素数",
+    "要素数",
+    "요소 수",
+    "Elementanzahl"
+  ],
+  "Select a unit in section 2 to inspect its first entries.": [
+    "Select a unit in section 2 to inspect its first entries.",
+    "在第 2 节选择器件查看其首条记录。",
+    "セクション2でデバイスを選択して最初の記録を表示。",
+    "2절에서 디바이스를 선택하여 첫 항목 확인.",
+    "Bauteil in Abschnitt 2 für die ersten Einträge auswählen."
+  ],
+  "No per-test records; PRR result is retained.": [
+    "No per-test records; PRR result is retained.",
+    "无逐测试记录；保留 PRR 结果。",
+    "テスト単位の記録なし。PRR 結果は保持。",
+    "테스트별 레코드 없음; PRR 결과 유지.",
+    "Keine Testeinträge; PRR-Ergebnis bleibt erhalten."
+  ],
+  "No per-test records; see the PRR summary in section 2.": [
+    "No per-test records; see the PRR summary in section 2.",
+    "无逐测试记录；参见第 2 节 PRR 汇总。",
+    "テスト単位の記録なし。セクション2のPRR概要を参照。",
+    "테스트별 레코드 없음; 2절 PRR 요약 참조.",
+    "Keine Testeinträge; siehe PRR in Abschnitt 2."
+  ],
+  "No run-level test entries.": [
+    "No run-level test entries.",
+    "无运行级测试记录。",
+    "実行レベルのテスト記録なし。",
+    "실행 수준 테스트 항목 없음.",
+    "Keine Testeinträge auf Laufebene."
+  ],
+  "FTR · Test pattern yield & failure Pareto": [
+    "FTR · Test pattern yield & failure Pareto",
+    "FTR · Pattern 良率与失败 Pareto",
+    "FTR · パターン歩留まりと不良パレート",
+    "FTR · 패턴 수율 및 실패 Pareto",
+    "FTR · Pattern-Ausbeute und Fehler-Pareto"
+  ],
+  "Pattern search": [
+    "Pattern search",
+    "搜索 Pattern",
+    "パターン検索",
+    "패턴 검색",
+    "Pattern-Suche"
+  ],
+  "All patterns": [
+    "All patterns",
+    "全部 Pattern",
+    "すべてのパターン",
+    "모든 패턴",
+    "Alle Patterns"
+  ],
+  "Lot": [
+    "Lot",
+    "批次",
+    "ロット",
+    "로트",
+    "Los"
+  ],
+  "Program": [
+    "Program",
+    "程序",
+    "プログラム",
+    "프로그램",
+    "Programm"
+  ],
+  "Revision": [
+    "Revision",
+    "版本",
+    "版数",
+    "버전",
+    "Revision"
+  ],
+  "Head / site": [
+    "Head / site",
+    "Head / Site",
+    "ヘッド / サイト",
+    "헤드 / 사이트",
+    "Head / Site"
+  ],
+  "Test number": [
+    "Test number",
+    "测试编号",
+    "テスト番号",
+    "테스트 번호",
+    "Testnummer"
+  ],
+  "Reset filters": [
+    "Reset filters",
+    "重置筛选",
+    "フィルターをリセット",
+    "필터 초기화",
+    "Filter zurücksetzen"
+  ],
+  "Export evidence JSON": [
+    "Export evidence JSON",
+    "导出证据 JSON",
+    "証拠 JSON を出力",
+    "증거 JSON 내보내기",
+    "Nachweise als JSON exportieren"
+  ],
+  "Export filtered CSV": [
+    "Export filtered CSV",
+    "导出筛选 CSV",
+    "フィルター結果を CSV 出力",
+    "필터 결과 CSV 내보내기",
+    "Gefilterte CSV exportieren"
+  ],
+  "All patterns · Yield table": [
+    "All patterns · Yield table",
+    "全部 Pattern · 良率表",
+    "全パターン · 歩留まり表",
+    "전체 패턴 · 수율 표",
+    "Alle Patterns · Ausbeutetabelle"
+  ],
+  "100 rows per page; CSV includes all matching patterns.": [
+    "100 rows per page; CSV includes all matching patterns.",
+    "每页 100 行；CSV 包含全部匹配 Pattern。",
+    "1ページ100行。CSVには全該当パターンを含みます。",
+    "페이지당 100행; CSV에 모든 일치 패턴 포함.",
+    "100 Zeilen je Seite; CSV enthält alle passenden Patterns."
+  ],
+  "Source evidence and calculation policy": [
+    "Source evidence and calculation policy",
+    "来源证据与计算规则",
+    "ソース証拠と計算ルール",
+    "소스 증거 및 계산 규칙",
+    "Quellnachweise und Berechnungsregeln"
+  ],
+  "Source SHA-256": [
+    "Source SHA-256",
+    "源文件 SHA-256",
+    "ソース SHA-256",
+    "소스 SHA-256",
+    "Quell-SHA-256"
+  ],
+  "Test #": [
+    "Test #",
+    "测试编号",
+    "テスト番号",
+    "테스트 번호",
+    "Testnummer"
+  ],
+  "Attempts": [
+    "Attempts",
+    "测试次数",
+    "テスト回数",
+    "테스트 횟수",
+    "Testversuche"
+  ],
+  "Not executed": [
+    "Not executed",
+    "未执行",
+    "未実行",
+    "실행 안 됨",
+    "Nicht ausgeführt"
+  ],
+  "First / last offset": [
+    "First / last offset",
+    "首条 / 末条偏移",
+    "最初 / 最後のオフセット",
+    "첫 / 마지막 오프셋",
+    "Erster / letzter Offset"
+  ],
+  "Patterns": [
+    "Patterns",
+    "Pattern 数",
+    "パターン数",
+    "패턴 수",
+    "Patterns"
+  ],
+  "FTR attempts": [
+    "FTR attempts",
+    "FTR 测试次数",
+    "FTR テスト回数",
+    "FTR 테스트 횟수",
+    "FTR-Testversuche"
+  ],
+  "Failed attempts": [
+    "Failed attempts",
+    "失败次数",
+    "不合格回数",
+    "실패 횟수",
+    "Fehlgeschlagene Versuche"
+  ],
+  "Valid yield": [
+    "Valid yield",
+    "有效判定良率",
+    "有効判定の歩留まり",
+    "유효 판정 수율",
+    "Ausbeute gültiger Ergebnisse"
+  ],
+  "Alarms": [
+    "Alarms",
+    "报警",
+    "アラーム",
+    "알람",
+    "Alarme"
+  ],
+  "Yield %": [
+    "Yield %",
+    "良率 %",
+    "歩留まり %",
+    "수율 %",
+    "Ausbeute %"
+  ],
+  "Fail %": [
+    "Fail %",
+    "失败率 %",
+    "不良率 %",
+    "실패율 %",
+    "Fehlerrate %"
+  ],
+  "Failure share %": [
+    "Failure share %",
+    "失败占比 %",
+    "不良構成比 %",
+    "실패 비중 %",
+    "Fehleranteil %"
+  ],
+  "Cumulative %": [
+    "Cumulative %",
+    "累计占比 %",
+    "累積構成比 %",
+    "누적 비중 %",
+    "Kumuliert %"
+  ],
+  "[null] (missing VECT_NAM)": [
+    "[null] (missing VECT_NAM)",
+    "[null]（缺失 VECT_NAM）",
+    "[null]（VECT_NAM 欠落）",
+    "[null] (VECT_NAM 누락)",
+    "[null] (VECT_NAM fehlt)"
+  ],
+  "No failed attempts in the selected scope.": [
+    "No failed attempts in the selected scope.",
+    "所选范围内无失败测试。",
+    "選択範囲に不合格テストなし。",
+    "선택 범위에 실패 테스트 없음.",
+    "Keine fehlgeschlagenen Versuche im gewählten Bereich."
+  ],
+  "No matching FTR patterns.": [
+    "No matching FTR patterns.",
+    "无匹配的 FTR Pattern。",
+    "該当する FTR パターンなし。",
+    "일치하는 FTR 패턴 없음.",
+    "Keine passenden FTR-Patterns."
+  ],
+  "Page {page} / {pages} · {n} patterns": [
+    "Page {page} / {pages} · {n} patterns",
+    "第 {page} / {pages} 页 · {n} 个 Pattern",
+    "{page} / {pages} ページ · {n} パターン",
+    "{page} / {pages} 페이지 · 패턴 {n}개",
+    "Seite {page} / {pages} · {n} Patterns"
+  ],
+  "Showing {shown} of {total} failing patterns. Full results are in the table and CSV.": [
+    "Showing {shown} of {total} failing patterns. Full results are in the table and CSV.",
+    "显示 {total} 个失败 Pattern 中的 {shown} 个；完整结果见表格和 CSV。",
+    "不合格 {total} パターン中 {shown} 件を表示。全結果は表とCSVにあります。",
+    "실패 패턴 {total}개 중 {shown}개 표시. 전체 결과는 표와 CSV에 있습니다.",
+    "{shown} von {total} fehlerhaften Patterns. Alle Ergebnisse in Tabelle und CSV."
+  ],
+  "{n} unique sources; {paths} source paths. JSON exports all evidence, independent of filters.": [
+    "{n} unique sources; {paths} source paths. JSON exports all evidence, independent of filters.",
+    "{n} 个独立源文件；{paths} 个路径。JSON 导出全部证据，不受筛选影响。",
+    "固有ソース {n} 件、パス {paths} 件。JSONはフィルターに関係なく全証拠を出力。",
+    "고유 소스 {n}개, 경로 {paths}개. JSON은 필터와 무관하게 모든 증거를 내보냅니다.",
+    "{n} eindeutige Quellen; {paths} Pfade. JSON exportiert alle Nachweise unabhängig von Filtern."
+  ],
+  "Date unavailable": [
+    "Date unavailable",
+    "日期不可用",
+    "日時なし",
+    "날짜 없음",
+    "Datum nicht verfügbar"
+  ],
+  "Validation findings require review": [
+    "Validation findings require review",
+    "检查发现需要审阅",
+    "検査結果の確認が必要",
+    "검사 결과 검토 필요",
+    "Prüfbefunde müssen geprüft werden"
+  ],
+  "Configured checks passed": [
+    "Configured checks passed",
+    "已通过配置的检查",
+    "設定された検査に合格",
+    "설정된 검사 통과",
+    "Konfigurierte Prüfungen bestanden"
+  ],
+  "{n} warnings to review": [
+    "{n} warnings to review",
+    "{n} 条警告待审阅",
+    "確認が必要な警告 {n} 件",
+    "검토할 경고 {n}개",
+    "{n} Warnungen zu prüfen"
+  ],
+  "Unit {n} · head {head} / site {site}": [
+    "Unit {n} · head {head} / site {site}",
+    "器件 {n} · Head {head} / Site {site}",
+    "デバイス {n} · ヘッド {head} / サイト {site}",
+    "디바이스 {n} · 헤드 {head} / 사이트 {site}",
+    "Bauteil {n} · Head {head} / Site {site}"
+  ],
+  "Showing {n}/{total} records": [
+    "Showing {n}/{total} records",
+    "显示 {n}/{total} 条记录",
+    "{n}/{total} レコードを表示",
+    "레코드 {n}/{total}개 표시",
+    "{n}/{total} Datensätze angezeigt"
+  ],
+  "{n} units · page {page}/{pages}": [
+    "{n} units · page {page}/{pages}",
+    "{n} 个器件 · 第 {page}/{pages} 页",
+    "{n} デバイス · {page}/{pages} ページ",
+    "디바이스 {n}개 · {page}/{pages} 페이지",
+    "{n} Bauteile · Seite {page}/{pages}"
+  ],
+  "{n}/{total} findings": [
+    "{n}/{total} findings",
+    "{n}/{total} 项发现",
+    "{n}/{total} 件の結果",
+    "검사 결과 {n}/{total}개",
+    "{n}/{total} Befunde"
+  ],
+  "Profile invalid; semantic status": [
+    "Profile invalid; semantic status",
+    "配置规则不符；语义状态",
+    "プロファイル違反、意味状態",
+    "프로필 위반; 의미 상태",
+    "Profil ungültig; semantischer Status"
+  ],
+  "Profile invalid": [
+    "Profile invalid",
+    "不符合配置规则",
+    "プロファイル違反",
+    "프로필 위반",
+    "Profil ungültig"
+  ],
+  "Definition only": [
+    "Definition only",
+    "仅定义",
+    "定義のみ",
+    "정의만",
+    "Nur Definition"
+  ],
+  "explicit": [
+    "explicit",
+    "显式值",
+    "明示値",
+    "명시적 값",
+    "Explizit"
+  ],
+  "present": [
+    "present",
+    "存在",
+    "存在",
+    "존재",
+    "Vorhanden"
+  ],
+  "omitted": [
+    "omitted",
+    "省略",
+    "省略",
+    "생략됨",
+    "Ausgelassen"
+  ],
+  "default": [
+    "default",
+    "默认值",
+    "既定値",
+    "기본값",
+    "Standardwert"
+  ],
+  "inherited": [
+    "inherited",
+    "继承值",
+    "継承値",
+    "상속된 값",
+    "Geerbt"
+  ],
+  "unresolved": [
+    "unresolved",
+    "未解析",
+    "未解決",
+    "미확정",
+    "Ungeklärt"
+  ],
+  "PRR attempts retained · Coordinate identity · Offline evidence": [
+    "PRR attempts retained · Coordinate identity · Offline evidence",
+    "保留每次 PRR · 坐标关联 · 离线证据",
+    "各 PRR を保持 · 座標識別 · オフライン証拠",
+    "PRR 시도 유지 · 좌표 식별 · 오프라인 증거",
+    "PRR-Versuche erhalten · Koordinatenidentität · Offline-Nachweise"
+  ],
+  "Full or partial ID": [
+    "Full or partial ID",
+    "完整或部分 ID",
+    "完全または部分 ID",
+    "전체 또는 부분 ID",
+    "Vollständige oder teilweise ID"
+  ],
+  "X coordinate": [
+    "X coordinate",
+    "X 坐标",
+    "X 座標",
+    "X 좌표",
+    "X-Koordinate"
+  ],
+  "Y coordinate": [
+    "Y coordinate",
+    "Y 坐标",
+    "Y 座標",
+    "Y 좌표",
+    "Y-Koordinate"
+  ],
+  "All steps": [
+    "All steps",
+    "全部步骤",
+    "すべての工程",
+    "모든 단계",
+    "Alle Schritte"
+  ],
+  "Cross-step comparison": [
+    "Cross-step comparison",
+    "跨步骤对照",
+    "工程間比較",
+    "단계 간 비교",
+    "Schrittübergreifender Vergleich"
+  ],
+  "All attempts and sources": [
+    "All attempts and sources",
+    "全部测试尝试与来源",
+    "すべての試行とソース",
+    "모든 시도 및 소스",
+    "Alle Versuche und Quellen"
+  ],
+  "Step / attempt": [
+    "Step / attempt",
+    "步骤 / 尝试",
+    "工程 / 試行",
+    "단계 / 시도",
+    "Schritt / Versuch"
+  ],
+  "Verdict / bins": [
+    "Verdict / bins",
+    "判定 / Bin",
+    "判定 / ビン",
+    "판정 / 빈",
+    "Bewertung / Bins"
+  ],
+  "Program / time / hardware": [
+    "Program / time / hardware",
+    "程序 / 时间 / 设备",
+    "プログラム / 時刻 / 装置",
+    "프로그램 / 시간 / 장비",
+    "Programm / Zeit / Hardware"
+  ],
+  "Source evidence": [
+    "Source evidence",
+    "来源证据",
+    "ソース証拠",
+    "소스 증거",
+    "Quellnachweise"
+  ],
+  "Anomaly list": [
+    "Anomaly list",
+    "异常清单",
+    "異常一覧",
+    "이상 목록",
+    "Anomalieliste"
+  ],
+  "Configuration, identity and decision policy": [
+    "Configuration, identity and decision policy",
+    "配置、身份与判定规则",
+    "設定、識別および判定ルール",
+    "설정, 식별 및 판정 규칙",
+    "Konfiguration, Identität und Entscheidungsregeln"
+  ],
+  "Device / flow status": [
+    "Device / flow status",
+    "器件 / 流程状态",
+    "デバイス / 工程状態",
+    "디바이스 / 흐름 상태",
+    "Bauteil / Ablaufstatus"
+  ],
+  "{n} devices · page {page}/{pages}": [
+    "{n} devices · page {page}/{pages}",
+    "{n} 个器件 · 第 {page}/{pages} 页",
+    "{n} デバイス · {page}/{pages} ページ",
+    "디바이스 {n}개 · {page}/{pages} 페이지",
+    "{n} Bauteile · Seite {page}/{pages}"
+  ],
+  "No matching anomalies on this page.": [
+    "No matching anomalies on this page.",
+    "当前页无匹配异常。",
+    "このページに該当する異常なし。",
+    "현재 페이지에 일치하는 이상 없음.",
+    "Keine passenden Anomalien auf dieser Seite."
+  ],
+  "Latest valid verdict": [
+    "Latest valid verdict",
+    "最近有效判定",
+    "直近の有効判定",
+    "최근 유효 판정",
+    "Letzte gültige Bewertung"
+  ],
+  "Display index": [
+    "Display index",
+    "显示序号",
+    "表示番号",
+    "표시 번호",
+    "Anzeigeindex"
+  ],
+  "Attempt": [
+    "Attempt",
+    "尝试",
+    "試行",
+    "시도",
+    "Versuch"
+  ],
+  "Run time": [
+    "Run time",
+    "运行时间",
+    "実行時刻",
+    "실행 시간",
+    "Laufzeit"
+  ],
+  "Raw MIR / hardware": [
+    "Raw MIR / hardware",
+    "原始 MIR / 设备",
+    "生 MIR / 装置",
+    "원시 MIR / 장비",
+    "MIR-/Hardware-Rohdaten"
+  ],
+  "Full PRR and identity evidence": [
+    "Full PRR and identity evidence",
+    "完整 PRR 与身份依据",
+    "全 PRR と識別の証拠",
+    "전체 PRR 및 식별 증거",
+    "Vollständige PRR- und Identitätsnachweise"
+  ],
+  "{flow} / {version} · {n} unique STDF files": [
+    "{flow} / {version} · {n} unique STDF files",
+    "{flow} / {version} · {n} 份独立 STDF",
+    "{flow} / {version} · 固有 STDF {n} 件",
+    "{flow} / {version} · 고유 STDF {n}개",
+    "{flow} / {version} · {n} eindeutige STDF-Dateien"
+  ],
+  "Click a cell for attempts and evidence. Unknown order does not imply a final result; missing-step checks cover observed devices only.": [
+    "Click a cell for attempts and evidence. Unknown order does not imply a final result; missing-step checks cover observed devices only.",
+    "点击单元格查看尝试与证据。顺序未知时不推断最终结果；缺失检查仅覆盖已出现的器件。",
+    "セルから試行と証拠を表示。順序不明時は最終結果を推定せず、欠落検査は観測デバイスのみが対象。",
+    "셀을 클릭하여 시도와 증거 확인. 순서 불명 시 최종 결과를 추론하지 않으며 누락 검사는 관측된 디바이스만 대상입니다.",
+    "Zelle für Versuche und Nachweise anklicken. Bei unbekannter Reihenfolge kein Endergebnis; Fehlstellenprüfung nur für beobachtete Bauteile."
+  ],
+  "Steps follow configuration order. Unknown test ordering is only a stable display order, not a timeline.": [
+    "Steps follow configuration order. Unknown test ordering is only a stable display order, not a timeline.",
+    "步骤按配置排列。未知测试顺序仅为稳定显示顺序，不代表时间线。",
+    "工程は設定順。テスト順序が不明な場合、表示順は時系列ではありません。",
+    "단계는 설정 순서입니다. 순서 불명 시 표시 순서는 시간순이 아닙니다.",
+    "Schritte folgen der Konfiguration. Unbekannte Testreihenfolgen sind nur Anzeigeordnung, keine Zeitachse."
+  ],
+  "Follows filters and pagination. Select a device to see all steps and source records.": [
+    "Follows filters and pagination. Select a device to see all steps and source records.",
+    "跟随筛选与分页；选择器件查看全部步骤和源记录。",
+    "フィルターとページに連動。デバイスを選択して全工程と記録を表示。",
+    "필터 및 페이지를 따릅니다. 디바이스를 선택하여 전체 단계와 소스 기록 확인.",
+    "Folgt Filtern und Seiten. Bauteil für alle Schritte und Quellaufzeichnungen auswählen."
+  ],
+  "Identity namespaces remain distinct without explicit mapping. Unknown identity or steps make completeness indeterminate. MRR ends a run, not the manufacturing flow.": [
+    "Identity namespaces remain distinct without explicit mapping. Unknown identity or steps make completeness indeterminate. MRR ends a run, not the manufacturing flow.",
+    "没有显式映射时身份命名空间保持独立。未知身份或步骤使完整性无法判定。MRR 关闭运行，不关闭制造流程。",
+    "明示マッピングなしでは識別空間は別です。識別や工程が不明なら完全性は判定不能。MRR は実行のみを終了します。",
+    "명시적 매핑 없이는 식별 공간이 분리됩니다. 식별 또는 단계가 불명확하면 완전성을 판정할 수 없습니다. MRR은 실행만 종료합니다.",
+    "Identitätsräume bleiben ohne Zuordnung getrennt. Unbekannte Identität oder Schritte verhindern Vollständigkeitsurteile. MRR beendet einen Lauf, nicht den Fertigungsablauf."
+  ],
+  "States use colors, text and symbols. Measurement changes are not highlighted. JSON includes all original evidence and configuration.": [
+    "States use colors, text and symbols. Measurement changes are not highlighted. JSON includes all original evidence and configuration.",
+    "状态结合颜色、文字和符号。参数变化不高亮。JSON 包含全部原始证据与配置。",
+    "状態は色、文字、記号で表示。測定値変化は強調しません。JSON に全証拠と設定を含みます。",
+    "상태는 색상, 텍스트, 기호로 표시됩니다. 측정값 변화는 강조하지 않습니다. JSON에는 모든 원시 증거와 설정이 포함됩니다.",
+    "Status nutzt Farben, Text und Symbole. Messwertänderungen werden nicht markiert. JSON enthält alle Originalnachweise und Einstellungen."
+  ],
+  "Explicit values come from source bytes. All records are checked regardless of preview selection. Offsets and raw floating-point bits remain original evidence.": [
+    "Explicit values come from source bytes. All records are checked regardless of preview selection. Offsets and raw floating-point bits remain original evidence.",
+    "显式值来自源字节。预览选取不限制全文件检查。偏移与浮点原始位保持原样。",
+    "明示値はソースバイト由来。プレビュー選択に関係なく全記録を検査。オフセットと浮動小数点ビットは原証拠です。",
+    "명시적 값은 소스 바이트에서 옵니다. 미리보기와 무관하게 모든 레코드를 검사하며 오프셋과 부동소수점 비트는 유지됩니다.",
+    "Explizite Werte stammen aus Quelldaten. Alle Datensätze werden unabhängig von der Vorschau geprüft. Offsets und Gleitkommabits bleiben Originalnachweise."
+  ],
+  "Hover for raw values (timestamps in UTC); click to jump to details. Green means field validity, not device Pass. CSV selects required fields; absent optional records stay hidden.": [
+    "Hover for raw values (timestamps in UTC); click to jump to details. Green means field validity, not device Pass. CSV selects required fields; absent optional records stay hidden.",
+    "悬停显示原始值（时间为 UTC），点击跳转详情。绿色表示字段有效，不代表器件通过。CSV 选择必检字段；未出现的可选记录隐藏。",
+    "ホバーで生値（時刻はUTC）、クリックで詳細。緑はフィールド有効性でデバイス合格ではありません。CSVで必須フィールドを選択し、不在の任意記録は非表示。",
+    "마우스를 올리면 원시 값(UTC 시간), 클릭하면 상세 표시. 녹색은 필드 유효성으로 디바이스 통과가 아닙니다. CSV로 필수 필드를 선택하며 없는 선택 레코드는 숨깁니다.",
+    "Hover zeigt Rohwerte (Zeit in UTC), Klick die Details. Grün bedeutet gültiges Feld, nicht bestandenes Bauteil. CSV wählt Pflichtfelder; fehlende optionale Datensätze bleiben verborgen."
+  ],
+  "First records per type show one scalar or first array value. Counts cover all records; retests remain separate units.": [
+    "First records per type show one scalar or first array value. Counts cover all records; retests remain separate units.",
+    "每种类型的前几条记录只显示标量或数组首值。计数覆盖全部记录；重测独立保留。",
+    "種類ごとの最初の記録はスカラーまたは配列先頭値を表示。件数は全記録を含み、再テストは別デバイスとして保持。",
+    "유형별 첫 레코드는 스칼라 또는 배열 첫 값을 표시합니다. 개수는 전체 레코드를 포함하며 재테스트는 별도로 유지됩니다.",
+    "Erste Datensätze je Typ zeigen Skalar oder ersten Arraywert. Zähler umfassen alle Datensätze; Wiederholungen bleiben getrennt."
+  ],
+  "One complete VECT_NAM per pattern; each FTR counts once, including retests. Yield = Pass / (Pass + Fail); unknown and not-executed results are excluded. NUM_FAIL is a pin count.": [
+    "One complete VECT_NAM per pattern; each FTR counts once, including retests. Yield = Pass / (Pass + Fail); unknown and not-executed results are excluded. NUM_FAIL is a pin count.",
+    "每个完整 VECT_NAM 为一个 Pattern；每条 FTR 计一次，含重测。良率 = Pass / (Pass + Fail)，排除未知与未执行结果。NUM_FAIL 是引脚数。",
+    "完全な VECT_NAM ごとに集計し、再テストを含む各 FTR を1回とします。歩留まりは Pass / (Pass + Fail)、不明と未実行は除外。NUM_FAIL はピン数です。",
+    "전체 VECT_NAM별로 집계하며 재테스트를 포함해 FTR당 1회입니다. 수율 = Pass / (Pass + Fail), 불명 및 미실행은 제외합니다. NUM_FAIL은 핀 수입니다.",
+    "Ein vollständiger VECT_NAM je Pattern; jeder FTR zählt einmal, auch Wiederholungen. Ausbeute = Pass / (Pass + Fail), ohne unbekannte und nicht ausgeführte Ergebnisse. NUM_FAIL zählt Pins."
+  ],
+  "FTR filters apply to the supplied STDF inputs. Identical decompressed files count once. Missing names appear as [null], without inheritance or inferred splitting.": [
+    "FTR filters apply to the supplied STDF inputs. Identical decompressed files count once. Missing names appear as [null], without inheritance or inferred splitting.",
+    "FTR 筛选作用于指定 STDF 输入。相同解压内容只计一次。缺失名称显示 [null]，不继承或推测拆分。",
+    "FTR フィルターは指定 STDF が対象。同一の展開済み内容は1回のみ。名前欠落は [null] で、継承や推測分割はしません。",
+    "FTR 필터는 지정 STDF 입력에 적용됩니다. 같은 압축 해제 내용은 한 번만 계산합니다. 누락 이름은 [null]이며 상속 또는 추정 분할하지 않습니다.",
+    "FTR-Filter gelten für die angegebenen STDF-Dateien. Identische entpackte Dateien zählen einmal. Fehlende Namen erscheinen als [null], ohne Vererbung oder Zerlegung."
+  ],
+  "Red bars: failures scaled to the maximum. Blue dots: cumulative failure share (0–100%). Missing-name failures are included.": [
+    "Red bars: failures scaled to the maximum. Blue dots: cumulative failure share (0–100%). Missing-name failures are included.",
+    "红条：失败数相对最大值；蓝点：累计失败占比（0–100%）。包含名称缺失的失败。",
+    "赤棒：最大値に対する不良数。青点：累積不良構成比（0–100%）。名前欠落の不良も含みます。",
+    "빨간 막대: 최댓값 대비 실패 수. 파란 점: 누적 실패 비중(0–100%). 이름 누락 실패 포함.",
+    "Rote Balken: Fehler relativ zum Maximum. Blaue Punkte: kumulierter Fehleranteil (0–100%). Fehler ohne Namen enthalten."
+  ],
+  "Sort by headings; select a pattern for details. Green: all valid attempts passed. Red: failures. Amber: incomplete. Zero-failure patterns are included.": [
+    "Sort by headings; select a pattern for details. Green: all valid attempts passed. Red: failures. Amber: incomplete. Zero-failure patterns are included.",
+    "点击表头排序、Pattern 查看详情。绿色：有效尝试全部通过；红色：失败；黄色：不完整。包含零失败 Pattern。",
+    "見出しで並べ替え、パターンから詳細。緑：有効試行全合格、赤：不合格、黄：不完全。不良ゼロも含みます。",
+    "머리글로 정렬, 패턴으로 상세 확인. 녹색: 유효 시도 모두 통과, 빨간색: 실패, 황색: 불완전. 실패 0인 패턴 포함.",
+    "Überschriften sortieren; Pattern öffnet Details. Grün: alle gültigen Versuche bestanden. Rot: Fehler. Gelb: unvollständig. Auch fehlerfreie Patterns enthalten."
+  ],
+  "TEST_FLG bits 1/2/3/5/6 mark unknown results; bit 4 means not executed. Alarms (bit 0) are counted separately. Offsets bound each group, not a contiguous range. No final-device yield is inferred.": [
+    "TEST_FLG bits 1/2/3/5/6 mark unknown results; bit 4 means not executed. Alarms (bit 0) are counted separately. Offsets bound each group, not a contiguous range. No final-device yield is inferred.",
+    "TEST_FLG 位 1/2/3/5/6 表示未知结果，位 4 表示未执行。报警（位 0）独立计数。偏移仅为分组边界，不表示连续范围；不推断最终器件良率。",
+    "TEST_FLG のビット1/2/3/5/6は不明、4は未実行。アラーム（0）は別集計。オフセットはグループ境界で連続範囲ではなく、最終デバイス歩留まりは推定しません。",
+    "TEST_FLG 비트 1/2/3/5/6은 불명, 비트 4는 미실행입니다. 알람(비트 0)은 별도 집계합니다. 오프셋은 그룹 경계이며 연속 범위가 아닙니다. 최종 디바이스 수율을 추론하지 않습니다.",
+    "TEST_FLG-Bits 1/2/3/5/6 kennzeichnen unbekannte Ergebnisse, Bit 4 nicht ausgeführte Tests. Alarme (Bit 0) zählen separat. Offsets begrenzen Gruppen, keine zusammenhängenden Bereiche. Keine Endausbeute abgeleitet."
+  ],
+  "Parts merge by coordinate identity; unresolved attempts remain separate. Device yield uses all-pass merging, not final-retest yield.": [
+    "Parts merge by coordinate identity; unresolved attempts remain separate. Device yield uses all-pass merging, not final-retest yield.",
+    "器件按坐标身份合并；未解析尝试保持独立。器件良率采用全部通过口径，不是最终重测良率。",
+    "座標識別でデバイスを統合し、未解決試行は別扱い。歩留まりは全合格方式で最終再テスト歩留まりではありません。",
+    "좌표 식별로 디바이스를 병합하고 미확정 시도는 별도로 유지합니다. 수율은 전체 통과 방식이며 최종 재테스트 수율이 아닙니다.",
+    "Bauteile werden über Koordinaten zugeordnet; ungeklärte Versuche bleiben getrennt. Ausbeute verlangt alle Tests bestanden, nicht nur den letzten Wiederholungstest."
+  ],
+  "PART_ID, wafer, coordinate identity…": [
+    "PART_ID, wafer, coordinate identity…",
+    "PART_ID、晶圆、坐标身份…",
+    "PART_ID、ウェハー、座標識別…",
+    "PART_ID, 웨이퍼, 좌표 식별…",
+    "PART_ID, Wafer, Koordinatenidentität…"
+  ],
+  "Rule, field, message…": [
+    "Rule, field, message…",
+    "规则、字段、消息…",
+    "ルール、フィールド、メッセージ…",
+    "규칙, 필드, 메시지…",
+    "Regel, Feld, Meldung…"
+  ],
+  "Find unit": [
+    "Find unit",
+    "查找器件",
+    "デバイス検索",
+    "디바이스 찾기",
+    "Bauteil suchen"
+  ],
+  "Find issue": [
+    "Find issue",
+    "查找问题",
+    "問題検索",
+    "문제 찾기",
+    "Befund suchen"
+  ],
+  "Lot selection": [
+    "Lot selection",
+    "选择批次",
+    "ロット選択",
+    "로트 선택",
+    "Losauswahl"
+  ],
+  "Commonality dimension": [
+    "Commonality dimension",
+    "共同因素维度",
+    "共通要因の次元",
+    "공통 요인 차원",
+    "Dimension gemeinsamer Faktoren"
+  ],
+  "Dashboard sections": [
+    "Dashboard sections",
+    "报告页签",
+    "レポートタブ",
+    "보고서 탭",
+    "Berichtsbereiche"
+  ],
+  "Field status legend": [
+    "Field status legend",
+    "字段状态图例",
+    "フィールド状態凡例",
+    "필드 상태 범례",
+    "Feldstatuslegende"
+  ],
+  "Report appearance": [
+    "Report appearance",
+    "报告外观",
+    "レポート表示",
+    "보고서 모양",
+    "Berichtsdarstellung"
+  ],
+  "Scan complete": [
+    "Scan complete",
+    "扫描完成",
+    "スキャン完了",
+    "스캔 완료",
+    "Scan vollständig"
+  ],
+  "Scan incomplete": [
+    "Scan incomplete",
+    "扫描未完成",
+    "スキャン未完了",
+    "스캔 미완료",
+    "Scan unvollständig"
+  ],
+  "{dimension}: {label} · {n} failing observations.": [
+    "{dimension}: {label} · {n} failing observations.",
+    "{dimension}: {label} · {n} 次失败观测。",
+    "{dimension}: {label} · 不良観測 {n} 件。",
+    "{dimension}: {label} · 실패 관측 {n}건.",
+    "{dimension}: {label} · {n} Fehlerbeobachtungen."
+  ],
+  "Fail {fail} / total {total}; yield {yield}; limit failures {limits}.": [
+    "Fail {fail} / total {total}; yield {yield}; limit failures {limits}.",
+    "失败 {fail} / 总计 {total}；良率 {yield}；超限 {limits} 次。",
+    "不合格 {fail} / 全 {total}、歩留まり {yield}、規格外 {limits}。",
+    "실패 {fail} / 전체 {total}; 수율 {yield}; 한계 초과 {limits}.",
+    "Fehler {fail} / gesamt {total}; Ausbeute {yield}; Grenzverletzungen {limits}."
+  ],
+  "Mean {mean}; sigma {sigma}; range {min} to {max}.": [
+    "Mean {mean}; sigma {sigma}; range {min} to {max}.",
+    "均值 {mean}；标准差 {sigma}；范围 {min} 至 {max}。",
+    "平均 {mean}、標準偏差 {sigma}、範囲 {min}～{max}。",
+    "평균 {mean}; 표준편차 {sigma}; 범위 {min} ~ {max}.",
+    "Mittelwert {mean}; Sigma {sigma}; Bereich {min} bis {max}."
+  ],
+  "Catalog revision {revision}; latest run: {status}.": [
+    "Catalog revision {revision}; latest run: {status}.",
+    "目录版本 {revision}；最近运行：{status}。",
+    "カタログ版 {revision}、最新実行：{status}。",
+    "카탈로그 버전 {revision}; 최근 실행: {status}.",
+    "Katalogrevision {revision}; letzter Lauf: {status}."
+  ],
+  "Showing current successful source versions.": [
+    "Showing current successful source versions.",
+    "显示当前已成功发布的源版本。",
+    "正常に公開された現行ソース版を表示。",
+    "현재 성공적으로 게시된 소스 버전 표시.",
+    "Aktuelle erfolgreich veröffentlichte Quellversionen."
+  ],
+  "Incomplete run: failed updates may retain older source versions.": [
+    "Incomplete run: failed updates may retain older source versions.",
+    "运行不完整：更新失败时可能保留旧源版本。",
+    "実行未完了：更新失敗時に古いソース版を保持する可能性があります。",
+    "실행 미완료: 업데이트 실패 시 이전 소스 버전이 유지될 수 있습니다.",
+    "Unvollständiger Lauf: fehlgeschlagene Updates können ältere Quellversionen behalten."
+  ],
+  "missing wafer_id": [
+    "missing wafer_id",
+    "缺失 wafer_id",
+    "wafer_id 欠落",
+    "wafer_id 누락",
+    "wafer_id fehlt"
+  ],
+  "missing part_id": [
+    "missing part_id",
+    "缺失 part_id",
+    "part_id 欠落",
+    "part_id 누락",
+    "part_id fehlt"
+  ],
+  "missing x/y coordinate": [
+    "missing x/y coordinate",
+    "缺失 X/Y 坐标",
+    "X/Y 座標欠落",
+    "X/Y 좌표 누락",
+    "X/Y-Koordinate fehlt"
+  ],
+  "missing test_pass": [
+    "missing test_pass",
+    "缺失 test_pass",
+    "test_pass 欠落",
+    "test_pass 누락",
+    "test_pass fehlt"
+  ],
+  "missing result": [
+    "missing result",
+    "缺失测量值",
+    "測定値欠落",
+    "측정값 누락",
+    "Messwert fehlt"
+  ],
+  "missing limits": [
+    "missing limits",
+    "缺失限值",
+    "規格値欠落",
+    "한계값 누락",
+    "Grenzwerte fehlen"
+  ],
+  "missing test_time_ms": [
+    "missing test_time_ms",
+    "缺失 test_time_ms",
+    "test_time_ms 欠落",
+    "test_time_ms 누락",
+    "test_time_ms fehlt"
+  ],
+  "unresolved coordinate identity": [
+    "unresolved coordinate identity",
+    "坐标身份未解析",
+    "座標識別未解決",
+    "좌표 식별 미확정",
+    "Koordinatenidentität ungeklärt"
+  ]
+}

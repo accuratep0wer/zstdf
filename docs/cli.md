@@ -33,9 +33,10 @@ Convert STDF to long-format EAV Parquet:
 cargo run -p stdf-cli --bin zstdf-cli -- convert path\to\input.stdf path\to\output.parquet --batch-size 65536
 ```
 
-Conversion streams decoded records into Arrow batches and then into Parquet, so
-memory is bounded by the configured batch size rather than the whole input
-file. Successful conversions are committed atomically through a same-directory
+Conversion emits Arrow batches into Parquet. Batch size is a target, not a hard
+memory limit: unfinished parts, input decoding, and writer buffers also consume
+memory. Use catalog layout for accounted resource budgets. Successful
+conversions are committed atomically through a same-directory
 temporary file and write a manifest at `output.parquet.json`.
 
 Use `--no-overwrite` for retry-safe jobs. If the output Parquet file and
@@ -60,13 +61,34 @@ files. It includes yield KPIs, failure Pareto, failure commonality, test
 correlation, wafer/XY maps, bin distributions, process window statistics, and
 data-completeness checks.
 
+## Unified Conversion
+
+Use `convert input.stdf output.parquet` for a single output file, or
+`convert <inputs...> --output-dir dataset` for one output per source. Add
+`--layout catalog` for bounded row fragments, catalog verification, and
+`dashboard-dir`. The old `convert-many` and `convert-partitioned` subcommands
+are removed: replace them with `convert` and `convert --layout catalog`,
+respectively. Existing single-file syntax is unchanged.
+
+With `--output-dir`, all positional paths are inputs. Without it, exactly two
+paths are required; directory paths and STDF output filenames are rejected.
+`--partition-by` requires `--output-dir`. Catalog resource options and
+`--continue-on-error` require `--layout catalog`. Catalog layout rejects
+`--batch-size` and `--no-overwrite`; use `--row-group-rows`, and let the catalog
+verify and reuse successful source generations. Invalid option combinations
+fail before input/output processing.
+
+`dump` prints compact record summaries to stdout. `to-ascii` remains available
+for detailed field-by-field text export, including formatted timestamps and
+inherited PTR scale/unit information.
+
 ## Multi-file Conversion (Phase 10B)
 
 Convert files or recursively scan directories:
 
 ```powershell
-cargo run -p stdf-cli -- convert-many --output-dir dataset --partition-by lot-id,wafer-id input1.stdf input2.stdf
-cargo run -p stdf-cli -- convert-many --output-dir dataset --no-overwrite path\to\inputs
+cargo run -p stdf-cli -- convert --output-dir dataset --partition-by lot-id,wafer-id input1.stdf input2.stdf
+cargo run -p stdf-cli -- convert --output-dir dataset --no-overwrite path\to\inputs
 ```
 
 The default partition key is `input-file`. Other keys are `lot-id` and
@@ -95,7 +117,7 @@ read those columns rather than inferring null/empty strings from folder names.
 Output names depend on canonical source path and content. Reordering inputs
 or retrying a subset preserves names. Changing bytes or moving a source creates
 a new output and retains the old version; do not blindly combine old and new
-versions when calculating yield. Phase 10C proposes a catalog to select versions.
+versions when calculating yield. Catalog layout selects current versions for dataset dashboards.
 
 `--no-overwrite` validates the current source and checks the existing Parquet
 footer, schema, and row count against the manifest before returning its summary.
@@ -115,11 +137,11 @@ committed files remain; rerun with `--no-overwrite` after resolving the error.
 Split mixed-lot or mixed-wafer PTR results into immutable Parquet fragments:
 
 ```powershell
-cargo run -p stdf-cli -- convert-partitioned --output-dir dataset --partition-by lot-id,wafer-id .\inputs
+cargo run -p stdf-cli -- convert --layout catalog --output-dir dataset --partition-by lot-id,wafer-id .\inputs
 ```
 
 This command defaults to lot/wafer partitioning and accepts the same file and
-directory inputs as `convert-many`. It prints total rows/fragments, each output
+directory inputs as `convert`. It prints total rows/fragments, each output
 path, peak open writers, and accounted pending/writer bytes. Repeated runs with
 the same inputs and options validate and reuse completed source generations.
 
@@ -136,7 +158,7 @@ Resource options:
 For a smaller workload and budget:
 
 ```powershell
-cargo run -p stdf-cli -- convert-partitioned --output-dir dataset-small --memory-limit-mib 16 --max-output-files 1000 --max-open-writers 2 --row-group-rows 1024 .\inputs
+cargo run -p stdf-cli -- convert --layout catalog --output-dir dataset-small --memory-limit-mib 16 --max-output-files 1000 --max-open-writers 2 --row-group-rows 1024 .\inputs
 ```
 
 The file limit reserves 8 KiB per possible output for paths/receipts/plan
@@ -167,7 +189,7 @@ create a managed catalog; they are not automatically imported.
 ## Catalog Verification, Recovery, and Dashboards (Phase 10C.2)
 
 ```powershell
-cargo run -p stdf-cli -- convert-partitioned --output-dir dataset --continue-on-error .\inputs
+cargo run -p stdf-cli -- convert --layout catalog --output-dir dataset --continue-on-error .\inputs
 cargo run -p stdf-cli -- verify-dataset dataset
 cargo run -p stdf-cli -- dashboard-dir dataset dashboard.html --title "Lot DataView"
 ```
@@ -182,7 +204,7 @@ After a terminated process, explicitly recover and repeat the original conversio
 
 ```powershell
 cargo run -p stdf-cli -- recover-dataset dataset
-cargo run -p stdf-cli -- convert-partitioned --output-dir dataset .\inputs
+cargo run -p stdf-cli -- convert --layout catalog --output-dir dataset .\inputs
 ```
 
 Recovery refuses active or unverifiable legacy lock owners, removes only abandoned

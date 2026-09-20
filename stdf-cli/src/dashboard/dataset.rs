@@ -115,6 +115,8 @@ pub fn generate_dataset_dashboard(
     let html = DASHBOARD_HTML
         .replace("__TITLE__", &html_escape(&options.title))
         .replace("__DATA__", &json);
+    let html = crate::ftr_pareto::attach(html, &options.ftr_inputs, output)?;
+    let html = crate::report_ui::decorate(html);
     if html.len() > limits.max_memory_bytes / 2 {
         return Err(invalid_data("dashboard HTML exceeds memory budget").into());
     }

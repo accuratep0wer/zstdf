@@ -89,7 +89,7 @@ impl Stage {
         self.quota.lock().unwrap().0 -= size;
         Ok(())
     }
-    pub fn manifest(&self, profile_hash: &str) -> CliResult<()> {
+    pub fn manifest(&self, profile_hash: &str, checks_hash: &str) -> CliResult<()> {
         let mut files = BTreeMap::new();
         for entry in fs::read_dir(&self.path)? {
             let entry = entry?;
@@ -111,7 +111,7 @@ impl Stage {
         self.write(
             "manifest.json",
             &serde_json::to_vec_pretty(
-                &json!({"schema":"sanity-bundle-v1","profile_hash":profile_hash,"files":files}),
+                &json!({"schema":"sanity-bundle-v1","profile_hash":profile_hash,"checks_hash":checks_hash,"files":files}),
             )?,
         )
     }

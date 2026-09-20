@@ -6,30 +6,21 @@ use stdf_parquet::{
     FragmentOptions, PartitionKey,
 };
 
-#[derive(Debug, clap::Args)]
+#[derive(Debug)]
 pub struct Arguments {
-    #[arg(required = true)]
-    inputs: Vec<PathBuf>,
-    #[arg(long)]
-    output_dir: PathBuf,
-    #[arg(long, value_delimiter = ',', default_value = "lot-id,wafer-id")]
-    partition_by: Vec<PartitionKey>,
+    pub inputs: Vec<PathBuf>,
+    pub output_dir: PathBuf,
+    pub partition_by: Vec<PartitionKey>,
     /// Accounted conversion memory budget, excluding runtime/allocator overhead.
-    #[arg(long, default_value_t = 256)]
-    memory_limit_mib: usize,
-    #[arg(long, default_value_t = 100_000)]
-    max_pending_tests: usize,
-    #[arg(long, default_value_t = 4)]
-    max_open_writers: usize,
+    pub memory_limit_mib: usize,
+    pub max_pending_tests: usize,
+    pub max_open_writers: usize,
     /// Maximum rows per row group and fragment.
-    #[arg(long, default_value_t = 65_536)]
-    row_group_rows: usize,
+    pub row_group_rows: usize,
     /// Total fragments per invocation; reserves memory for their metadata.
-    #[arg(long, default_value_t = 10_000)]
-    max_output_files: usize,
+    pub max_output_files: usize,
     /// Convert remaining files after a failure; still exits nonzero if any fail.
-    #[arg(long)]
-    continue_on_error: bool,
+    pub continue_on_error: bool,
 }
 
 pub fn execute(args: Arguments, out: &mut impl Write) -> CliResult<()> {

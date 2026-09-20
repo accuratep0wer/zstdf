@@ -1,0 +1,10 @@
+# Example: check only run completion and selected optional vendor fields.
+# For a full core checklist, uncomment these rows in config/sanity-checks.csv instead.
+record,field,flow,format
+MRR,FINISH_T,CP|FT,U*4
+ATR,MOD_TIM,CP|FT,U*4
+CDR,CHN_NAM,CP|FT,C*n
+CTSR,CHAR_NAM,CP|FT,C*n
+CTSR,AXES[].RNG_RESO,CP|FT,R*8
+# ATR,CMD_LINE,CP|FT,C*n
+# CTSR,AXES[].MARGIN_VAL,CP|FT,R*8

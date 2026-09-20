@@ -11,8 +11,11 @@ use stdf_core::{RecordType, StdfError, StdfRecord};
 use stdf_io::StdfReader;
 use stdf_validate::{Severity, ValidationReport};
 
+mod conversion;
 mod dashboard;
+mod ftr_pareto;
 mod partitioned;
+mod report_ui;
 mod sanity;
 mod traceability;
 
@@ -33,6 +36,8 @@ struct Cli {
 enum Command {
     /// Audit CP/FT source fields and preview run metadata and per-unit first values.
     Sanity(sanity::Arguments),
+    /// Report FTR failures and yield by full VECT_NAM directly from STDF.
+    FtrPareto(ftr_pareto::Arguments),
     /// Trace device test steps and retest differences directly from STDF.
     Traceability(traceability::Arguments),
     /// Verify hashes, paths, schemas, and row counts of the current dataset snapshot.
@@ -52,9 +57,10 @@ enum Command {
         max_lots: usize,
         #[arg(long, default_value_t = 100_000)]
         max_parts: usize,
+        /// Add FTR patterns below Failure Pareto from raw STDF inputs. Repeatable.
+        #[arg(long)]
+        ftr_input: Vec<PathBuf>,
     },
-    /// Convert PTR results to bounded, row-partitioned Parquet fragments.
-    ConvertPartitioned(partitioned::Arguments),
     /// Print file-level decode summary.
     Info {
         /// Input STDF path. Gzip is auto-detected by extension or magic bytes.
@@ -93,34 +99,8 @@ enum Command {
         #[arg(long, default_value_t = 1)]
         threads: usize,
     },
-    /// Convert STDF records to long-format EAV Parquet.
-    Convert {
-        /// Input STDF path. Gzip is auto-detected by extension or magic bytes.
-        input: PathBuf,
-        /// Output Parquet path.
-        output: PathBuf,
-        /// Target EAV rows per Arrow batch.
-        #[arg(long, default_value_t = 65_536)]
-        batch_size: usize,
-        /// Return existing manifest summary instead of replacing an existing output.
-        #[arg(long)]
-        no_overwrite: bool,
-    },
-    /// Convert files or directories to a partitioned Parquet dataset.
-    ConvertMany {
-        /// STDF files or directories to scan recursively (including .stdf.gz/.std.gz).
-        #[arg(required = true)]
-        inputs: Vec<PathBuf>,
-        #[arg(long)]
-        output_dir: PathBuf,
-        /// Comma-separated input-file, lot-id, wafer-id keys.
-        #[arg(long, value_delimiter = ',', default_value = "input-file")]
-        partition_by: Vec<stdf_parquet::PartitionKey>,
-        #[arg(long, default_value_t = 65_536)]
-        batch_size: usize,
-        #[arg(long)]
-        no_overwrite: bool,
-    },
+    /// Convert one file or multiple files/directories to EAV Parquet.
+    Convert(conversion::Arguments),
     /// Generate an interactive HTML dashboard from an EAV Parquet file.
     Dashboard {
         /// Input EAV Parquet path produced by `convert`.
@@ -133,6 +113,9 @@ enum Command {
         /// Maximum numeric tests considered for correlation analysis.
         #[arg(long, default_value_t = 16)]
         max_correlation_tests: usize,
+        /// Add FTR patterns below Failure Pareto from raw STDF inputs. Repeatable.
+        #[arg(long)]
+        ftr_input: Vec<PathBuf>,
     },
 }
 
@@ -146,6 +129,7 @@ fn main() {
 fn execute(cli: Cli, out: &mut impl Write) -> CliResult<()> {
     match cli.command {
         Command::Sanity(args) => sanity::execute(args, out),
+        Command::FtrPareto(args) => ftr_pareto::execute(args, out),
         Command::Traceability(args) => traceability::execute(args, out),
         Command::VerifyDataset { input } => {
             let catalog = stdf_parquet::catalog::verify_catalog(&input)?;
@@ -170,12 +154,14 @@ fn execute(cli: Cli, out: &mut impl Write) -> CliResult<()> {
             memory_limit_mib,
             max_lots,
             max_parts,
+            ftr_input,
         } => {
             let summary = dashboard::generate_dataset_dashboard(
                 &input,
                 &output,
                 dashboard::DashboardOptions {
                     title,
+                    ftr_inputs: ftr_input,
                     ..Default::default()
                 },
                 dashboard::DatasetLimits {
@@ -193,7 +179,6 @@ fn execute(cli: Cli, out: &mut impl Write) -> CliResult<()> {
             )?;
             Ok(())
         }
-        Command::ConvertPartitioned(args) => partitioned::execute(args, out),
         Command::Info { input } => info(input, out),
         Command::Dump { input, limit } => dump(input, limit, out),
         Command::Check { input } => check(input, out),
@@ -207,32 +192,14 @@ fn execute(cli: Cli, out: &mut impl Write) -> CliResult<()> {
             report_path,
             threads,
         } => batch_check(root_dir, report_path, threads, out),
-        Command::Convert {
-            input,
-            output,
-            batch_size,
-            no_overwrite,
-        } => convert(input, output, batch_size, no_overwrite, out),
-        Command::ConvertMany {
-            inputs,
-            output_dir,
-            partition_by,
-            batch_size,
-            no_overwrite,
-        } => convert_many(
-            inputs,
-            output_dir,
-            partition_by,
-            batch_size,
-            no_overwrite,
-            out,
-        ),
+        Command::Convert(args) => conversion::execute(args, out),
         Command::Dashboard {
             input,
             output,
             title,
             max_correlation_tests,
-        } => dashboard_command(input, output, title, max_correlation_tests, out),
+            ftr_input,
+        } => dashboard_command(input, output, title, max_correlation_tests, ftr_input, out),
     }
 }
 
@@ -260,7 +227,7 @@ fn info(input: PathBuf, out: &mut impl Write) -> CliResult<()> {
     Ok(())
 }
 
-fn convert_many(
+fn convert_files(
     inputs: Vec<PathBuf>,
     output_dir: PathBuf,
     partition_by: Vec<stdf_parquet::PartitionKey>,
@@ -307,6 +274,7 @@ fn dashboard_command(
     output: PathBuf,
     title: String,
     max_correlation_tests: usize,
+    ftr_inputs: Vec<PathBuf>,
     out: &mut impl Write,
 ) -> CliResult<()> {
     let summary = dashboard::generate_dashboard(
@@ -315,6 +283,7 @@ fn dashboard_command(
         dashboard::DashboardOptions {
             title,
             max_correlation_tests: max_correlation_tests.max(2),
+            ftr_inputs,
             ..dashboard::DashboardOptions::default()
         },
     )?;
@@ -789,6 +758,13 @@ mod tests {
         assert!(ascii.contains("FAR Record"));
         assert!(ascii.contains("PTR Record"));
         assert!(ascii.contains("End of file. Done!"));
+        let mut compact = Vec::new();
+        dump(input.clone(), None, &mut compact).unwrap();
+        let compact = String::from_utf8(compact).unwrap();
+        assert_ne!(ascii, compact);
+        assert!(ascii.lines().count() > compact.lines().count());
+        assert!(ascii.contains("CPU_TYPE:"));
+        assert!(!compact.contains("CPU_TYPE:"));
 
         std::fs::remove_file(input).ok();
         std::fs::remove_file(output).ok();

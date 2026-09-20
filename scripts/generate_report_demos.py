@@ -1,0 +1,96 @@
+"""Build synthetic inputs and all report demos using an already built zstdf CLI.
+
+Copyright 2026 zstdf contributors. SPDX-License-Identifier: Apache-2.0
+Only named generated fixtures/reports are replaced; unrelated files are retained.
+"""
+import argparse
+import os
+import struct
+import subprocess
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+
+
+def ptr_only_demo(source):
+    """Strip MPR/FTR from the synthetic little-endian CP fixture, not user data."""
+    output = bytearray()
+    counts = {}
+    offset = 0
+    while offset < len(source):
+        length, typ, sub = struct.unpack_from('<HBB', source, offset)
+        body = bytearray(source[offset + 4:offset + 4 + length])
+        if len(body) != length:
+            raise ValueError('Truncated synthetic fixture')
+        offset += 4 + length
+        if (typ, sub) in ((15, 15), (15, 20)):
+            continue
+        if (typ, sub) == (5, 10):
+            counts[tuple(body[:2])] = 0
+        elif (typ, sub) == (15, 10):
+            counts[tuple(body[4:6])] += 1
+        elif (typ, sub) == (5, 20):
+            struct.pack_into('<H', body, 3, counts.pop(tuple(body[:2])))
+        output += struct.pack('<HBB', len(body), typ, sub) + body
+    if counts:
+        raise ValueError('Unclosed synthetic unit')
+    return output
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    default_cli = ROOT / 'target' / 'release' / ('zstdf-cli.exe' if os.name == 'nt' else 'zstdf-cli')
+    parser.add_argument('--cli', type=Path, default=default_cli)
+    args = parser.parse_args()
+    cli = args.cli.resolve()
+    if not cli.is_file():
+        parser.error('Build the CLI first: cargo build --release -p stdf-cli --locked')
+
+    def run(*command):
+        subprocess.run([str(v) for v in command], cwd=ROOT, check=True)
+
+    for generator in ('examples/sanity/generate_demo.py',
+                      'examples/sanity/generate_vendor_demo.py',
+                      'examples/ftr-patterns/generate_demo.py'):
+        run(sys.executable, '-B', ROOT / generator)
+
+    sanity = Path('examples/sanity/generated')
+    patterns = Path('examples/ftr-patterns/generated')
+    ftr_inputs = [patterns / 'patterns.stdf', patterns / 'patterns.stdf.gz']
+    run(cli, 'convert', sanity / 'cp.stdf', patterns / 'cp.parquet')
+    run(cli, 'dashboard', patterns / 'cp.parquet', patterns / 'dashboard.html',
+        '--ftr-input', ftr_inputs[0], '--ftr-input', ftr_inputs[1])
+    run(cli, 'ftr-pareto', *ftr_inputs, '--output', patterns / 'report.html')
+
+    # The bounded converter supports PTR only. Keep this input outside the FTR
+    # demo directory so recursive FTR scans still have exactly one unique source.
+    work = ROOT / 'target' / 'report-demo-inputs'
+    work.mkdir(parents=True, exist_ok=True)
+    ptr_input = work / 'cp-ptr-only.stdf'
+    ptr_input.write_bytes(ptr_only_demo((ROOT / sanity / 'cp.stdf').read_bytes()))
+    run(cli, 'convert', '--layout', 'catalog', ptr_input, '--output-dir', work / 'dataset')
+    run(cli, 'dashboard-dir', work / 'dataset', patterns / 'dataset-dashboard.html',
+        '--ftr-input', ftr_inputs[0])
+
+    for domain in ('cp', 'ft'):
+        run(cli, 'sanity', sanity / f'{domain}.stdf', '--test-domain', domain,
+            '--profile', f'examples/sanity/{domain}-profile.json',
+            '--output-dir', sanity / f'{domain}-report')
+    run(cli, 'sanity', sanity / 'cp.stdf', sanity / 'ft.stdf',
+        '--run-profiles', 'examples/sanity/run-profiles.json',
+        '--output-dir', sanity / 'mixed-report')
+    run(cli, 'sanity', sanity / 'vendor.stdf', '--test-domain', 'cp',
+        '--output-dir', sanity / 'vendor-report')
+    run(cli, 'sanity', sanity / 'vendor.stdf', '--test-domain', 'cp',
+        '--checks-csv', 'examples/sanity/vendor-checks.csv',
+        '--output-dir', sanity / 'vendor-checked-report')
+    run(sys.executable, '-B', ROOT / 'examples/traceability/generate_demo.py', '--cli', cli)
+
+    print('\nReport demos are ready. Open the Dashboard and select Pareto:')
+    print((ROOT / patterns / 'dashboard.html').as_uri() + '?theme=quality&lang=zh&tab=pareto')
+    print('Browser checks: node scripts/smoke_report_ui.cjs')
+
+
+if __name__ == '__main__':
+    main()

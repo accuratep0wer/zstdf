@@ -366,7 +366,7 @@ without buffering all inputs or opening one Parquet writer per source at once.
 Milestone implemented:
 
 - Rust `files_to_partitioned_parquet_dir` with per-file and total summaries.
-- CLI `convert-many --output-dir DIR [--partition-by lot-id,wafer-id] INPUT...`.
+- CLI `convert --output-dir DIR [--partition-by lot-id,wafer-id] INPUT...`.
 - Python `write_parquet_many(...)` returning `(files, rows)` and releasing the GIL.
 - Recursive CLI discovery of `.std`, `.stdf`, `.std.gz`, and `.stdf.gz`; explicit
   files can have other extensions. Canonical paths are sorted and deduplicated;
@@ -450,9 +450,10 @@ Implementation and scope:
 - The bounded converter currently supports PTR EAV output. MPR and FTR return
   an unsupported-expansion error instead of silently losing measurements; large
   MPR result counts are checked against the pending-test limit first.
-- CLI: `convert-partitioned --output-dir DIR [resource limits] INPUT...`.
+- CLI: `convert --layout catalog --output-dir DIR [resource limits] INPUT...`.
   Python: `write_parquet_partitioned(...)` returns `(files, rows, fragments)`.
-  The older `convert`/`convert-many` entry points retain their existing behavior.
+  The same `convert` command retains single-file and file-per-source behavior
+  when catalog layout is not selected.
 - The writer cache is limited by both open-file count and measured Parquet
   buffer size. Eviction closes an immutable fragment; a later visit creates a
   new numbered fragment. Each fragment contains at most one bounded row group.
@@ -524,7 +525,7 @@ Validation for 10C.2:
 
 Implementation and scope for 10C.2:
 
-- CLI `convert-partitioned` and Python `write_parquet_partitioned` now write
+- CLI `convert --layout catalog` and Python `write_parquet_partitioned` now write
   `_catalog.json` above immutable `objects/<generation>/source-...` fragments.
   Python signatures and tuple results remain unchanged. The lower-level Rust
   `files_to_partitioned_fragments` API remains available without a catalog.

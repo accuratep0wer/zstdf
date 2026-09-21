@@ -315,3 +315,77 @@ fn convert_directory_empty_directory_produces_no_output() {
     assert!(!output.exists());
     fs::remove_dir(dir).unwrap();
 }
+
+#[test]
+fn catalog_cli_accepts_mixed_mpr_ftr_and_preserves_snapshot_on_bad_update() {
+    let dir = tests::temp_path("mixed_mpr_catalog");
+    fs::create_dir(&dir).unwrap();
+    let input = dir.join("mixed.stdf");
+    let dataset = dir.join("dataset");
+    let html = dir.join("dashboard.html");
+    let base = tests::build_test_stdf();
+    let mut offset = 0;
+    while base[offset + 2..offset + 4] != [5, 20] {
+        offset += 4 + usize::from(u16::from_le_bytes([base[offset], base[offset + 1]]));
+    }
+    let mut mpr = 100u32.to_le_bytes().to_vec();
+    // TEST_NUM intentionally collides with the PTR and FTR.
+    mpr.extend([1, 0, 128, 0]);
+    mpr.extend(0u16.to_le_bytes());
+    mpr.extend(2u16.to_le_bytes());
+    mpr.extend(10f32.to_le_bytes());
+    mpr.extend(20f32.to_le_bytes());
+    let mut ftr = 100u32.to_le_bytes().to_vec();
+    ftr.extend([1, 0, 0]);
+    let mut bytes = base[..offset].to_vec();
+    for (sub, body) in [(15, mpr), (20, ftr)] {
+        bytes.extend((body.len() as u16).to_le_bytes());
+        bytes.extend([15, sub]);
+        bytes.extend(body);
+    }
+    bytes.extend(&base[offset..]);
+    fs::write(&input, &bytes).unwrap();
+    let args = [
+        "zstdf-cli",
+        "convert",
+        input.to_str().unwrap(),
+        "--output-dir",
+        dataset.to_str().unwrap(),
+        "--layout",
+        "catalog",
+        "--row-group-rows",
+        "1",
+    ];
+    let mut out = Vec::new();
+    execute(Cli::try_parse_from(args).unwrap(), &mut out).unwrap();
+    assert!(String::from_utf8(out).unwrap().contains("rows=5"));
+    execute(
+        Cli::try_parse_from([
+            "zstdf-cli",
+            "dashboard-dir",
+            dataset.to_str().unwrap(),
+            html.to_str().unwrap(),
+        ])
+        .unwrap(),
+        &mut Vec::new(),
+    )
+    .unwrap();
+    let report = fs::read_to_string(&html).unwrap();
+    assert!(report.contains("MPR result 0"));
+    assert!(report.contains("MPR result 1"));
+    assert!(report.contains("MPR overall"));
+    let snapshot = stdf_parquet::catalog::verify_catalog(&dataset)
+        .unwrap()
+        .sources;
+    // Declared result count no longer fits the available RTN_RSLT array.
+    bytes[offset + 4 + 10] = 3;
+    fs::write(&input, bytes).unwrap();
+    assert!(execute(Cli::try_parse_from(args).unwrap(), &mut Vec::new()).is_err());
+    let after = stdf_parquet::catalog::verify_catalog(&dataset).unwrap();
+    assert_eq!(
+        serde_json::to_value(snapshot).unwrap(),
+        serde_json::to_value(after.sources).unwrap()
+    );
+    assert_eq!(fs::read_to_string(&html).unwrap(), report);
+    fs::remove_dir_all(dir).unwrap();
+}

@@ -257,21 +257,6 @@ fn fragment(report: &Report) -> CliResult<String> {
     Ok(include_str!("ftr_pareto.html").replace("__FTR_DATA__", &json))
 }
 
-pub fn attach(html: String, inputs: &[PathBuf], output: &Path) -> CliResult<String> {
-    if inputs.is_empty() {
-        return Ok(html);
-    }
-    if !html.contains("<!-- FTR_PATTERN_ANALYSIS -->") {
-        return Err("dashboard template is missing the FTR Pareto section".into());
-    }
-    let fragment = fragment(&analyze(inputs, output, 50_000)?)?;
-    let html = html.replacen("<!-- FTR_PATTERN_ANALYSIS -->", &fragment, 1);
-    if html.len() > 256 * 1024 * 1024 {
-        return Err("FTR dashboard report exceeds 256 MiB".into());
-    }
-    Ok(html)
-}
-
 pub fn execute(args: Arguments, out: &mut impl Write) -> CliResult<()> {
     let limit = args
         .max_report_mib

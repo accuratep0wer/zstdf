@@ -427,3 +427,159 @@ fn prr(head_num: u8, site_num: u8, part_id: Option<&str>, part_flg: u8) -> Prr {
         part_fix: None,
     }
 }
+
+fn mpr_fixture(site: u8, flags: u8, values: &[f32]) -> stdf_core::records::Mpr {
+    let mut body = 700u32.to_le_bytes().to_vec();
+    body.extend([1, site, flags, 0]);
+    body.extend(0u16.to_le_bytes());
+    body.extend((values.len() as u16).to_le_bytes());
+    for value in values {
+        body.extend(value.to_le_bytes());
+    }
+    stdf_core::records::Mpr::parse(&mut stdf_core::fields::FieldReader::new(
+        &body,
+        stdf_core::ByteOrder::LittleEndian,
+    ))
+    .unwrap()
+}
+
+fn ftr_fixture(site: u8, flags: u8) -> stdf_core::records::Ftr {
+    let mut body = 700u32.to_le_bytes().to_vec();
+    body.extend([1, site, flags]);
+    stdf_core::records::Ftr::parse(&mut stdf_core::fields::FieldReader::new(
+        &body,
+        stdf_core::ByteOrder::LittleEndian,
+    ))
+    .unwrap()
+}
+
+#[test]
+fn mpr_and_ftr_expand_on_both_paths_without_cross_site_leakage() {
+    let records = vec![
+        StdfRecord::Pir(pir(1, 0)),
+        StdfRecord::Pir(pir(1, 1)),
+        StdfRecord::Mpr(mpr_fixture(0, 128, &[1.0, 2.0])),
+        StdfRecord::Ftr(ftr_fixture(1, 0)),
+        StdfRecord::Prr(prr(1, 1, Some("SAME"), 0)),
+        StdfRecord::Prr(prr(1, 0, Some("SAME"), 8)),
+    ];
+    let ordinary = records_to_batches(records.clone().into_iter().map(Ok), 1).unwrap();
+    let bounded = crate::bounded_record_batches(
+        records.into_iter().map(Ok),
+        crate::BatchLimits {
+            max_pending_tests: 4,
+            max_memory_bytes: 1024 * 1024,
+        },
+    )
+    .unwrap()
+    .collect::<Result<Vec<_>, _>>()
+    .unwrap();
+    assert_eq!(ordinary, bounded);
+    assert_eq!(bounded.iter().map(|b| b.num_rows()).sum::<usize>(), 4);
+    assert!(bounded[0].column(crate::schema::RESULT).is_null(0));
+    assert!(as_bool(&bounded[0], crate::schema::TEST_PASS).value(0));
+    let batch = &bounded[1];
+    assert_eq!(as_string(batch, crate::schema::TEST_TYPE).value(0), "MPR");
+    assert!(!as_bool(batch, crate::schema::TEST_PASS).value(0));
+    assert!(batch.column(crate::schema::TEST_PASS).is_null(1));
+    assert!(batch.column(crate::schema::TEST_PASS).is_null(2));
+    assert_eq!(as_f32(batch, crate::schema::RESULT).value(1), 1.0);
+    assert_eq!(as_f32(batch, crate::schema::RESULT).value(2), 2.0);
+    assert!(as_string(batch, crate::schema::TEST_TXT)
+        .value(2)
+        .ends_with("[MPR result 1]"));
+}
+
+#[test]
+fn mpr_budget_counts_every_emitted_row_and_releases_completed_parts() {
+    let limits = crate::BatchLimits {
+        max_pending_tests: 3,
+        max_memory_bytes: 1024 * 1024,
+    };
+    let records = vec![
+        StdfRecord::Mpr(mpr_fixture(0, 0, &[1.0, 2.0])),
+        StdfRecord::Ftr(ftr_fixture(1, 0)),
+    ];
+    let error = crate::bounded_record_batches(records.into_iter().map(Ok), limits)
+        .unwrap()
+        .next()
+        .unwrap()
+        .unwrap_err();
+    assert!(matches!(
+        error,
+        StdfError::ResourceLimit {
+            resource: "pending tests",
+            ..
+        }
+    ));
+    let records = vec![
+        StdfRecord::Mpr(mpr_fixture(0, 0, &[1.0, 2.0])),
+        StdfRecord::Prr(prr(1, 0, None, 0)),
+        StdfRecord::Mpr(mpr_fixture(1, 0, &[3.0, 4.0])),
+        StdfRecord::Prr(prr(1, 1, None, 0)),
+    ];
+    assert_eq!(
+        crate::bounded_record_batches(records.into_iter().map(Ok), limits)
+            .unwrap()
+            .collect::<Result<Vec<_>, _>>()
+            .unwrap()
+            .len(),
+        2
+    );
+    let memory = crate::BatchLimits {
+        max_pending_tests: 1000,
+        max_memory_bytes: 140_000,
+    };
+    let records = vec![Ok(StdfRecord::Mpr(mpr_fixture(0, 0, &[1.0; 20])))];
+    assert!(matches!(
+        crate::bounded_record_batches(records, memory)
+            .unwrap()
+            .next()
+            .unwrap(),
+        Err(StdfError::ResourceLimit {
+            resource: "pending bytes",
+            ..
+        })
+    ));
+}
+
+#[test]
+fn missing_mpr_arrays_fail_and_zero_results_retain_overall_verdict() {
+    let mut broken = mpr_fixture(0, 0, &[1.0, 2.0]);
+    broken.rtn_rslt = None;
+    assert!(records_to_batches(vec![Ok(StdfRecord::Mpr(broken.clone()))], 100).is_err());
+    let records = vec![Ok(StdfRecord::Mpr(broken))];
+    assert!(crate::bounded_record_batches(
+        records,
+        crate::BatchLimits {
+            max_pending_tests: 100,
+            max_memory_bytes: 1024 * 1024
+        }
+    )
+    .unwrap()
+    .next()
+    .unwrap()
+    .is_err());
+    for flags in [0, 128, 2, 4, 8, 16, 32, 64] {
+        let rows = records_to_batches(
+            vec![
+                Ok(StdfRecord::Mpr(mpr_fixture(0, flags, &[]))),
+                Ok(StdfRecord::Ftr(ftr_fixture(0, flags))),
+                Ok(StdfRecord::Prr(prr(1, 0, None, 0))),
+            ],
+            100,
+        )
+        .unwrap();
+        assert_eq!(rows[0].num_rows(), 2);
+        for row in 0..2 {
+            assert_eq!(
+                rows[0].column(crate::schema::TEST_PASS).is_null(row),
+                flags & 0x7e != 0
+            );
+        }
+    }
+}
+
+fn as_f32(batch: &arrow::record_batch::RecordBatch, index: usize) -> &arrow::array::Float32Array {
+    batch.column(index).as_any().downcast_ref().unwrap()
+}

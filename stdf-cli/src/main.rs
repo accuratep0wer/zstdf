@@ -14,6 +14,7 @@ use stdf_validate::{Severity, ValidationReport};
 mod conversion;
 mod dashboard;
 mod ftr_pareto;
+mod latest_pareto;
 mod partitioned;
 mod report_ui;
 mod sanity;
@@ -57,8 +58,8 @@ enum Command {
         max_lots: usize,
         #[arg(long, default_value_t = 100_000)]
         max_parts: usize,
-        /// Add FTR patterns below Failure Pareto from raw STDF inputs. Repeatable.
-        #[arg(long)]
+        /// Raw STDF evidence for latest-device bin/test/pattern Pareto. Repeatable.
+        #[arg(long = "stdf-input", visible_alias = "ftr-input")]
         ftr_input: Vec<PathBuf>,
     },
     /// Print file-level decode summary.
@@ -113,8 +114,8 @@ enum Command {
         /// Maximum numeric tests considered for correlation analysis.
         #[arg(long, default_value_t = 16)]
         max_correlation_tests: usize,
-        /// Add FTR patterns below Failure Pareto from raw STDF inputs. Repeatable.
-        #[arg(long)]
+        /// Raw STDF evidence for latest-device bin/test/pattern Pareto. Repeatable.
+        #[arg(long = "stdf-input", visible_alias = "ftr-input")]
         ftr_input: Vec<PathBuf>,
     },
 }

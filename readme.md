@@ -64,8 +64,8 @@ existing `eav-v2` Parquet contains PTR measurements, not FTR pattern names.
 
 ```powershell
 cargo build --release -p stdf-cli --locked
-# FTR pattern metrics appear below the existing Failure Pareto section:
-.\target\release\zstdf-cli.exe dashboard measurements.parquet dashboard.html --ftr-input C:\data
+# Latest-device Pareto: select Hard bin, Soft bin, Test, or FTR pattern:
+.\target\release\zstdf-cli.exe dashboard measurements.parquet dashboard.html --stdf-input C:\data
 # Optional standalone export when no measurement Parquet is available:
 .\target\release\zstdf-cli.exe ftr-pareto C:\data\run.stdf --output patterns.html
 # Reproducible synthetic demo:
@@ -252,7 +252,7 @@ conversion interfaces remain available. The following features are implemented; 
 | Single-file Parquet conversion, manifests, and retry reuse | `convert`, `--no-overwrite` |
 | Phase 10A single-file visualization | `dashboard` |
 | Phase 10B multi-file conversion and file-level partitioning | `convert --output-dir` |
-| Phase 10C.1 row partitioning and conversion within resource budgets | `convert --layout catalog` (currently supports PTR) |
+| Phase 10C.1 row partitioning and conversion within resource budgets | `convert --layout catalog` (PTR, MPR, and FTR) |
 | Phase 10C.2 dataset integrity, recovery, and multi-lot visualization | `verify-dataset`, `recover-dataset`, `dashboard-dir` |
 | Optional Python conversion interface | `_zstdf`; see [Optional Python Binding](#optional-python-binding) |
 
@@ -296,7 +296,7 @@ For bounded, mixed-lot/wafer PTR conversion from a directory:
 ```
 
 This workflow writes multiple Parquet fragments and supports resource limits.
-It currently supports PTR results; MPR/FTR expansion returns an explicit error.
+It supports PTR results, indexed MPR measurements with an overall verdict, and FTR verdicts.
 Its memory budget applies to accounted conversion state, not an OS-enforced
 resident-memory ceiling. Use `dashboard` for one Parquet file or `dashboard-dir`
 for a catalog-backed dataset. See [CLI documentation](docs/cli.md) for resource options, retries, and
@@ -330,7 +330,7 @@ xdg-open dashboard.html
 
 On a headless RHEL server, transfer `dashboard.html` to your desktop computer
 and open it in a browser. The generated HTML is self-contained; no web server
-is required. The same PTR-only and memory-accounting limits described above apply.
+is required. The same measurement coverage and memory-accounting limits described above apply.
 
 ## Run CP/FT Sanity Reports
 
@@ -723,6 +723,35 @@ Prints file/failure counts and the report path. Any failed input produces a
 nonzero exit status. More workers can increase memory usage, especially for gzip
 inputs; use one worker when diagnosing failures or working with limited RAM.
 
+### Latest-device Pareto
+
+The Pareto page selects **Hard bin**, **Soft bin**, **Test**, or **FTR pattern**.
+Choose **Stacked** or **Side by side**, color by lot/wafer/head-site, and enable
+**Show passing bins** when needed. Each failure mode counts a device at most once.
+
+Device identity is lot + wafer scribe/ID when available + positive X/Y from PRR,
+falling back to the complete PTR coordinate pair. MIR `START_T` selects the
+latest run; source-local PRR order selects the latest attempt within one run.
+Tied timestamps across sources, missing timestamps that prevent ordering, and
+unresolved identities are excluded with an audit entry. The evidence JSON stores
+`is_latest` as true, false, or null. Earlier tests are never carried into a newer
+attempt. Other Dashboard pages retain their existing measurement statistics.
+
+```powershell
+# Catalog dashboards discover the catalog's unchanged source STDF files.
+.\target\release\zstdf-cli.exe dashboard-dir dataset dashboard.html
+# A single-Parquet dashboard needs raw evidence for MIR times and FTR patterns.
+.\target\release\zstdf-cli.exe dashboard output.parquet dashboard.html --stdf-input C:\data\inputs
+# Generate a two-lot example with known retest outcomes.
+python examples/latest-pareto/generate_demo.py
+```
+
+`--ftr-input` remains an alias for `--stdf-input`. Explicit raw inputs define the
+Pareto population; supply the matching dataset sources. The standalone
+`ftr-pareto` command retains its historical FTR-attempt counting policy.
+See [latest-device Pareto](docs/latest-pareto.md) for ordering, identity, limits,
+and verification details.
+
 ### Conversion Command Selection
 
 All conversion uses `convert`. The former `convert-many` and
@@ -805,11 +834,27 @@ zstdf-cli convert --layout catalog inputs --output-dir dataset --memory-limit-mi
 | `--max-output-files N` | `10000` | Maximum generated fragments for an invocation; also affects reserved metadata memory. |
 | `--continue-on-error` | Off | Continue processing other inputs after an input fails, rather than stopping at the first failure. Any failures still result in a nonzero CLI exit status. |
 
-Resource limits must be positive. Currently supports PTR results; unsupported
-MPR/FTR expansion is an explicit error. Prints rows, fragments, writer/memory
+Resource limits must be positive. Supports PTR results, MPR overall verdicts
+and indexed measurements, and FTR verdicts. Prints rows, fragments, writer/memory
 peaks, and failures. Inspect `_catalog.json` for run status and failed inputs.
 Catalog layout rejects `--no-overwrite` and `--batch-size`; dataset identity and current versions
 are managed through its catalog.
+
+MPR conversion emits one `[MPR overall]` row carrying the record verdict and
+one `[MPR result N]` row for each `RTN_RSLT` value (zero-based position). The
+original test text is retained as the label prefix. Individual measurement rows
+have unknown pass/fail because the MPR flag describes the complete test; raw
+limits remain available for separate limit comparisons. Dashboard statistics
+and correlations keep these positions separate. Positions are not inferred pin
+identities, and return states, stimulus axes, and pin maps are not expanded.
+FTR rows contain the verdict and a null numeric result. Use `--stdf-input` for
+`VECT_NAM` pattern analysis. `--max-pending-tests` counts emitted EAV rows,
+including MPR overall rows, across all open sites.
+
+The Arrow schema remains `eav-v2`. Conversion fingerprints changed so catalog
+and file-per-source retries regenerate old results rather than reusing an
+older conversion. Single-file `--no-overwrite` deliberately returns existing
+output; omit it when regenerating a single-file export with MPR/FTR coverage.
 
 ### `verify-dataset`: Check Dataset Integrity
 

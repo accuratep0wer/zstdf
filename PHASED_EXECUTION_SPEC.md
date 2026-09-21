@@ -447,9 +447,10 @@ Implementation and scope:
 - Active parts snapshot lot/wafer metadata at PIR (or their first PTR for an
   implicit part). SDR mappings select the wafer group for each head/site;
   interleaved parts are not reassigned when another wafer starts or finishes.
-- The bounded converter currently supports PTR EAV output. MPR and FTR return
-  an unsupported-expansion error instead of silently losing measurements; large
-  MPR result counts are checked against the pending-test limit first.
+- The bounded converter supports PTR measurements, MPR overall-verdict and
+  indexed measurement rows, and FTR verdict rows. MPR result counts are checked
+  against pending-row and byte limits before expansion. Per-result MPR verdicts
+  remain unknown; Dashboard statistics separate indexed result positions.
 - CLI: `convert --layout catalog --output-dir DIR [resource limits] INPUT...`.
   Python: `write_parquet_partitioned(...)` returns `(files, rows, fragments)`.
   The same `convert` command retains single-file and file-per-source behavior
@@ -599,8 +600,8 @@ Validation before implementation:
 - Define retest/part-instance and test-program identity in a versioned schema
   before changing counting semantics. Include repeated PART_ID, reused test
   numbers with different units/limits, and per-wafer XY selection regressions.
-- Retain explicit PTR-only behavior in bounded conversion until a separately
-  validated MPR/FTR expansion milestone is implemented.
+- Bounded MPR/FTR expansion is implemented with array validation, interleaved
+  site ownership, per-result grouping, and pending-row/byte budget tests.
 
 ### 10D.1: bounded scratch-store foundation (implemented)
 

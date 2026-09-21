@@ -108,7 +108,7 @@ pub(crate) fn files_to_partitioned_fragments_with_limit(
         .map(fs::canonicalize)
         .collect::<std::io::Result<BTreeSet<_>>>()?;
     let config = format!(
-        "fragment-v3|eav-v2|coordinate-v1|{:?}|{}|{}|{}|{}|{}",
+        "fragment-v3|eav-v2|coordinate-v1|mpr-ftr-v1|{:?}|{}|{}|{}|{}|{}",
         keys,
         options.max_memory_bytes,
         options.max_pending_tests,

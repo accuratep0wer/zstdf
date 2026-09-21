@@ -22,7 +22,7 @@ pub struct Arguments {
     /// Write multiple sources under this directory (recursive STDF/gzip scanning).
     #[arg(long)]
     output_dir: Option<PathBuf>,
-    /// Directory layout; defaults to files. Catalog supports PTR results only.
+    /// Directory layout; defaults to files. Supports PTR, MPR measurements, and FTR verdicts.
     #[arg(long, value_enum, requires = "output_dir")]
     layout: Option<Layout>,
     /// Comma-separated keys; defaults to input-file (files) or lot-id,wafer-id (catalog).

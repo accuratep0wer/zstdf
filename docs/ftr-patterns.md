@@ -1,13 +1,17 @@
 # FTR pattern failure Pareto and yield
 
-FTR pattern metrics appear **below the existing Failure Pareto chart and test
-table**, within the Dashboard's existing **Pareto** page. `dashboard` and
-`dashboard-dir` accept repeatable `--ftr-input` paths for raw STDF files,
-directories, and gzip files. There is no separate FTR navigation tab.
+The Dashboard's **Pareto** page now uses a single level selector: **Hard bin**,
+**Soft bin**, **Test**, or **FTR pattern**. It counts unique devices from their
+latest attempt, ordered by MIR `START_T`. See [latest-device Pareto](latest-pareto.md).
 
-The existing `eav-v2` conversion stores PTR measurements and does not carry
-`VECT_NAM`, so FTR metrics read the supplied STDF inputs directly. The optional
-`ftr-pareto` command remains available for a standalone HTML export.
+`dashboard` accepts repeatable `--stdf-input` paths (`--ftr-input` is an alias).
+`dashboard-dir` automatically discovers the catalog's source STDF files unless
+explicit inputs are supplied. Pattern data comes from these raw sources because
+`eav-v2` does not store `VECT_NAM` or MIR run times.
+
+The optional **standalone `ftr-pareto` command** retains its all-FTR-attempt
+policy. The calculation and controls below describe that standalone report,
+not the Dashboard's latest-device Pareto.
 
 ## Build and run
 
@@ -20,9 +24,9 @@ cargo build --release -p stdf-cli --locked
 .\target\release\zstdf-cli.exe ftr-pareto C:\data\run.stdf --output patterns.html
 .\target\release\zstdf-cli.exe ftr-pareto C:\data\CP C:\data\FT --output patterns.html
 
-# Add FTR metrics under the existing Failure Pareto section.
-.\target\release\zstdf-cli.exe dashboard measurements.parquet dashboard.html --ftr-input C:\data\CP --ftr-input C:\data\FT
-.\target\release\zstdf-cli.exe dashboard-dir dataset dashboard.html --ftr-input C:\data
+# Enable the Dashboard latest-device Pareto (select FTR pattern).
+.\target\release\zstdf-cli.exe dashboard measurements.parquet dashboard.html --stdf-input C:\data\CP --stdf-input C:\data\FT
+.\target\release\zstdf-cli.exe dashboard-dir dataset dashboard.html --stdf-input C:\data
 ```
 
 On Linux/macOS use `./target/release/zstdf-cli` and platform-appropriate paths.
@@ -77,8 +81,8 @@ optional export utility when a measurement Parquet file is not available.
 - Export evidence JSON includes all source hashes, paths, scoped counts, and
   schema `ftr-patterns-v1`, independent of filters. It is aggregated evidence;
   individual raw FTR records remain in the source STDF.
-- Dashboard FTR filters are independent of measurement/dashboard filters. Supply
-  the matching STDF population explicitly when comparing these two views.
+- Standalone filters apply to the raw inputs passed to `ftr-pareto`. Dashboard
+  Pareto uses its shared lot/search filters and the latest-device policy.
 
 ## Limits and failure behavior
 
@@ -102,7 +106,7 @@ an explicit empty report, not an inferred 100% yield.
 ## Synthetic demo and verification
 
 For all reports and browser-test inputs, run `python scripts/generate_report_demos.py`
-after building the release CLI. This also prepares the PTR-only dataset needed
+after building the release CLI. This also prepares the mixed PTR/MPR/FTR dataset needed
 by `smoke_report_ui.cjs`. The commands below generate only the FTR example and
 its companion single-file Dashboard.
 
@@ -115,7 +119,7 @@ cargo test -p stdf-cli ftr_pareto --locked
 # Prepare the companion measurement dashboard for browser integration checks:
 python examples/sanity/generate_demo.py
 .\target\release\zstdf-cli.exe convert examples/sanity/generated/cp.stdf examples/ftr-patterns/generated/cp.parquet
-.\target\release\zstdf-cli.exe dashboard examples/ftr-patterns/generated/cp.parquet examples/ftr-patterns/generated/dashboard.html --ftr-input examples/ftr-patterns/generated/patterns.stdf --ftr-input examples/ftr-patterns/generated/patterns.stdf.gz
+.\target\release\zstdf-cli.exe dashboard examples/ftr-patterns/generated/cp.parquet examples/ftr-patterns/generated/dashboard.html --stdf-input examples/ftr-patterns/generated/patterns.stdf --stdf-input examples/ftr-patterns/generated/patterns.stdf.gz
 # Requires Playwright and an installed Microsoft Edge browser.
 node scripts/smoke_ftr_patterns.cjs
 ```

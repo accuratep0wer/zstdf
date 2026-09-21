@@ -26,13 +26,13 @@ const cases=[
    if(kind==='dashboard'||kind==='dataset'){
     assert.equal(await page.locator('.tab').count(),6);
     assert.ok(await page.locator('#pareto').isVisible());
-    await page.locator('[data-tab=pareto]').click();assert.equal(await page.locator('#pareto #fp').count(),1);
-    assert.ok(await page.locator('#fp').evaluate(n=>n.compareDocumentPosition(document.querySelector('#pareto-table'))&Node.DOCUMENT_POSITION_PRECEDING));
-    await page.locator('#fp-search').fill('scan/core');
-    await page.locator('#fp-table th button').filter({hasText:'VECT_NAM'}).click();
-    await page.locator('#fp-table tbody button').first().click();
-    await page.locator('#fp-close').click();
-    if(kind==='dataset')await page.locator('#lot-select').selectOption('1');
+    await page.locator('[data-tab=pareto]').click();assert.equal(await page.locator('#pareto #latest-pareto').count(),1);
+    await page.locator('#lp-level').selectOption('hard_bin');
+    await page.locator('#lp-passing').check();
+    await page.locator('#search').fill('HBIN');
+    await page.locator('#pareto-table [data-sort="label"]').click();
+    await page.locator('#pareto-table tbody button').first().click();
+    await page.locator('#lp-close').click();
    }else if(kind==='sanity'){
     await page.locator('#units tr').first().click();await page.locator('#search').fill('UNIT1');
    }else if(kind==='traceability'){
@@ -49,10 +49,10 @@ const cases=[
      const misses=await page.evaluate(()=>[...document.querySelectorAll('[data-i18n]')].filter(n=>n.textContent!==ReportUI.t(n.dataset.i18n)).map(n=>n.dataset.i18n));assert.deepEqual(misses,[]);
      if(kind==='dashboard'||kind==='dataset'){
       assert.ok(await page.locator('#pareto').evaluate(n=>n.classList.contains('active')));
-      assert.equal(await page.locator('#fp-search').inputValue(),'scan/core');assert.equal(await page.locator('#fp-table tbody tr').count(),1);
-      assert.equal(await page.locator('#fp-table tbody button').textContent(),'scan/core_at_speed');
-      assert.equal(await page.locator('#fp-table th').first().getAttribute('aria-sort'),'ascending');
-      assert.equal(await page.locator('#fp-table tbody td').nth(3).textContent(),'5');
+      assert.equal(await page.locator('#search').inputValue(),'HBIN');assert.equal(await page.locator('#pareto-table tbody tr').count(),1);
+      assert.equal(await page.locator('#pareto-table tbody button').textContent(),'HBIN 1');
+      assert.equal(await page.locator('#pareto-table th').first().getAttribute('aria-sort'),'ascending');
+      assert.equal(await page.locator('#lp-passing').isChecked(),true);
      }else if(kind==='sanity'){
       assert.equal(await page.locator('#search').inputValue(),'UNIT1');assert.match(await page.locator('#unit-id').textContent(),/1/);
       assert.equal(await page.locator('#units tr.selected').count(),1);assert.match(await page.locator('#metadata').textContent(),/LOT001/);
@@ -67,7 +67,7 @@ const cases=[
     for(const tab of ['overview','pareto','commonality','correlation','spatial','quality']){
      await page.locator('[data-tab='+tab+']').click();assert.ok(await page.locator('#'+tab).isVisible());
     }
-    await page.locator('[data-tab=pareto]').click();await page.locator('#fp-reset').click();
+    await page.locator('[data-tab=pareto]').click();await page.locator('#search').fill('');
    }
    await page.locator('#report-language').selectOption('zh');await page.locator('#report-theme').selectOption('dark');
    await page.screenshot({path:path.join(output,kind+'-dark-zh.png'),fullPage:true});

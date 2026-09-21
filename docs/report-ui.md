@@ -3,7 +3,7 @@
 Generated HTML reports share a top-right **Page style** and **Language** selector:
 
 - Measurement Dashboard, including all six existing tabs and dataset dashboards.
-- FTR pattern analysis below the existing Failure Pareto chart and test table.
+- Latest-device Pareto with bin/test/FTR-pattern levels and stacked/grouped bars.
 - Sanity reports, including CP, FT, mixed-run, and vendor-record reports.
 - Traceability reports, including the device matrix, anomalies, and attempt details.
 - The optional standalone FTR export.
@@ -46,16 +46,17 @@ need regeneration with the updated CLI.
 cargo build --release -p stdf-cli --locked
 
 # FTR is part of the existing Pareto page; raw STDF is needed for VECT_NAM.
-.\target\release\zstdf-cli.exe dashboard measurements.parquet dashboard.html --ftr-input C:\data
-.\target\release\zstdf-cli.exe dashboard-dir dataset dashboard.html --ftr-input C:\data
+.\target\release\zstdf-cli.exe dashboard measurements.parquet dashboard.html --stdf-input C:\data
+.\target\release\zstdf-cli.exe dashboard-dir dataset dashboard.html --stdf-input C:\data
 
 .\target\release\zstdf-cli.exe sanity C:\data\cp.stdf --test-domain cp --output-dir sanity-report
 .\target\release\zstdf-cli.exe traceability C:\data --flow-config flow.json --output trace.html
 ```
 
-FTR inputs still have their own labeled filters within the Pareto page because
+Standalone FTR-attempt reports retain their own filters because
 existing measurement Parquet does not carry FTR pattern names. Device-yield
-semantics and report evidence schemas are unchanged. Theme/language support does
+semantics outside Pareto remain unchanged. Latest-device Pareto has its own
+`latest-device-pareto-v1` evidence with selection flags. Theme/language support does
 not promote the separate compact Traceability design preview or its experimental
 column-filter layout into the production template.
 
@@ -65,7 +66,7 @@ column-filter layout into the production template.
 and styles, existing Pareto placement, retained filters/selections, unchanged
 evidence, responsive layout, offline operation, and browser preference persistence.
 Generate all required fixtures and reports with one command. The generator uses
-only synthetic inputs, prepares a PTR-only dataset for the bounded converter,
+only synthetic inputs, prepares a mixed PTR/MPR/FTR dataset for the bounded converter,
 and rebuilds the Dashboard, CP/FT/mixed/vendor Sanity, and Traceability demos.
 It replaces named generated outputs and preserves unrelated files. It runs from
 any working directory; `--cli` can select a different built executable.

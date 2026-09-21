@@ -23,7 +23,9 @@ pub fn records_to_batches(
     let mut batches = Vec::new();
 
     for record in records {
-        if let Some(batch) = builder.push_record(&record?) {
+        let record = record?;
+        context::validate_expansion(&record)?;
+        if let Some(batch) = builder.push_record(&record) {
             batches.push(batch);
         }
     }
@@ -65,6 +67,10 @@ where
         for record in self.records.by_ref() {
             match record {
                 Ok(record) => {
+                    if let Err(error) = context::validate_expansion(&record) {
+                        self.finished = true;
+                        return Some(Err(error));
+                    }
                     if let Some(batch) = self.builder.push_record(&record) {
                         return Some(Ok(batch));
                     }

@@ -133,7 +133,7 @@ pub fn files_to_partitioned_parquet_dir(
         // A fixed FNV-1a 128-bit fingerprint is stable across Rust versions and run order.
         // It identifies local sources, and is not a cryptographic integrity guarantee.
         let path_hash = hash_bytes(
-            hash_bytes(HASH_INIT, b"eav-v2|coordinate-v1"),
+            hash_bytes(HASH_INIT, b"eav-v2|coordinate-v1|mpr-ftr-v1"),
             path.as_os_str().as_encoded_bytes(),
         );
         output.push(format!(

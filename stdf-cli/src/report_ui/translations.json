@@ -71,10 +71,10 @@
   ],
   "Devices": [
     "Devices",
-    "器件",
-    "デバイス",
-    "디바이스",
-    "Bauteile"
+    "器件数",
+    "デバイス数",
+    "디바이스 수",
+    "Geräte"
   ],
   "Tests / retests": [
     "Tests / retests",
@@ -2168,5 +2168,229 @@
     "座標識別未解決",
     "좌표 식별 미확정",
     "Koordinatenidentität ungeklärt"
+  ],
+  "Latest-device Pareto": [
+    "Latest-device Pareto",
+    "最新器件结果 Pareto",
+    "デバイス最新結果のパレート図",
+    "디바이스 최신 결과 파레토",
+    "Pareto der neuesten Geräteergebnisse"
+  ],
+  "Analysis level": [
+    "Analysis level",
+    "分析层级",
+    "分析レベル",
+    "분석 수준",
+    "Analyseebene"
+  ],
+  "Hard bin": [
+    "Hard bin",
+    "硬件 Bin",
+    "ハードビン",
+    "하드 빈",
+    "Hardware-Bin"
+  ],
+  "Soft bin": [
+    "Soft bin",
+    "软件 Bin",
+    "ソフトビン",
+    "소프트 빈",
+    "Software-Bin"
+  ],
+  "FTR pattern": [
+    "FTR pattern",
+    "FTR 测试图形",
+    "FTR パターン",
+    "FTR 패턴",
+    "FTR-Testmuster"
+  ],
+  "Bar layout": [
+    "Bar layout",
+    "柱形排列",
+    "棒の配置",
+    "막대 배치",
+    "Balkenanordnung"
+  ],
+  "Stacked": [
+    "Stacked",
+    "堆叠",
+    "積み上げ",
+    "누적",
+    "Gestapelt"
+  ],
+  "Side by side": [
+    "Side by side",
+    "并排",
+    "並列",
+    "나란히",
+    "Nebeneinander"
+  ],
+  "Color by": [
+    "Color by",
+    "颜色分组",
+    "色分け",
+    "색상 기준",
+    "Farbe nach"
+  ],
+  "None": [
+    "None",
+    "无",
+    "なし",
+    "없음",
+    "Keine"
+  ],
+  "Passing bins": [
+    "Passing bins",
+    "通过 Bin",
+    "合格ビン",
+    "통과 빈",
+    "Bestandene Bins"
+  ],
+  "Show passing bins": [
+    "Show passing bins",
+    "显示通过 Bin",
+    "合格ビンを表示",
+    "통과 빈 표시",
+    "Bestandene Bins anzeigen"
+  ],
+  "Selection audit": [
+    "Selection audit",
+    "选择依据",
+    "選択監査",
+    "선택 검증",
+    "Auswahlnachweis"
+  ],
+  "Device": [
+    "Device",
+    "器件",
+    "デバイス",
+    "디바이스",
+    "Gerät"
+  ],
+  "Latest flag": [
+    "Latest flag",
+    "最新标记",
+    "最新フラグ",
+    "최신 플래그",
+    "Neueste-Markierung"
+  ],
+  "Reason": [
+    "Reason",
+    "原因",
+    "理由",
+    "사유",
+    "Grund"
+  ],
+  "Failure mode": [
+    "Failure mode",
+    "失败模式",
+    "不良モード",
+    "불량 유형",
+    "Fehlermodus"
+  ],
+  "devices": [
+    "devices",
+    "器件",
+    "デバイス",
+    "디바이스",
+    "Geräte"
+  ],
+  "Earlier attempt": [
+    "Earlier attempt",
+    "较早测试",
+    "以前の試行",
+    "이전 시도",
+    "Früherer Versuch"
+  ],
+  "unresolved_identity": [
+    "unresolved_identity",
+    "身份无法解析",
+    "識別情報を解決できません",
+    "식별 정보 확인 불가",
+    "Identität nicht auflösbar"
+  ],
+  "ambiguous_wafer": [
+    "ambiguous_wafer",
+    "晶圆归属不明确",
+    "ウェーハの対応が不明",
+    "웨이퍼 연결 불명확",
+    "Wafer-Zuordnung unklar"
+  ],
+  "ambiguous_latest": [
+    "ambiguous_latest",
+    "最新顺序不明确",
+    "最新の試行を確定できません",
+    "최신 시도 불명확",
+    "Neuester Versuch unklar"
+  ],
+  "{selected} latest devices · {old} earlier attempts excluded": [
+    "{selected} latest devices · {old} earlier attempts excluded",
+    "{selected} 个最新器件 · 已排除 {old} 次历史测试",
+    "最新デバイス {selected} 個 · 以前の試行 {old} 件を除外",
+    "최신 디바이스 {selected}개 · 이전 시도 {old}건 제외",
+    "{selected} neueste Geräte · {old} frühere Versuche ausgeschlossen"
+  ],
+  "{ambiguous} devices have ambiguous latest attempts; {unresolved} attempts have unresolved identities.": [
+    "{ambiguous} devices have ambiguous latest attempts; {unresolved} attempts have unresolved identities.",
+    "{ambiguous} 个器件无法确定最新测试；{unresolved} 次测试身份无法解析。",
+    "{ambiguous} 個で最新試行が不明、{unresolved} 件で識別情報が未解決です。",
+    "디바이스 {ambiguous}개의 최신 시도가 불명확하며 시도 {unresolved}건의 식별 정보가 확인되지 않았습니다.",
+    "Bei {ambiguous} Geräten ist der neueste Versuch unklar; {unresolved} Versuche haben keine auflösbare Identität."
+  ],
+  "Page {page} of {pages} · {total} modes": [
+    "Page {page} of {pages} · {total} modes",
+    "第 {page}/{pages} 页 · 共 {total} 种模式",
+    "{page}/{pages} ページ · {total} モード",
+    "{page}/{pages} 페이지 · {total}개 유형",
+    "Seite {page} von {pages} · {total} Modi"
+  ],
+  "Showing {shown} of {total} audit entries; JSON contains all attempts.": [
+    "Showing {shown} of {total} audit entries; JSON contains all attempts.",
+    "显示 {total} 条审计记录中的 {shown} 条；JSON 包含全部测试。",
+    "監査 {total} 件中 {shown} 件を表示。JSON には全試行を含みます。",
+    "검증 항목 {total}건 중 {shown}건 표시. JSON에 모든 시도가 포함됩니다.",
+    "{shown} von {total} Nachweisen angezeigt; JSON enthält alle Versuche."
+  ],
+  "Raw STDF evidence is required. Regenerate with --stdf-input to enable latest-device Pareto.": [
+    "Raw STDF evidence is required. Regenerate with --stdf-input to enable latest-device Pareto.",
+    "需要原始 STDF。请使用 --stdf-input 重新生成，以启用最新器件 Pareto。",
+    "元の STDF が必要です。--stdf-input を指定して再生成してください。",
+    "원본 STDF가 필요합니다. --stdf-input으로 다시 생성하세요.",
+    "STDF-Quelldaten erforderlich. Mit --stdf-input neu erzeugen."
+  ],
+  "Latest Pareto unavailable: source STDF files are missing or differ from the catalog snapshot. Reconvert the source files before generating this report.": [
+    "Latest Pareto unavailable: source STDF files are missing or differ from the catalog snapshot. Reconvert the source files before generating this report.",
+    "最新 Pareto 不可用：源 STDF 缺失或与目录快照不一致。请先重新转换源文件。",
+    "最新パレート図は利用できません。元の STDF がないか、カタログと異なります。再変換してください。",
+    "최신 파레토를 사용할 수 없습니다. 원본 STDF가 없거나 카탈로그 스냅샷과 다릅니다. 다시 변환하세요.",
+    "Neuestes Pareto nicht verfügbar: STDF-Quellen fehlen oder weichen vom Katalog ab. Quelldateien erneut konvertieren."
+  ],
+  "One selected attempt per lot + wafer + X/Y device. Latest is determined by MIR START_T; source-local order breaks ties within a run.": [
+    "One selected attempt per lot + wafer + X/Y device. Latest is determined by MIR START_T; source-local order breaks ties within a run.",
+    "按 lot + 晶圆 + X/Y 器件选取一次测试。MIR START_T 决定最新运行；同次运行内按源记录顺序选择。",
+    "ロット＋ウェーハ＋X/Y ごとに1試行を選択。MIR START_T で最新ランを決定し、同一ラン内は記録順で選択します。",
+    "로트 + 웨이퍼 + X/Y 디바이스별 한 시도를 선택합니다. MIR START_T로 최신 실행을 정하고 동일 실행에서는 기록 순서를 사용합니다.",
+    "Ein Versuch je Los + Wafer + X/Y. MIR START_T bestimmt den neuesten Lauf; innerhalb eines Laufs entscheidet die Aufzeichnungsreihenfolge."
+  ],
+  "Bins count devices; test and pattern modes count failing devices once per mode. An earlier attempt never supplies missing tests to the selected attempt.": [
+    "Bins count devices; test and pattern modes count failing devices once per mode. An earlier attempt never supplies missing tests to the selected attempt.",
+    "Bin 统计器件数；测试和图形层级按失败器件去重计数。不使用历史测试补齐最新测试中缺失的项目。",
+    "ビンはデバイス数、テストとパターンはモードごとの不良デバイス数です。以前の試行から欠落テストを補完しません。",
+    "빈은 디바이스 수를, 테스트와 패턴은 유형별 불량 디바이스 수를 집계합니다. 이전 시도로 누락된 테스트를 채우지 않습니다.",
+    "Bins zählen Geräte; Tests und Muster zählen fehlerhafte Geräte je Modus einmal. Fehlende Tests werden nicht aus früheren Versuchen ergänzt."
+  ],
+  "Unresolved identities and ambiguous latest attempts are excluded and listed here. Missing wafer information stays separate from known wafer identities.": [
+    "Unresolved identities and ambiguous latest attempts are excluded and listed here. Missing wafer information stays separate from known wafer identities.",
+    "身份无法解析或最新顺序不明确的记录排除并列于此处。缺失晶圆信息的身份不与已知晶圆身份合并。",
+    "識別不能または最新不明の試行は除外してここに表示します。ウェーハ情報なしの識別子は既知ウェーハと統合しません。",
+    "식별 불가 또는 최신 시도가 불명확한 항목은 제외되어 여기에 표시됩니다. 웨이퍼 정보가 없는 항목은 알려진 웨이퍼와 병합하지 않습니다.",
+    "Nicht auflösbare Identitäten und unklare neueste Versuche werden ausgeschlossen und hier aufgeführt. Fehlende Wafer-Informationen bleiben von bekannten Wafern getrennt."
+  ],
+  "This page uses the supplied raw STDF population. Other pages retain measurement-snapshot statistics.": [
+    "This page uses the supplied raw STDF population. Other pages retain measurement-snapshot statistics.",
+    "本页使用所提供的原始 STDF 数据。其他页面保留测量快照统计口径。",
+    "このページは指定された元の STDF を使用します。他のページは測定スナップショットの統計です。",
+    "이 페이지는 제공된 원본 STDF를 사용합니다. 다른 페이지는 측정 스냅샷 통계를 유지합니다.",
+    "Diese Seite verwendet die angegebenen STDF-Quelldaten. Andere Seiten behalten die Statistik des Messdaten-Snapshots bei."
   ]
 }

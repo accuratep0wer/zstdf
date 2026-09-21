@@ -1,0 +1,97 @@
+<!-- Copyright 2026 zstdf contributors. SPDX-License-Identifier: Apache-2.0 -->
+<style>
+#latest-pareto [hidden]{display:none!important}
+#latest-pareto{color:var(--ui-ink);background:var(--ui-surface);border:1px solid var(--ui-line);padding:16px}#latest-pareto .lp-tools{display:flex;flex-wrap:wrap;gap:12px;align-items:end;margin:12px 0}#latest-pareto h2{font-size:18px;margin:0 0 8px}#latest-pareto label{display:grid;gap:4px;font-size:12px}#latest-pareto select,#latest-pareto button{font:inherit;color:var(--ui-ink);background:var(--ui-control);border:1px solid var(--ui-line);padding:6px;border-radius:3px}#latest-pareto button{cursor:pointer}#latest-pareto .lp-note{color:var(--ui-muted);font-size:12px;margin:8px 0}#latest-pareto .lp-legend{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;margin:10px 0}#latest-pareto .lp-chip{display:inline-block;width:12px;height:12px;margin-right:5px;vertical-align:middle}#latest-pareto .lp-scroll{overflow:auto;max-height:650px;border:1px solid var(--ui-line)}#latest-pareto svg{display:block;min-width:720px;width:100%;background:var(--ui-surface)}#latest-pareto svg text{font:12px system-ui,sans-serif;fill:var(--ui-ink)}#latest-pareto svg rect[role=button]{cursor:pointer;outline-offset:2px}#latest-pareto table{width:100%;border-collapse:collapse;font-size:12px;font-variant-numeric:tabular-nums}#latest-pareto th,#latest-pareto td{border:1px solid var(--ui-line);padding:3px 8px;height:24px;text-align:right}#latest-pareto th{background:var(--ui-th)}#latest-pareto td:first-child,#latest-pareto th:first-child{text-align:left}#latest-pareto .lp-alert{background:var(--ui-warn);color:var(--ui-warn-ink);padding:8px;border-left:3px solid var(--ui-warn-ink)}#latest-pareto details{margin-top:14px}#latest-pareto pre{white-space:pre-wrap;overflow-wrap:anywhere;max-height:350px;overflow:auto}#latest-pareto dialog{width:min(1100px,95vw);max-height:85vh;background:var(--ui-surface);color:var(--ui-ink);border:1px solid var(--ui-line)}#latest-pareto dialog::backdrop{background:#14253688}#latest-pareto .lp-foot{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:10px 0}
+</style>
+<div id="latest-pareto">
+<h2 data-i18n="Latest-device Pareto">Latest-device Pareto</h2>
+<p class="lp-note" data-i18n="One selected attempt per lot + wafer + X/Y device. Latest is determined by MIR START_T; source-local order breaks ties within a run.">One selected attempt per lot + wafer + X/Y device. Latest is determined by MIR START_T; source-local order breaks ties within a run.</p>
+<p class="lp-note" data-i18n="This page uses the supplied raw STDF population. Other pages retain measurement-snapshot statistics.">This page uses the supplied raw STDF population. Other pages retain measurement-snapshot statistics.</p>
+<div class="lp-tools">
+<label><span data-i18n="Analysis level">Analysis level</span><select id="lp-level"><option value="hard_bin" data-i18n="Hard bin">Hard bin</option><option value="soft_bin" data-i18n="Soft bin">Soft bin</option><option value="tests" data-i18n="Test">Test</option><option value="patterns" data-i18n="FTR pattern">FTR pattern</option></select></label>
+<label><span data-i18n="Bar layout">Bar layout</span><select id="lp-layout"><option value="stacked" data-i18n="Stacked">Stacked</option><option value="grouped" data-i18n="Side by side">Side by side</option></select></label>
+<label><span data-i18n="Color by">Color by</span><select id="lp-series"><option value="lot" data-i18n="Lot">Lot</option><option value="wafer" data-i18n="Wafer">Wafer</option><option value="site" data-i18n="Head / site">Head / site</option><option value="none" data-i18n="None">None</option></select></label>
+<label id="lp-passing-label"><span data-i18n="Passing bins">Passing bins</span><span><input id="lp-passing" type="checkbox"><span data-i18n="Show passing bins">Show passing bins</span></span></label>
+<button id="lp-export" data-i18n="Export evidence JSON">Export evidence JSON</button><button id="lp-csv" data-i18n="Export filtered CSV">Export filtered CSV</button>
+</div>
+<p id="lp-summary" class="lp-note" aria-live="polite"></p><p id="lp-issues" class="lp-alert" hidden></p>
+<p class="lp-note" data-i18n="Bins count devices; test and pattern modes count failing devices once per mode. An earlier attempt never supplies missing tests to the selected attempt.">Bins count devices; test and pattern modes count failing devices once per mode. An earlier attempt never supplies missing tests to the selected attempt.</p>
+<div id="lp-legend" class="lp-legend"></div>
+<div class="lp-scroll"><svg id="lp-chart" role="img" aria-label="Latest-device Pareto chart"></svg></div>
+<div class="lp-foot"><button id="lp-prev" data-i18n="Previous">Previous</button><span id="lp-page"></span><button id="lp-next" data-i18n="Next">Next</button></div>
+<div id="pareto-table" class="lp-scroll"></div><div id="test-detail" hidden></div>
+<details><summary data-i18n="Selection audit">Selection audit</summary><p class="lp-note" data-i18n="Unresolved identities and ambiguous latest attempts are excluded and listed here. Missing wafer information stays separate from known wafer identities.">Unresolved identities and ambiguous latest attempts are excluded and listed here. Missing wafer information stays separate from known wafer identities.</p><div class="lp-scroll" id="lp-audit"></div><p id="lp-audit-note" class="lp-note"></p></details>
+<dialog id="lp-detail"><button id="lp-close" data-i18n="Close">Close</button><h3 id="lp-detail-title"></h3><pre id="lp-detail-content"></pre></dialog>
+</div>
+<script type="application/json" id="latest-pareto-data">__LATEST_DATA__</script>
+<script>
+(()=>{'use strict';
+const report=JSON.parse(document.getElementById('latest-pareto-data').textContent),$=id=>document.getElementById('lp-'+id),T=(s,v)=>window.ReportUI.t(s,v);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let scope={query:'',minFails:0,lot:null},page=0,rows=[],selected=[],series=[],sortKey='count',descending=true;
+const pageSize=25;
+const utc=t=>t?new Date(t*1000).toISOString():'[null]';
+const group=a=>$('series').value==='lot'?a.lot:$('series').value==='wafer'?(a.wafer??'[null]'):$('series').value==='site'?`H${a.head}/S${a.site}`:T('All');
+const color=i=>{let hash=0;for(const ch of series[i])hash=(hash*31+ch.codePointAt(0))>>>0;return `hsl(${(hash*137.508+207)%360} 58% ${window.ReportUI.theme==='dark'?64:43}%)`};
+function modes(a){const level=$('level').value;
+ if(level==='hard_bin'||level==='soft_bin')return [{key:String(a[level]??'[null]'),label:(level==='hard_bin'?'HBIN ':'SBIN ')+(a[level]??'[null]'),passed:a[level]===null?null:a.passed}];
+ return a[level];
+}
+function refresh(){
+ const population=report.attempts.filter(a=>scope.lot===null||a.lot===scope.lot);
+ selected=population.filter(a=>a.is_latest===true);
+ const ambiguous=new Set(population.filter(a=>a.issue==='ambiguous_latest').map(a=>a.ecid)).size;
+ const unresolved=population.filter(a=>['unresolved_identity','ambiguous_wafer'].includes(a.issue)).length;
+ const old=population.filter(a=>a.is_latest===false).length;
+ $('summary').textContent=T('{selected} latest devices · {old} earlier attempts excluded',{selected:selected.length,old});
+ $('issues').hidden=!ambiguous&&!unresolved;
+ if(report.unavailable){$('issues').hidden=false;$('issues').textContent=T(report.unavailable);}
+ else if(!report.sources||!Object.keys(report.sources).length){$('issues').hidden=false;$('issues').textContent=T('Raw STDF evidence is required. Regenerate with --stdf-input to enable latest-device Pareto.');}
+ else $('issues').textContent=T('{ambiguous} devices have ambiguous latest attempts; {unresolved} attempts have unresolved identities.',{ambiguous,unresolved});
+ const bins=['hard_bin','soft_bin'].includes($('level').value);$('passing-label').hidden=!bins;
+ const map=new Map();
+ for(const a of selected)for(const m of modes(a)){
+  if(!bins&&m.passed!==false)continue;
+  let row=map.get(m.key);if(!row){row={key:m.key,label:m.label,count:0,pass:0,fail:0,unknown:0,groups:new Map(),attempts:[]};map.set(m.key,row);}
+  row.count++;row[m.passed===true?'pass':m.passed===false?'fail':'unknown']++;const g=group(a);row.groups.set(g,(row.groups.get(g)||0)+1);row.attempts.push(a);
+ }
+ rows=[...map.values()].filter(r=>(!bins||$('passing').checked||r.fail>0||r.unknown>0)&&r.label.toLowerCase().includes(scope.query)&&r.fail>=scope.minFails);
+ rows.sort((a,b)=>{const n=typeof a[sortKey]==='number'?a[sortKey]-b[sortKey]:String(a[sortKey]).localeCompare(String(b[sortKey]),undefined,{numeric:true});return (descending?-n:n)||a.label.localeCompare(b.label)});
+ series=[...new Set(rows.flatMap(r=>[...r.groups.keys()]))].sort();
+ page=Math.min(page,Math.max(0,Math.ceil(rows.length/pageSize)-1));draw();
+ const audits=population.filter(a=>a.is_latest!==true);
+ $('audit').innerHTML='<table><thead><tr>'+['Device','MIR START_T','Latest flag','Reason'].map(s=>'<th>'+esc(T(s))+'</th>').join('')+'</tr></thead><tbody>'+audits.slice(0,100).map(a=>`<tr><td>${esc(a.ecid??a.source+':'+a.sequence)}</td><td>${esc(utc(a.start_t))}</td><td>${esc(String(a.is_latest))}</td><td>${esc(T(a.issue??'Earlier attempt'))}</td></tr>`).join('')+'</tbody></table>';
+ $('audit-note').textContent=T('Showing {shown} of {total} audit entries; JSON contains all attempts.',{shown:Math.min(100,audits.length),total:audits.length});
+}
+function draw(){
+ const visible=rows.slice(page*pageSize,(page+1)*pageSize),grouped=$('layout').value==='grouped';
+ const width=1000,left=290,right=70,top=40,bottom=30;
+ const band=grouped?Math.max(40,series.length*15+12):38,height=top+Math.max(1,visible.length)*band+bottom;
+ const highest=Math.max(1,...rows.map(r=>grouped?Math.max(...r.groups.values()):r.count)),ticks=Math.min(5,highest),max=Math.ceil(highest/ticks)*ticks,plot=width-left-right;
+ $('chart').setAttribute('viewBox',`0 0 ${width} ${height}`);$('chart').dataset.layout=$('layout').value;
+ let svg='';for(let tick=0;tick<=ticks;tick++){const x=left+plot*tick/ticks;svg+=`<line x1="${x}" x2="${x}" y1="${top-10}" y2="${height-bottom}" stroke="var(--ui-line)"/><text x="${x}" y="20" text-anchor="middle">${(max*tick/ticks).toLocaleString(undefined,{maximumFractionDigits:1})}</text>`;}
+ visible.forEach((r,index)=>{const y=top+index*band;svg+=`<text x="${left-12}" y="${y+20}" text-anchor="end"><title>${esc(r.label)}</title>${esc(r.label.length>38?r.label.slice(0,35)+'…':r.label)}</text>`;let offset=0;
+  series.forEach((s,i)=>{const n=r.groups.get(s)||0;if(!n)return;const w=n/max*plot,x=left+(grouped?0:offset),barY=y+(grouped?i*15:5);svg+=`<rect x="${x}" y="${barY}" width="${w}" height="${grouped?12:22}" fill="${color(i)}" data-mode="${index}" tabindex="0" role="button" aria-label="${esc(r.label+' / '+s+': '+n)}"><title>${esc(r.label+' / '+s+': '+n+' '+T('devices'))}</title></rect>`;if(!grouped)offset+=w;
+   if(grouped)svg+=`<text x="${x+w+5}" y="${barY+11}">${n}</text>`;
+  });if(!grouped)svg+=`<text x="${left+offset+6}" y="${y+21}">${r.count}</text>`;
+ });
+ if(!visible.length)svg+=`<text x="${left}" y="${top+20}">${esc(T('No data for current filters.'))}</text>`;
+ $('chart').innerHTML=svg;
+ $('legend').innerHTML=series.map((s,i)=>`<span><i class="lp-chip" style="background:${color(i)}"></i>${esc(s)}</span>`).join('');
+ $('page').textContent=T('Page {page} of {pages} · {total} modes',{page:page+1,pages:Math.max(1,Math.ceil(rows.length/pageSize)),total:rows.length});$('prev').disabled=page===0;$('next').disabled=(page+1)*pageSize>=rows.length;
+ const columns=[['label','Failure mode'],['count','Devices'],['pass','Pass'],['fail','Fail'],['unknown','Unknown']];
+ document.getElementById('pareto-table').innerHTML='<table><thead><tr>'+columns.map(([key,label])=>`<th aria-sort="${sortKey===key?(descending?'descending':'ascending'):'none'}"><button data-sort="${key}">${esc(T(label))}${sortKey===key?(descending?' ↓':' ↑'):''}</button></th>`).join('')+'</tr></thead><tbody>'+visible.map((r,i)=>`<tr><td><button data-mode="${i}">${esc(r.label)}</button></td><td>${r.count}</td><td>${r.pass}</td><td>${r.fail}</td><td>${r.unknown}</td></tr>`).join('')+'</tbody></table>';
+ if(!visible.length)document.getElementById('pareto-table').innerHTML=esc(T('No data for current filters.'));
+}
+function detail(index){const row=rows[page*pageSize+Number(index)];if(!row)return;$('detail-title').textContent=row.label;$('detail-content').textContent=JSON.stringify(row.attempts.map(a=>({ecid:a.ecid,is_latest:a.is_latest,mir_start_utc:utc(a.start_t),source_paths:report.sources[a.source],...a})),null,2);$('detail').showModal();}
+document.getElementById('latest-pareto').addEventListener('click',e=>{const m=e.target.closest('[data-mode]');if(m)detail(m.dataset.mode);const b=e.target.closest('[data-sort]');if(b){descending=sortKey===b.dataset.sort?!descending:b.dataset.sort!=='label';sortKey=b.dataset.sort;refresh()}});
+$('chart').addEventListener('keydown',e=>{if(['Enter',' '].includes(e.key)&&e.target.dataset.mode!==undefined){e.preventDefault();detail(e.target.dataset.mode)}});
+for(const id of ['level','layout','series','passing'])$(id).addEventListener('change',()=>{page=0;refresh()});
+$('prev').onclick=()=>{page--;draw()};$('next').onclick=()=>{page++;draw()};$('close').onclick=()=>$('detail').close();
+function download(name,type,text){const url=URL.createObjectURL(new Blob([text],{type}));const a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
+$('export').onclick=()=>download('latest-device-pareto.json','application/json',JSON.stringify(report,null,2));
+$('csv').onclick=()=>{const q=v=>'"'+String(v).replace(/^[=+@\-\t\r]/,"'$&").replace(/"/g,'""')+'"';download('latest-device-pareto.csv','text/csv','mode,devices,pass,fail,unknown\r\n'+rows.map(r=>[r.label,r.count,r.pass,r.fail,r.unknown].map(q).join(',')).join('\r\n'))};
+window.LatestPareto={render(next){if(next){if(scope.lot!==next.lot||scope.query!==next.query||scope.minFails!==next.minFails)page=0;scope=next;}refresh();}};
+window.addEventListener('report-ui-change',refresh);refresh();
+})();
+</script>

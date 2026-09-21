@@ -168,8 +168,16 @@ part fails with a resource-limit error before further tests are retained.
 The memory option is not an operating-system RSS ceiling; runtime, allocator,
 decoder, and encoding overhead still need headroom. Disk spilling is not enabled.
 
-PTR results are supported. MPR/FTR expansion is not yet supported by this
-bounded workflow and produces an explicit error. Malformed part/test records,
+PTR results, MPR measurements, and FTR verdicts are supported. MPR emits one
+overall-verdict row plus one indexed row per numeric result; FTR emits a verdict
+row with a null numeric result. MPR indexed rows do not inherit the overall
+pass/fail flag. Their measurement statistics and correlations remain separate
+by result position. Result positions do not imply pin identities. The original
+test text is the prefix of each generated MPR label. Pin-state arrays and
+stimulus axes are not expanded; raw source STDF remains the evidence for them.
+The pending-test limit counts emitted rows, including MPR overall rows.
+Catalog/file-per-source fingerprints include this conversion revision, so
+retries rebuild previously converted inputs with the new coverage. Malformed part/test records,
 duplicate PIR, and missing PRR also fail instead of dropping measurements.
 
 Each source is published under `objects/<generation>/source-...`, containing
@@ -226,9 +234,11 @@ state; roughly 30,000 short rows fit the default budget. Exceeding a limit or
 detecting corruption leaves existing HTML unchanged. These are accounted limits,
 not hard RSS guarantees; disk-backed large-data analytics is the next milestone.
 Repeated PART_IDs have independent source-local attempt sequences. Resolved
-coordinate identities still use all-pass merging and the first finite result
-per test number; first/final-retest policies and program identities are not
-implemented. Test-row statistics are not deduplicated by the part merge key.
+coordinate identities in measurement panels still use all-pass merging and the
+first finite result per test key. The Pareto page instead selects the latest
+device attempt using MIR START_T from source STDF; see
+[latest-device Pareto](latest-pareto.md). Program identity mapping remains
+outside measurement aggregation. Test-row statistics are not deduplicated by the part merge key.
 
 Repeat the Windows memory smoke test after building the CLI:
 

@@ -67,10 +67,10 @@ impl<I> BoundedRecordBatchIter<I> {
         Ok(())
     }
 
-    fn retain(&mut self, key: (u8, u8), test_bytes: usize) -> Result<(), StdfError> {
+    fn retain(&mut self, key: (u8, u8), count: usize, test_bytes: usize) -> Result<(), StdfError> {
         let new_part = !self.pending.contains_key(&key);
         let charge = test_bytes.saturating_add(if new_part { 4096 } else { 0 });
-        let tests = self.tests.saturating_add(usize::from(test_bytes > 0));
+        let tests = self.tests.saturating_add(count);
         check("pending tests", tests, self.limits.max_pending_tests)?;
         check(
             "pending bytes",
@@ -78,7 +78,7 @@ impl<I> BoundedRecordBatchIter<I> {
             self.limits.max_memory_bytes,
         )?;
         let entry = self.pending.entry(key).or_default();
-        entry.0 += usize::from(test_bytes > 0);
+        entry.0 += count;
         entry.1 += charge;
         self.tests = tests;
         self.bytes += charge;
@@ -108,7 +108,7 @@ impl<I> BoundedRecordBatchIter<I> {
                 if self.pending.contains_key(&key) {
                     return Err(invalid("duplicate PIR would discard an incomplete part"));
                 }
-                self.retain(key, 0)?;
+                self.retain(key, 0, 0)?;
             }
             StdfRecord::Ptr(ptr) => {
                 let strings = ptr
@@ -118,23 +118,40 @@ impl<I> BoundedRecordBatchIter<I> {
                     .saturating_add(ptr.units.as_ref().map_or(0, String::len));
                 self.retain(
                     (ptr.head_num, ptr.site_num),
+                    1,
                     4096usize.saturating_add(strings.saturating_mul(4)),
                 )?;
             }
             StdfRecord::Mpr(mpr) => {
+                let count = usize::from(mpr.rslt_cnt) + 1;
                 check(
                     "pending tests",
-                    self.tests.saturating_add(mpr.rslt_cnt as usize),
+                    self.tests.saturating_add(count),
                     self.limits.max_pending_tests,
                 )?;
-                return Err(invalid(
-                    "MPR EAV expansion is not supported by the bounded PTR converter",
-                ));
+                crate::context::validate_expansion(record)?;
+                let strings = mpr
+                    .test_txt
+                    .as_ref()
+                    .map_or(0, String::len)
+                    .saturating_add(mpr.units.as_ref().map_or(0, String::len));
+                self.retain(
+                    (mpr.head_num, mpr.site_num),
+                    count,
+                    count.saturating_mul(4096usize.saturating_add(strings.saturating_mul(4))),
+                )?;
             }
-            StdfRecord::Ftr(_) => {
-                return Err(invalid(
-                    "FTR EAV expansion is not supported by the bounded PTR converter",
-                ))
+            StdfRecord::Ftr(ftr) => {
+                self.retain(
+                    (ftr.head_num, ftr.site_num),
+                    1,
+                    4096usize.saturating_add(
+                        ftr.test_txt
+                            .as_ref()
+                            .map_or(0, String::len)
+                            .saturating_mul(4),
+                    ),
+                )?;
             }
             StdfRecord::Unknown { typ, sub, .. }
                 if matches!(

@@ -99,6 +99,7 @@ struct Kpis {
 
 #[derive(Debug, Clone)]
 struct TestAggregate {
+    key: String,
     label: String,
     test_num: u32,
     test_type: String,
@@ -175,6 +176,7 @@ struct PartInfo {
 
 #[derive(Debug, Clone)]
 struct RunningTest {
+    key: String,
     label: String,
     test_num: u32,
     test_type: String,
@@ -196,6 +198,7 @@ struct RunningTest {
 impl RunningTest {
     fn new(row: &TestRow) -> Self {
         Self {
+            key: test_key(row),
             label: test_label(row),
             test_num: row.test_num,
             test_type: row.test_type.clone(),
@@ -260,6 +263,7 @@ impl RunningTest {
         };
         let known = self.pass + self.fail;
         TestAggregate {
+            key: self.key,
             label: self.label,
             test_num: self.test_num,
             test_type: self.test_type,
@@ -294,7 +298,12 @@ pub fn generate_dashboard(
     if output.canonicalize().ok().as_ref() == Some(&input.canonicalize()?) {
         return Err(invalid_data("dashboard output must not overwrite input Parquet").into());
     }
-    let html = crate::ftr_pareto::attach(render_html(&data), &options.ftr_inputs, output)?;
+    let html = crate::latest_pareto::attach(
+        render_html(&data),
+        &options.ftr_inputs,
+        output,
+        256 * 1024 * 1024,
+    )?;
     let html = crate::report_ui::decorate(html);
     stdf_parquet::catalog::atomic_write(output, html.as_bytes())?;
     Ok(summary)
@@ -398,11 +407,11 @@ fn analyze_rows(rows: &[TestRow], options: &DashboardOptions) -> DashboardData {
 struct AnalysisAccumulator {
     row_count: usize,
     parts: BTreeMap<String, PartInfo>,
-    tests: BTreeMap<u32, RunningTest>,
+    tests: BTreeMap<String, RunningTest>,
     lots: BTreeSet<String>,
     wafers: BTreeSet<String>,
     commonality: BTreeMap<(String, String), usize>,
-    part_results: BTreeMap<String, BTreeMap<u32, f64>>,
+    part_results: BTreeMap<String, BTreeMap<String, f64>>,
     heatmap: BTreeMap<(i16, i16), (usize, usize)>,
     data_quality: BTreeMap<String, (usize, usize)>,
 }
@@ -450,7 +459,7 @@ impl AnalysisAccumulator {
         entry.part_pass &= row.part_pass;
 
         self.tests
-            .entry(row.test_num)
+            .entry(test_key(row))
             .or_insert_with(|| RunningTest::new(row))
             .push(row);
 
@@ -458,7 +467,7 @@ impl AnalysisAccumulator {
             self.part_results
                 .entry(part_key)
                 .or_default()
-                .entry(row.test_num)
+                .entry(test_key(row))
                 .or_insert(result);
         }
 
@@ -649,7 +658,7 @@ fn process_windows(tests: &[TestAggregate], max_items: usize) -> Vec<ProcessWind
 }
 
 fn correlations(
-    part_results: &BTreeMap<String, BTreeMap<u32, f64>>,
+    part_results: &BTreeMap<String, BTreeMap<String, f64>>,
     tests: &[TestAggregate],
     max_tests: usize,
 ) -> Vec<CorrelationPair> {
@@ -657,23 +666,23 @@ fn correlations(
         .iter()
         .filter(|test| test.mean.is_some() && test.sigma.unwrap_or(0.0) > 0.0)
         .take(max_tests.max(2))
-        .map(|test| (test.test_num, test.label.clone()))
+        .map(|test| (test.key.clone(), test.label.clone()))
         .collect();
     let labels: HashMap<_, _> = selected.iter().cloned().collect();
     let mut pairs = Vec::new();
 
     for left_index in 0..selected.len() {
         for right_index in (left_index + 1)..selected.len() {
-            let left = selected[left_index].0;
-            let right = selected[right_index].0;
+            let left = &selected[left_index].0;
+            let right = &selected[right_index].0;
             if let Some((correlation, count)) = pearson(part_results, left, right) {
                 pairs.push(CorrelationPair {
                     x: labels
-                        .get(&left)
+                        .get(left)
                         .cloned()
                         .unwrap_or_else(|| left.to_string()),
                     y: labels
-                        .get(&right)
+                        .get(right)
                         .cloned()
                         .unwrap_or_else(|| right.to_string()),
                     correlation,
@@ -695,9 +704,9 @@ fn correlations(
 }
 
 fn pearson(
-    part_results: &BTreeMap<String, BTreeMap<u32, f64>>,
-    left: u32,
-    right: u32,
+    part_results: &BTreeMap<String, BTreeMap<String, f64>>,
+    left: &str,
+    right: &str,
 ) -> Option<(f64, usize)> {
     let mut n = 0usize;
     let mut sum_x = 0.0;
@@ -707,7 +716,7 @@ fn pearson(
     let mut sum_xy = 0.0;
 
     for values in part_results.values() {
-        let (Some(x), Some(y)) = (values.get(&left), values.get(&right)) else {
+        let (Some(x), Some(y)) = (values.get(left), values.get(right)) else {
             continue;
         };
         n += 1;
@@ -832,6 +841,21 @@ fn scoped_part_key(row: &TestRow, source: &str) -> String {
     row.part_merge_key
         .clone()
         .unwrap_or_else(|| serde_json::json!(["unresolved", source, row.part_sequence]).to_string())
+}
+
+fn test_key(row: &TestRow) -> String {
+    // MPR labels include a stable zero-based result position. Never mix channels
+    // or combine a functional result with a parametric test using the same number.
+    serde_json::json!([
+        row.test_num,
+        row.test_type,
+        if row.test_type == "MPR" {
+            row.test_txt.as_deref()
+        } else {
+            None
+        }
+    ])
+    .to_string()
 }
 
 fn test_label(row: &TestRow) -> String {
@@ -1369,7 +1393,7 @@ tr:hover td { background: rgba(87, 242, 209, .05); }
     <div>
       <div class="eyebrow">STDF spectrum dataview</div>
       <h1 id="title"></h1>
-      <p class="muted" data-i18n="Parts merge by coordinate identity; unresolved attempts remain separate. Device yield uses all-pass merging, not final-retest yield.">Parts merge by coordinate identity; unresolved attempts remain separate. Device yield uses all-pass merging, not final-retest yield.</p>
+      <p id="analysis-policy" class="muted" data-i18n="Parts merge by coordinate identity; unresolved attempts remain separate. Device yield uses all-pass merging, not final-retest yield.">Parts merge by coordinate identity; unresolved attempts remain separate. Device yield uses all-pass merging, not final-retest yield.</p>
     </div>
     <div class="controls">
       <input id="search" type="search" placeholder="Filter tests or groups" data-i18n-placeholder="Filter tests or groups">
@@ -1486,6 +1510,9 @@ if (snapshot.lots) {
 
 function updateDatasetStatus(){if(!snapshot.lots)return;document.getElementById('dataset-status').textContent=T('Catalog revision {revision}; latest run: {status}.',{revision:snapshot.revision,status:snapshot.run_status})+' '+T(snapshot.run_status==='complete'?'Showing current successful source versions.':'Incomplete run: failed updates may retain older source versions.');}
 function render() {
+  const policy=document.getElementById('analysis-policy');
+  policy.dataset.i18n=state.tab==='pareto'?'One selected attempt per lot + wafer + X/Y device. Latest is determined by MIR START_T; source-local order breaks ties within a run.':'Parts merge by coordinate identity; unresolved attempts remain separate. Device yield uses all-pass merging, not final-retest yield.';
+  policy.textContent=T(policy.dataset.i18n);
   renderKpis();
   renderBar('site-yield-chart', data.site_yield.slice(0, 16), item => item.label, item => item.yield_percent, item => item.yield_percent < 90 ? C('bad-ink') : C('good-ink'), '%');
   renderBar('hard-bin-chart', data.hard_bins.slice(0, 16), item => item.label, item => item.total, item => item.fail ? C('warn-ink') : C('good-ink'), ' '+T('parts'));
@@ -1509,6 +1536,8 @@ function renderKpis() {
 }
 
 function renderPareto() {
+  if(window.LatestPareto){window.LatestPareto.render({query:state.query,minFails:state.minFails,lot:snapshot.lots&&Number(lotSelect.value)>0?snapshot.lots[Number(lotSelect.value)-1].label:null});return;}
+
   const items = filtered(data.pareto).filter(item => item.fail >= state.minFails);
   renderBar('pareto-chart', items.slice(0, 18), item => item.label, item => item.fail, () => C('bad-ink'), ' '+T('fails'), showTestDetail);
   table('pareto-table', items, [
@@ -1833,6 +1862,61 @@ mod tests {
                 .fail,
             2
         );
+    }
+
+    #[test]
+    fn mpr_channels_have_independent_statistics_and_correlations() {
+        let mut rows = Vec::new();
+        for part in 1..=3 {
+            for index in 0..2 {
+                let mut r = row(
+                    &format!("P{part}"),
+                    0,
+                    true,
+                    100,
+                    (part * (index + 1)) as f32,
+                    true,
+                );
+                r.test_type = "MPR".into();
+                r.test_txt = Some(format!("Voltage [MPR result {index}]"));
+                r.test_pass = None;
+                rows.push(r);
+            }
+            let mut overall = row(&format!("P{part}"), 0, true, 100, 0.0, false);
+            overall.test_type = "MPR".into();
+            overall.test_txt = Some("Voltage [MPR overall]".into());
+            overall.result = None;
+            rows.push(overall);
+            let mut ftr = row(&format!("P{part}"), 0, true, 100, 0.0, true);
+            ftr.test_type = "FTR".into();
+            ftr.result = None;
+            rows.push(ftr);
+        }
+        let data = analyze_rows(&rows, &DashboardOptions::default());
+        assert_eq!(data.kpis.tests, 4);
+        let first = data
+            .pareto
+            .iter()
+            .find(|t| t.label.ends_with("[MPR result 0]"))
+            .unwrap();
+        let second = data
+            .pareto
+            .iter()
+            .find(|t| t.label.ends_with("[MPR result 1]"))
+            .unwrap();
+        assert_eq!(first.mean, Some(2.0));
+        assert_eq!(second.mean, Some(4.0));
+        assert_eq!(first.fail, 0);
+        assert_eq!(first.unknown, 3);
+        let overall = data
+            .pareto
+            .iter()
+            .find(|t| t.label.ends_with("[MPR overall]"))
+            .unwrap();
+        assert_eq!(overall.fail, 3);
+        assert_eq!(data.correlations.len(), 1);
+        assert_eq!(data.correlations[0].pairs, 3);
+        assert!((data.correlations[0].correlation - 1.0).abs() < 1e-12);
     }
 
     fn row(

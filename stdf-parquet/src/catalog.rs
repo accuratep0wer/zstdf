@@ -209,7 +209,8 @@ pub fn convert_dataset(
     };
     publish(root, &mut catalog, max_bytes)?;
     let options_sha = sha256(
-        format!("catalog-fragments-v3|eav-v2|coordinate-v1|{keys:?}|{options:?}").as_bytes(),
+        format!("catalog-fragments-v3|eav-v2|coordinate-v1|mpr-ftr-v1|{keys:?}|{options:?}")
+            .as_bytes(),
     );
     let objects = root.join("objects");
     fs::create_dir_all(&objects)?;

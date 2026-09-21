@@ -115,7 +115,50 @@ pub fn generate_dataset_dashboard(
     let html = DASHBOARD_HTML
         .replace("__TITLE__", &html_escape(&options.title))
         .replace("__DATA__", &json);
-    let html = crate::ftr_pareto::attach(html, &options.ftr_inputs, output)?;
+    // Do not rescan a changed source against an older committed Parquet snapshot.
+    let automatic = options.ftr_inputs.is_empty();
+    let raw_inputs = if automatic {
+        catalog
+            .sources
+            .values()
+            .map(|s| std::path::PathBuf::from(&s.source_path))
+            .collect()
+    } else {
+        options.ftr_inputs.clone()
+    };
+    let sources_match = || {
+        catalog.sources.values().all(|source| {
+            use sha2::{Digest, Sha256};
+            use std::io::Read;
+            let Ok(mut file) = File::open(&source.source_path) else {
+                return false;
+            };
+            let mut digest = Sha256::new();
+            let mut buf = [0; 65536];
+            loop {
+                match file.read(&mut buf) {
+                    Ok(0) => break,
+                    Ok(n) => digest.update(&buf[..n]),
+                    Err(_) => return false,
+                }
+            }
+            format!("{:x}", digest.finalize()) == source.source_sha256
+        })
+    };
+    let html = if automatic && !sources_match() {
+        crate::latest_pareto::unavailable(html, "Latest Pareto unavailable: source STDF files are missing or differ from the catalog snapshot. Reconvert the source files before generating this report.", limits.max_memory_bytes)?
+    } else {
+        let html = crate::latest_pareto::attach(
+            html,
+            &raw_inputs,
+            output,
+            limits.max_memory_bytes.saturating_sub(charged),
+        )?;
+        if automatic && !sources_match() {
+            return Err(invalid_data("source STDF changed during latest Pareto analysis").into());
+        }
+        html
+    };
     let html = crate::report_ui::decorate(html);
     if html.len() > limits.max_memory_bytes / 2 {
         return Err(invalid_data("dashboard HTML exceeds memory budget").into());
@@ -356,6 +399,20 @@ mod tests {
         .unwrap();
         assert_eq!(f.dashboard(limits()).unwrap().rows, 2);
         assert_eq!(f.payload()["run_status"], "partial");
+        let html = fs::read_to_string(f.0.join("out.html")).unwrap();
+        let evidence = html
+            .split("id=\"latest-pareto-data\">")
+            .nth(1)
+            .unwrap()
+            .split("</script>")
+            .next()
+            .unwrap();
+        let evidence: serde_json::Value = serde_json::from_str(evidence).unwrap();
+        assert!(evidence["unavailable"]
+            .as_str()
+            .unwrap()
+            .contains("catalog snapshot"));
+        assert_eq!(evidence["attempts"].as_array().unwrap().len(), 0);
         assert!(!fs::read_to_string(f.0.join("out.html"))
             .unwrap()
             .contains("<script>alert(1)"));

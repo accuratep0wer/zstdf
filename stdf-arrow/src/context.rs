@@ -87,6 +87,20 @@ impl StdfContext {
         }
     }
 
+    fn active(&mut self, head: u8, site: u8) -> &mut ActivePart {
+        let key = (head, site);
+        let wafer_id = self.wafer_for(head, site);
+        self.active_parts.entry(key).or_insert_with(|| {
+            self.part_seq += 1;
+            ActivePart {
+                part_seq: self.part_seq,
+                lot_id: self.lot_id.clone(),
+                wafer_id,
+                tests: Vec::new(),
+            }
+        })
+    }
+
     pub fn push_record(&mut self, record: &StdfRecord) -> Option<PartResult> {
         match record {
             StdfRecord::Mir(mir) => {
@@ -149,6 +163,55 @@ impl StdfContext {
                 });
                 None
             }
+            StdfRecord::Mpr(mpr) => {
+                let tests = &mut self.active(mpr.head_num, mpr.site_num).tests;
+                // TEST_FLG describes the complete MPR, not each RTN_RSLT value.
+                tests.push(TestResult {
+                    test_num: mpr.test_num,
+                    test_txt: Some(format!(
+                        "{} [MPR overall]",
+                        mpr.test_txt.as_deref().unwrap_or("")
+                    )),
+                    test_type: "MPR".into(),
+                    result: None,
+                    test_pass: reliable_test_pass(mpr.test_flg),
+                    lo_limit: None,
+                    hi_limit: None,
+                    units: mpr.units.clone(),
+                });
+                for (index, value) in mpr.rtn_rslt.iter().flatten().enumerate() {
+                    tests.push(TestResult {
+                        test_num: mpr.test_num,
+                        test_txt: Some(format!(
+                            "{} [MPR result {}]",
+                            mpr.test_txt.as_deref().unwrap_or(""),
+                            index
+                        )),
+                        test_type: "MPR".into(),
+                        result: Some(*value),
+                        test_pass: None,
+                        lo_limit: mpr.lo_limit,
+                        hi_limit: mpr.hi_limit,
+                        units: mpr.units.clone(),
+                    });
+                }
+                None
+            }
+            StdfRecord::Ftr(ftr) => {
+                self.active(ftr.head_num, ftr.site_num)
+                    .tests
+                    .push(TestResult {
+                        test_num: ftr.test_num,
+                        test_txt: ftr.test_txt.clone(),
+                        test_type: "FTR".into(),
+                        result: None,
+                        test_pass: reliable_test_pass(ftr.test_flg),
+                        lo_limit: None,
+                        hi_limit: None,
+                        units: None,
+                    });
+                None
+            }
             StdfRecord::Prr(prr) => Some(self.finish_part(prr)),
             _ => None,
         }
@@ -186,4 +249,24 @@ impl StdfContext {
             tests: active.tests,
         }
     }
+}
+
+// Reserved/unreliable/timeout/not-executed/aborted/no-indication are unknown.
+fn reliable_test_pass(flags: u8) -> Option<bool> {
+    (flags & 0x7e == 0).then_some(flags & 0x80 == 0)
+}
+
+pub(crate) fn validate_expansion(record: &StdfRecord) -> Result<(), stdf_core::StdfError> {
+    if let StdfRecord::Mpr(mpr) = record {
+        if mpr.rtn_rslt.as_ref().map_or(0, Vec::len) != usize::from(mpr.rslt_cnt)
+            || mpr.rtn_stat.as_ref().map_or(0, Vec::len) != usize::from(mpr.rtn_icnt)
+        {
+            return Err(stdf_core::StdfError::InvalidField {
+                record: "MPR",
+                field: "RTN_RSLT/RTN_STAT",
+                msg: "array length does not match declared count".into(),
+            });
+        }
+    }
+    Ok(())
 }

@@ -49,28 +49,15 @@ const root = path.resolve(__dirname, '../examples/ftr-patterns/generated');
     await page.setViewportSize({width:1536,height:1080});
     await page.goto(pathToFileURL(path.join(root,'dashboard.html')).href);
     await page.locator('.tab[data-tab="pareto"]').click();
-    assert.equal(await page.locator('.tab[data-tab="ftr-patterns"]').count(),0);
-    assert.equal(await page.locator('#pareto #fp').count(),1);
-    assert.ok(await page.locator('#fp-table').isVisible());
+    assert.equal(await page.locator('#pareto #latest-pareto').count(),1);
+    await page.locator('#lp-level').selectOption('patterns');
+    assert.equal(await page.locator('#pareto-table tbody tr').count(),3);
+    const latestScan=page.locator('#pareto-table tbody tr').filter({has:page.getByRole('button',{name:'scan/core_at_speed',exact:true})});
+    assert.equal(await latestScan.locator('td').nth(3).textContent(),'3');
     await page.locator('#search').fill('unrelated measurement filter');
-    assert.equal(await page.locator('#fp-table tbody tr').count(),5);
-    await page.getByRole('button',{name:'Overview',exact:true}).click();
-    assert.ok(!await page.locator('#fp-table').isVisible());
-    await page.locator('.tab[data-tab="pareto"]').click();
-    assert.equal(await page.locator('.tab[data-tab="ftr-patterns"]').count(),0);
-    assert.equal(await page.locator('#pareto #fp').count(),1);
+    assert.match(await page.locator('#pareto-table').innerText(),/No data/);
+    await page.locator('#search').fill('');
     await page.screenshot({path:path.join(root,'dashboard-desktop.png'),fullPage:true});
-    const datasetReport=path.join(root,'dataset-dashboard.html');
-    if(fs.existsSync(datasetReport)) {
-      await page.goto(pathToFileURL(datasetReport).href);
-      await page.locator('.tab[data-tab="pareto"]').click();
-    assert.equal(await page.locator('.tab[data-tab="ftr-patterns"]').count(),0);
-    assert.equal(await page.locator('#pareto #fp').count(),1);
-      assert.equal(await page.locator('#fp-table tbody tr').count(),5);
-      await page.locator('#lot-select').selectOption('1');
-      assert.equal(await page.locator('#fp-table tbody tr').count(),5);
-      assert.match(await page.locator('#fp-kpis').innerText(),/78.05%/);
-    }
     // Exercise pagination and script-safe rendering with an expanded synthetic report payload.
     const source=evidence.sources[0]; source.groups=Array.from({length:205},(_,i)=>({...source.groups[0],pattern:'PAT_'+String(i).padStart(3,'0'),attempts:1,pass:1,fail:0,unknown:0,not_executed:0,alarms:0}));
     source.groups[0].pattern='</script><img src=x onerror=alert(1)>';

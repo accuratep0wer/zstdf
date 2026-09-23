@@ -6,7 +6,7 @@ mod bounded;
 pub mod context;
 pub mod identity;
 pub mod schema;
-pub use bounded::{bounded_record_batches, BatchLimits, BoundedRecordBatchIter};
+pub use bounded::{bounded_record_batches, BatchLimits, BoundedRecordBatchIter, RowProvenance};
 
 use arrow::record_batch::RecordBatch;
 use stdf_core::{StdfError, StdfRecord};

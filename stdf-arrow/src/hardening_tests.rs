@@ -583,3 +583,30 @@ fn missing_mpr_arrays_fail_and_zero_results_retain_overall_verdict() {
 fn as_f32(batch: &arrow::record_batch::RecordBatch, index: usize) -> &arrow::array::Float32Array {
     batch.column(index).as_any().downcast_ref().unwrap()
 }
+
+#[test]
+fn optional_provenance_tracks_record_order_across_interleaved_sites() {
+    let records = vec![
+        StdfRecord::Pir(pir(1, 0)),
+        StdfRecord::Pir(pir(1, 1)),
+        StdfRecord::Ptr(ptr(1, 1, 0, 1., 0)),
+        StdfRecord::Ptr(ptr(2, 1, 1, 2., 0)),
+        StdfRecord::Prr(prr(1, 1, Some("same"), 0)),
+        StdfRecord::Prr(prr(1, 0, Some("same"), 0)),
+    ];
+    let mut iter = crate::bounded_record_batches(
+        records.into_iter().map(Ok),
+        crate::BatchLimits {
+            max_pending_tests: 100,
+            max_memory_bytes: 1024 * 1024,
+        },
+    )
+    .unwrap()
+    .with_provenance();
+    assert_eq!(iter.next().unwrap().unwrap().num_rows(), 1);
+    assert_eq!(iter.last_provenance()[0].record_sequence, 4);
+    assert_eq!(iter.last_provenance()[0].expansion_index, 0);
+    assert_eq!(iter.next().unwrap().unwrap().num_rows(), 1);
+    assert_eq!(iter.last_provenance()[0].record_sequence, 3);
+    assert!(iter.next().is_none());
+}

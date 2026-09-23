@@ -71,10 +71,10 @@
   ],
   "Devices": [
     "Devices",
-    "器件数",
-    "デバイス数",
-    "디바이스 수",
-    "Geräte"
+    "器件",
+    "デバイス",
+    "디바이스",
+    "Bauteile"
   ],
   "Tests / retests": [
     "Tests / retests",
@@ -169,10 +169,10 @@
   ],
   "Flags": [
     "Flags",
-    "标记",
+    "标志",
     "フラグ",
-    "표시",
-    "Markierungen"
+    "플래그",
+    "Flags"
   ],
   "Result": [
     "Result",
@@ -646,8 +646,8 @@
   "Tests": [
     "Tests",
     "测试项",
-    "テスト項目",
-    "테스트 항목",
+    "テスト",
+    "테스트",
     "Tests"
   ],
   "Failure Commonality": [
@@ -758,7 +758,7 @@
   "Wafers": [
     "Wafers",
     "晶圆",
-    "ウェハー",
+    "ウェハ",
     "웨이퍼",
     "Wafer"
   ],
@@ -820,10 +820,10 @@
   ],
   "Range": [
     "Range",
-    "范围",
-    "範囲",
-    "범위",
-    "Bereich"
+    "范围图",
+    "範囲チャート",
+    "범위 차트",
+    "Spannweitendiagramm"
   ],
   "Limit Fails": [
     "Limit Fails",
@@ -2392,5 +2392,950 @@
     "このページは指定された元の STDF を使用します。他のページは測定スナップショットの統計です。",
     "이 페이지는 제공된 원본 STDF를 사용합니다. 다른 페이지는 측정 스냅샷 통계를 유지합니다.",
     "Diese Seite verwendet die angegebenen STDF-Quelldaten. Andere Seiten behalten die Statistik des Messdaten-Snapshots bei."
+  ],
+  "Engineering Viewer": [
+    "Engineering Viewer",
+    "工程数据查看器",
+    "エンジニアリングビューア",
+    "엔지니어링 뷰어",
+    "Engineering-Viewer"
+  ],
+  "Information": [
+    "Information",
+    "信息",
+    "情報",
+    "정보",
+    "Informationen"
+  ],
+  "Hard Bins": [
+    "Hard Bins",
+    "硬件分箱",
+    "ハードビン",
+    "하드 빈",
+    "Hardware-Bins"
+  ],
+  "Soft Bins": [
+    "Soft Bins",
+    "软件分箱",
+    "ソフトビン",
+    "소프트 빈",
+    "Software-Bins"
+  ],
+  "Data Log": [
+    "Data Log",
+    "测试数据",
+    "データログ",
+    "데이터 로그",
+    "Datenprotokoll"
+  ],
+  "Records": [
+    "Records",
+    "记录",
+    "レコード",
+    "레코드",
+    "Datensätze"
+  ],
+  "Histogram": [
+    "Histogram",
+    "直方图",
+    "ヒストグラム",
+    "히스토그램",
+    "Histogramm"
+  ],
+  "Box": [
+    "Box",
+    "箱线图",
+    "箱ひげ図",
+    "상자 그림",
+    "Boxplot"
+  ],
+  "Probability": [
+    "Probability",
+    "概率图",
+    "確率プロット",
+    "확률 도표",
+    "Wahrscheinlichkeitsdiagramm"
+  ],
+  "Trend": [
+    "Trend",
+    "趋势图",
+    "トレンド",
+    "추세",
+    "Trend"
+  ],
+  "Scatter": [
+    "Scatter",
+    "散点图",
+    "散布図",
+    "산점도",
+    "Streudiagramm"
+  ],
+  "Bin Wafer Map": [
+    "Bin Wafer Map",
+    "分箱晶圆图",
+    "ビンウェハマップ",
+    "빈 웨이퍼 맵",
+    "Bin-Waferkarte"
+  ],
+  "Parametric Wafer Map": [
+    "Parametric Wafer Map",
+    "参数晶圆图",
+    "パラメトリックウェハマップ",
+    "파라미터 웨이퍼 맵",
+    "Parametrische Waferkarte"
+  ],
+  "Timing summary": [
+    "Timing summary",
+    "耗时汇总",
+    "時間サマリー",
+    "시간 요약",
+    "Zeitübersicht"
+  ],
+  "Population": [
+    "Population",
+    "分析总体",
+    "母集団",
+    "분석 모집단",
+    "Grundgesamtheit"
+  ],
+  "Latest": [
+    "Latest",
+    "最新一次",
+    "最新",
+    "최신",
+    "Letzter Versuch"
+  ],
+  "First": [
+    "First",
+    "首次",
+    "初回",
+    "최초",
+    "Erster Versuch"
+  ],
+  "All attempts": [
+    "All attempts",
+    "全部测试次数",
+    "すべての試行",
+    "모든 시도",
+    "Alle Versuche"
+  ],
+  "Link": [
+    "Link",
+    "联动",
+    "リンク",
+    "연결",
+    "Verknüpfen"
+  ],
+  "Linked": [
+    "Linked",
+    "已联动",
+    "リンク中",
+    "연결됨",
+    "Verknüpft"
+  ],
+  "Pin": [
+    "Pin",
+    "固定",
+    "固定",
+    "고정",
+    "Fixieren"
+  ],
+  "Pinned": [
+    "Pinned",
+    "已固定",
+    "固定中",
+    "고정됨",
+    "Fixiert"
+  ],
+  "New": [
+    "New",
+    "新建",
+    "新規",
+    "새로 만들기",
+    "Neu"
+  ],
+  "Statistics": [
+    "Statistics",
+    "统计",
+    "統計",
+    "통계",
+    "Statistik"
+  ],
+  "Properties": [
+    "Properties",
+    "属性",
+    "プロパティ",
+    "속성",
+    "Eigenschaften"
+  ],
+  "Image": [
+    "Image",
+    "图像",
+    "画像",
+    "이미지",
+    "Bild"
+  ],
+  "Show In": [
+    "Show In",
+    "显示于",
+    "表示先",
+    "다음에서 표시",
+    "Anzeigen in"
+  ],
+  "Save session": [
+    "Save session",
+    "保存会话",
+    "セッション保存",
+    "세션 저장",
+    "Sitzung speichern"
+  ],
+  "Load session": [
+    "Load session",
+    "加载会话",
+    "セッション読込",
+    "세션 불러오기",
+    "Sitzung laden"
+  ],
+  "Export HTML": [
+    "Export HTML",
+    "导出 HTML",
+    "HTML 書き出し",
+    "HTML 내보내기",
+    "HTML exportieren"
+  ],
+  "Reset analysis": [
+    "Reset analysis",
+    "重置分析",
+    "分析をリセット",
+    "분석 초기화",
+    "Analyse zurücksetzen"
+  ],
+  "Search": [
+    "Search",
+    "搜索",
+    "検索",
+    "검색",
+    "Suchen"
+  ],
+  "Filter": [
+    "Filter",
+    "筛选",
+    "フィルター",
+    "필터",
+    "Filter"
+  ],
+  "Column filter": [
+    "Column filter",
+    "列筛选",
+    "列フィルター",
+    "열 필터",
+    "Spaltenfilter"
+  ],
+  "Contains text or =, !=, >, >=, <, <=": [
+    "Contains text or =, !=, >, >=, <, <=",
+    "包含文本或 =, !=, >, >=, <, <=",
+    "文字列または =, !=, >, >=, <, <=",
+    "텍스트 포함 또는 =, !=, >, >=, <, <=",
+    "Text enthält oder =, !=, >, >=, <, <="
+  ],
+  "Columns": [
+    "Columns",
+    "列",
+    "列",
+    "열",
+    "Spalten"
+  ],
+  "Copy": [
+    "Copy",
+    "复制",
+    "コピー",
+    "복사",
+    "Kopieren"
+  ],
+  "Clear": [
+    "Clear",
+    "清除",
+    "クリア",
+    "지우기",
+    "Leeren"
+  ],
+  "Select all": [
+    "Select all",
+    "全选",
+    "すべて選択",
+    "모두 선택",
+    "Alles auswählen"
+  ],
+  "Include": [
+    "Include",
+    "纳入分析",
+    "含める",
+    "포함",
+    "Einbeziehen"
+  ],
+  "Exclude": [
+    "Exclude",
+    "排除分析",
+    "除外",
+    "제외",
+    "Ausschließen"
+  ],
+  "Included": [
+    "Included",
+    "已纳入",
+    "対象",
+    "포함됨",
+    "Einbezogen"
+  ],
+  "Excluded": [
+    "Excluded",
+    "已排除",
+    "除外済み",
+    "제외됨",
+    "Ausgeschlossen"
+  ],
+  "Analyze Selection": [
+    "Analyze Selection",
+    "分析所选内容",
+    "選択を分析",
+    "선택 항목 분석",
+    "Auswahl analysieren"
+  ],
+  "Selection actions": [
+    "Selection actions",
+    "选择操作",
+    "選択操作",
+    "선택 작업",
+    "Auswahlaktionen"
+  ],
+  "Inspect record": [
+    "Inspect record",
+    "检查原始记录",
+    "レコードを調べる",
+    "레코드 검사",
+    "Datensatz untersuchen"
+  ],
+  "Record evidence": [
+    "Record evidence",
+    "记录证据",
+    "レコードの根拠",
+    "레코드 근거",
+    "Datensatzbelege"
+  ],
+  "Record": [
+    "Record",
+    "记录",
+    "レコード",
+    "레코드",
+    "Datensatz"
+  ],
+  "Row": [
+    "Row",
+    "行",
+    "行",
+    "행",
+    "Zeile"
+  ],
+  "Origin": [
+    "Origin",
+    "来源",
+    "出所",
+    "출처",
+    "Herkunft"
+  ],
+  "Offset": [
+    "Offset",
+    "偏移量",
+    "オフセット",
+    "오프셋",
+    "Offset"
+  ],
+  "Record sequence": [
+    "Record sequence",
+    "记录顺序",
+    "レコード順序",
+    "레코드 순서",
+    "Datensatzfolge"
+  ],
+  "Value": [
+    "Value",
+    "数值",
+    "値",
+    "값",
+    "Wert"
+  ],
+  "Value status": [
+    "Value status",
+    "数值状态",
+    "値の状態",
+    "값 상태",
+    "Wertstatus"
+  ],
+  "Test name": [
+    "Test name",
+    "测试名称",
+    "テスト名",
+    "테스트 이름",
+    "Testname"
+  ],
+  "Result index": [
+    "Result index",
+    "结果索引",
+    "結果インデックス",
+    "결과 인덱스",
+    "Ergebnisindex"
+  ],
+  "Head": [
+    "Head",
+    "测试头",
+    "ヘッド",
+    "헤드",
+    "Testkopf"
+  ],
+  "Part ID": [
+    "Part ID",
+    "器件编号",
+    "部品ID",
+    "부품 ID",
+    "Teile-ID"
+  ],
+  "Device identity": [
+    "Device identity",
+    "器件身份",
+    "デバイス識別",
+    "디바이스 식별자",
+    "Bauteilidentität"
+  ],
+  "Duration (ms)": [
+    "Duration (ms)",
+    "耗时 (ms)",
+    "所要時間 (ms)",
+    "소요 시간 (ms)",
+    "Dauer (ms)"
+  ],
+  "Low": [
+    "Low",
+    "下限",
+    "下限",
+    "하한",
+    "Untergrenze"
+  ],
+  "High": [
+    "High",
+    "上限",
+    "上限",
+    "상한",
+    "Obergrenze"
+  ],
+  "Alarm": [
+    "Alarm",
+    "告警",
+    "アラーム",
+    "경보",
+    "Alarm"
+  ],
+  "Alert": [
+    "Alert",
+    "自定义提醒",
+    "ユーザー警告",
+    "사용자 알림",
+    "Benutzerwarnung"
+  ],
+  "Alert field": [
+    "Alert field",
+    "提醒字段",
+    "警告フィールド",
+    "알림 필드",
+    "Warnungsfeld"
+  ],
+  "Alert condition": [
+    "Alert condition",
+    "提醒条件",
+    "警告条件",
+    "알림 조건",
+    "Warnungsbedingung"
+  ],
+  "Last execution": [
+    "Last execution",
+    "最后一次执行",
+    "最後の実行",
+    "마지막 실행",
+    "Letzte Ausführung"
+  ],
+  "Issue": [
+    "Issue",
+    "问题",
+    "問題",
+    "문제",
+    "Problem"
+  ],
+  "Parquet fragment": [
+    "Parquet fragment",
+    "Parquet 分片",
+    "Parquet フラグメント",
+    "Parquet 조각",
+    "Parquet-Fragment"
+  ],
+  "Parquet row": [
+    "Parquet row",
+    "Parquet 行",
+    "Parquet 行",
+    "Parquet 행",
+    "Parquet-Zeile"
+  ],
+  "Annotation type": [
+    "Annotation type",
+    "注释类型",
+    "注釈タイプ",
+    "주석 유형",
+    "Markierungstyp"
+  ],
+  "Next annotation": [
+    "Next annotation",
+    "下一个注释",
+    "次の注釈",
+    "다음 주석",
+    "Nächste Markierung"
+  ],
+  "Previous annotation": [
+    "Previous annotation",
+    "上一个注释",
+    "前の注釈",
+    "이전 주석",
+    "Vorherige Markierung"
+  ],
+  "No further annotation in the indexed preview": [
+    "No further annotation in the indexed preview",
+    "没有更多符合条件的注释",
+    "該当する注釈はありません",
+    "조건에 맞는 주석이 없습니다",
+    "Keine weitere passende Markierung"
+  ],
+  "Ruler previews 2000 marks; navigation covers all": [
+    "Ruler previews 2000 marks; navigation covers all",
+    "标尺预览 2000 个标记；导航覆盖全部",
+    "ルーラーは2000件を表示、移動は全件対象",
+    "눈금자는 2000개 표시, 탐색은 전체 지원",
+    "Lineal zeigt 2000 Markierungen; Navigation umfasst alle"
+  ],
+  "Bins": [
+    "Bins",
+    "组数",
+    "ビン数",
+    "구간 수",
+    "Klassen"
+  ],
+  "bins": [
+    "bins",
+    "组",
+    "ビン",
+    "구간",
+    "Klassen"
+  ],
+  "Half bins": [
+    "Half bins",
+    "组数减半",
+    "ビン数を半分に",
+    "구간 수 절반",
+    "Klassen halbieren"
+  ],
+  "Double bins": [
+    "Double bins",
+    "组数加倍",
+    "ビン数を倍に",
+    "구간 수 두 배",
+    "Klassen verdoppeln"
+  ],
+  "Count": [
+    "Count",
+    "数量",
+    "件数",
+    "개수",
+    "Anzahl"
+  ],
+  "Exact statistics": [
+    "Exact statistics",
+    "精确统计",
+    "厳密な統計",
+    "정확한 통계",
+    "Exakte Statistik"
+  ],
+  "Whisker percentiles": [
+    "Whisker percentiles",
+    "须线百分位",
+    "ひげの百分位",
+    "수염 백분위수",
+    "Perzentile der Whisker"
+  ],
+  "Mean / sigma lines": [
+    "Mean / sigma lines",
+    "均值和标准差线",
+    "平均・標準偏差線",
+    "평균 및 표준편차 선",
+    "Mittelwert- und Sigmalinien"
+  ],
+  "Ppk (overall sigma)": [
+    "Ppk (overall sigma)",
+    "Ppk（总体标准差）",
+    "Ppk（全体標準偏差）",
+    "Ppk (전체 표준편차)",
+    "Ppk (Gesamtstandardabweichung)"
+  ],
+  "Sample standard deviation; linearly interpolated quantiles": [
+    "Sample standard deviation; linearly interpolated quantiles",
+    "样本标准差；线性插值分位数",
+    "標本標準偏差・線形補間分位数",
+    "표본 표준편차 및 선형 보간 분위수",
+    "Stichprobenstandardabweichung; linear interpolierte Quantile"
+  ],
+  "Probability (%)": [
+    "Probability (%)",
+    "累计概率 (%)",
+    "累積確率 (%)",
+    "누적 확률 (%)",
+    "Kumulative Wahrscheinlichkeit (%)"
+  ],
+  "Series": [
+    "Series",
+    "序列",
+    "系列",
+    "계열",
+    "Datenreihe"
+  ],
+  "Layout": [
+    "Layout",
+    "布局",
+    "レイアウト",
+    "배치",
+    "Layout"
+  ],
+  "Legend": [
+    "Legend",
+    "图例",
+    "凡例",
+    "범례",
+    "Legende"
+  ],
+  "Title": [
+    "Title",
+    "标题",
+    "タイトル",
+    "제목",
+    "Titel"
+  ],
+  "Pareto level": [
+    "Pareto level",
+    "帕累托层级",
+    "パレートの分類",
+    "파레토 수준",
+    "Pareto-Ebene"
+  ],
+  "Map color": [
+    "Map color",
+    "晶圆图颜色",
+    "マップの色",
+    "맵 색상",
+    "Kartenfarbe"
+  ],
+  "Map statistic": [
+    "Map statistic",
+    "晶圆图统计量",
+    "マップの統計量",
+    "맵 통계",
+    "Kartenstatistik"
+  ],
+  "Missing coordinates": [
+    "Missing coordinates",
+    "缺少坐标",
+    "座標なし",
+    "좌표 없음",
+    "Fehlende Koordinaten"
+  ],
+  "Incomplete coverage": [
+    "Incomplete coverage",
+    "覆盖不完整",
+    "不完全な範囲",
+    "불완전한 범위",
+    "Unvollständige Abdeckung"
+  ],
+  "Missing values remain unmeasured": [
+    "Missing values remain unmeasured",
+    "缺失值保持未测状态",
+    "欠損値は未測定のまま",
+    "누락된 값은 미측정으로 유지",
+    "Fehlende Werte bleiben ungemessen"
+  ],
+  "Flip Y": [
+    "Flip Y",
+    "翻转 Y 轴",
+    "Y軸反転",
+    "Y축 반전",
+    "Y spiegeln"
+  ],
+  "Rotate": [
+    "Rotate",
+    "旋转",
+    "回転",
+    "회전",
+    "Drehen"
+  ],
+  "Reverse wafer order": [
+    "Reverse wafer order",
+    "反转晶圆顺序",
+    "ウェハ順序を反転",
+    "웨이퍼 순서 반전",
+    "Waferreihenfolge umkehren"
+  ],
+  "Unpaired": [
+    "Unpaired",
+    "未配对",
+    "未ペア",
+    "짝 없음",
+    "Ungepaart"
+  ],
+  "No mapped devices": [
+    "No mapped devices",
+    "没有可映射的器件",
+    "マップ対象なし",
+    "매핑된 디바이스 없음",
+    "Keine kartierbaren Bauteile"
+  ],
+  "No valid numeric data": [
+    "No valid numeric data",
+    "没有有效数值数据",
+    "有効な数値なし",
+    "유효한 숫자 데이터 없음",
+    "Keine gültigen numerischen Daten"
+  ],
+  "Not selected": [
+    "Not selected",
+    "未选择",
+    "未選択",
+    "선택 안 함",
+    "Nicht ausgewählt"
+  ],
+  "Loading": [
+    "Loading",
+    "加载中",
+    "読み込み中",
+    "불러오는 중",
+    "Wird geladen"
+  ],
+  "Profile": [
+    "Profile",
+    "验证配置",
+    "検証プロファイル",
+    "검증 프로필",
+    "Prüfprofil"
+  ],
+  "Validation": [
+    "Validation",
+    "验证",
+    "検証",
+    "검증",
+    "Validierung"
+  ],
+  "Source": [
+    "Source",
+    "源文件",
+    "ソース",
+    "소스",
+    "Quelldatei"
+  ],
+  "Measurements": [
+    "Measurements",
+    "测量值",
+    "測定値",
+    "측정값",
+    "Messwerte"
+  ],
+  "measurements": [
+    "measurements",
+    "测量值",
+    "測定値",
+    "측정값",
+    "Messwerte"
+  ],
+  "Wafer": [
+    "Wafer",
+    "晶圆",
+    "ウェハ",
+    "웨이퍼",
+    "Wafer"
+  ],
+  "Plot points reduced; statistics use all selected values": [
+    "Plot points reduced; statistics use all selected values",
+    "绘图点已采样；统计使用全部所选值",
+    "表示点は間引き、統計は全選択値を使用",
+    "표시 점은 축소되며 통계는 전체 선택 값을 사용",
+    "Darstellung reduziert; Statistik verwendet alle ausgewählten Werte"
+  ],
+  "Current analysis selection": [
+    "Current analysis selection",
+    "当前分析选择",
+    "現在の分析選択",
+    "현재 분석 선택",
+    "Aktuelle Analyseauswahl"
+  ],
+  "Summary snapshot": [
+    "Summary snapshot",
+    "汇总快照",
+    "サマリースナップショット",
+    "요약 스냅샷",
+    "Zusammenfassungs-Snapshot"
+  ],
+  "Offline selection": [
+    "Offline selection",
+    "离线选择",
+    "オフライン選択",
+    "오프라인 선택",
+    "Offline-Auswahl"
+  ],
+  "Maximum 16 panes": [
+    "Maximum 16 panes",
+    "最多 16 个窗格",
+    "最大16ペイン",
+    "최대 16개 창",
+    "Maximal 16 Bereiche"
+  ],
+  "FFC requires a documented first-failing-cycle mapping. CYCL_CNT is not assumed to be FFC.": [
+    "FFC requires a documented first-failing-cycle mapping. CYCL_CNT is not assumed to be FFC.",
+    "FFC 需要明确的首个失败周期映射；不能将 CYCL_CNT 当作 FFC。",
+    "FFCには最初の失敗サイクルの対応仕様が必要です。CYCL_CNTをFFCと見なしません。",
+    "FFC는 첫 실패 사이클 매핑 명세가 필요합니다. CYCL_CNT를 FFC로 간주하지 않습니다.",
+    "FFC benötigt eine dokumentierte Zuordnung des ersten Fehlerzyklus. CYCL_CNT wird nicht als FFC interpretiert."
+  ],
+  "One self-contained file for sharing. Maximum attachment size is enforced by the local viewer.": [
+    "One self-contained file for sharing. Maximum attachment size is enforced by the local viewer.",
+    "生成独立文件用于共享；本地查看器限制附件大小。",
+    "共有用の単一完結ファイル。添付サイズ上限を適用します。",
+    "공유용 독립 파일입니다. 로컬 뷰어가 첨부 크기를 제한합니다.",
+    "Eine eigenständige Datei zum Teilen. Der lokale Viewer begrenzt die Anhanggröße."
+  ],
+  "Single-file snapshot. No manufacturing flow completeness is inferred.": [
+    "Single-file snapshot. No manufacturing flow completeness is inferred.",
+    "单文件快照；不据此推断制造流程完整性。",
+    "単一ファイルのスナップショット。製造フローの完全性は推定しません。",
+    "단일 파일 스냅샷이며 제조 공정 완전성을 추론하지 않습니다.",
+    "Einzeldatei-Snapshot. Keine Ableitung der Vollständigkeit des Fertigungsablaufs."
+  ],
+  "all": [
+    "all",
+    "全部",
+    "すべて",
+    "전체",
+    "Alle"
+  ],
+  "failure": [
+    "failure",
+    "失败",
+    "失敗",
+    "실패",
+    "Fehler"
+  ],
+  "alarm": [
+    "alarm",
+    "告警",
+    "アラーム",
+    "경보",
+    "Alarm"
+  ],
+  "exclusion": [
+    "exclusion",
+    "排除",
+    "除外",
+    "제외",
+    "Ausschluss"
+  ],
+  "alert": [
+    "alert",
+    "提醒",
+    "警告",
+    "알림",
+    "Warnung"
+  ],
+  "Tab group": [
+    "Tab group",
+    "标签组",
+    "タブグループ",
+    "탭 그룹",
+    "Tabgruppe"
+  ],
+  "X label": [
+    "X label",
+    "X 轴标题",
+    "X軸ラベル",
+    "X축 레이블",
+    "X-Beschriftung"
+  ],
+  "Y label": [
+    "Y label",
+    "Y 轴标题",
+    "Y軸ラベル",
+    "Y축 레이블",
+    "Y-Beschriftung"
+  ],
+  "Axis bounds": [
+    "Axis bounds",
+    "坐标轴范围",
+    "軸範囲",
+    "축 범위",
+    "Achsengrenzen"
+  ],
+  "Invalid axis bounds": [
+    "Invalid axis bounds",
+    "坐标轴范围无效",
+    "無効な軸範囲",
+    "잘못된 축 범위",
+    "Ungültige Achsengrenzen"
+  ],
+  "Captured rows": [
+    "Captured rows",
+    "已导出的行",
+    "収録行",
+    "포함된 행",
+    "Erfasste Zeilen"
+  ],
+  "Summary snapshot settings are fixed": [
+    "Summary snapshot settings are fixed",
+    "汇总快照的设置已固定",
+    "サマリーの設定は固定です",
+    "요약 스냅샷 설정은 고정됩니다",
+    "Einstellungen des Snapshots sind fest"
+  ],
+  "Unavailable": [
+    "Unavailable",
+    "不可用",
+    "利用不可",
+    "사용 불가",
+    "Nicht verfügbar"
+  ],
+  "Test method": [
+    "Test method",
+    "测试方法",
+    "テストメソッド",
+    "테스트 메서드",
+    "Testmethode"
+  ],
+  "Foreground time": [
+    "Foreground time",
+    "前台执行时间",
+    "フォアグラウンド時間",
+    "포그라운드 시간",
+    "Vordergrundzeit"
+  ],
+  "Background time": [
+    "Background time",
+    "后台执行时间",
+    "バックグラウンド時間",
+    "백그라운드 시간",
+    "Hintergrundzeit"
+  ],
+  "Unresolved": [
+    "Unresolved",
+    "未解析",
+    "未解決",
+    "미해결",
+    "Ungeklärt"
   ]
 }

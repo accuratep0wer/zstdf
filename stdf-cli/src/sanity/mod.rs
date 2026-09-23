@@ -10,7 +10,7 @@ use std::io::{Read, Seek, SeekFrom, Write};
 use std::path::{Path, PathBuf};
 use stdf_validate::fields::{self, Field};
 
-mod checks;
+pub(crate) mod checks;
 mod profiles;
 mod scan;
 mod storage;

@@ -19,6 +19,7 @@ mod partitioned;
 mod report_ui;
 mod sanity;
 mod traceability;
+mod viewer;
 
 #[cfg(test)]
 mod dataset_tests;
@@ -35,6 +36,8 @@ struct Cli {
 
 #[derive(Debug, Subcommand)]
 enum Command {
+    /// Open one STDF in a local Parquet-backed engineering workspace, or export offline HTML.
+    View(viewer::Arguments),
     /// Audit CP/FT source fields and preview run metadata and per-unit first values.
     Sanity(sanity::Arguments),
     /// Report FTR failures and yield by full VECT_NAM directly from STDF.
@@ -129,6 +132,7 @@ fn main() {
 
 fn execute(cli: Cli, out: &mut impl Write) -> CliResult<()> {
     match cli.command {
+        Command::View(args) => viewer::execute(args, out),
         Command::Sanity(args) => sanity::execute(args, out),
         Command::FtrPareto(args) => ftr_pareto::execute(args, out),
         Command::Traceability(args) => traceability::execute(args, out),

@@ -7,7 +7,7 @@ const CTSR: &str = "REC_CUSTM:Cn CHAR_ID:Cn CHAR_NAM:Cn TAGT_INS:Cn RSLT_TITLE:C
 const CTRR: &str = "REC_CUSTM:Cn CHAR_ID_REF:U4 HEAD_NUM:U1 SITE_NUM:U4 TEST_NUM_REF:Cn CELL_COORD:Cn RSLT_TAGT_INS:Cn CELL_RSLT:Cn";
 
 #[derive(Serialize)]
-pub(super) struct Checks {
+pub(crate) struct Checks {
     pub hash: String,
     pub csv: String,
     rows: Vec<Row>,

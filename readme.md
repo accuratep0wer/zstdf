@@ -35,6 +35,33 @@ records stay hidden. Enable individual checks with `--checks-csv`. Framing and
 decode errors remain visible. See [vendor records and runnable demo](docs/vendor-records.md)
 for V93000 activity traces and shmoo/margin setup/results.
 
+
+## Single-file engineering viewer
+
+Open one STDF or gzip source directly in a local browser workspace. Conversion and a verified Parquet cache are automatic; existing `convert`, `dashboard`, `dashboard-dir`, `sanity`, and `traceability` commands remain available.
+
+```powershell
+cargo build --release -p stdf-cli
+.\target\release\zstdf-cli.exe view C:\data\run.stdf
+.\target\release\zstdf-cli.exe view C:\data\run.stdf.gz --flow CP
+.\target\release\zstdf-cli.exe view C:\data\run.stdf --dataset C:\data\dataset
+.\target\release\zstdf-cli.exe view C:\data\run.stdf --export-html run-view.html
+```
+
+Keep the terminal open for the local viewer. The exported HTML opens without a service or source files; the default attachment limit is 20 MiB. Add `--export-scope summary` for aggregate-only sharing.
+
+The workspace includes linked/pinned Data Logs, record inspection, per-column filters, retest population choices, plots, wafer maps, five styles, and five languages. Start with **Tests**, then use **Show In** to add panes. Display filters do not change analysis; device and measurement exclusions are separate actions.
+
+For a runnable synthetic demo:
+
+```powershell
+python examples/viewer/generate_demo.py
+.\target\release\zstdf-cli.exe view examples/viewer/generated/demo.stdf
+Start-Process examples/viewer/generated/selection.html
+```
+
+See [viewer behavior, provenance, budgets, and verification](docs/single-file-viewer-proposal.md) for details and supported boundaries.
+
 ## Report style and language
 
 Every generated Dashboard, Sanity, and Traceability HTML report has top-right

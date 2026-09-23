@@ -33,6 +33,9 @@ where
         peak_bytes: 128 * 1024,
         limits,
         finished: false,
+        provenance: None,
+        record_sequence: 0,
+        last_provenance: Vec::new(),
     })
 }
 
@@ -46,9 +49,30 @@ pub struct BoundedRecordBatchIter<I> {
     peak_bytes: usize,
     limits: BatchLimits,
     finished: bool,
+    provenance: Option<BTreeMap<(u8, u8), Vec<RowProvenance>>>,
+    record_sequence: u64,
+    last_provenance: Vec<RowProvenance>,
+}
+
+/// Exact source record ordinal and expansion index for an emitted EAV row.
+/// MPR index 0 is its overall verdict; indices 1.. are RTN_RSLT values.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RowProvenance {
+    pub record_sequence: u64,
+    pub expansion_index: u32,
 }
 
 impl<I> BoundedRecordBatchIter<I> {
+    /// Enable before reading. Existing converters incur no provenance allocation.
+    pub fn with_provenance(mut self) -> Self {
+        assert_eq!(self.record_sequence, 0, "enable provenance before reading");
+        self.provenance = Some(BTreeMap::new());
+        self
+    }
+
+    pub fn last_provenance(&self) -> &[RowProvenance] {
+        &self.last_provenance
+    }
     pub fn peak_reserved_bytes(&self) -> usize {
         self.peak_bytes
     }
@@ -87,6 +111,7 @@ impl<I> BoundedRecordBatchIter<I> {
     }
 
     fn push(&mut self, record: &StdfRecord) -> Result<Option<RecordBatch>, StdfError> {
+        self.record_sequence += 1;
         let context_string_len = match record {
             StdfRecord::Mir(mir) => mir.lot_id.len(),
             StdfRecord::Wir(wir) => wir.wafer_id.as_ref().map_or(0, String::len),
@@ -170,8 +195,31 @@ impl<I> BoundedRecordBatchIter<I> {
             }
             _ => {}
         }
+        if let Some(origins) = &mut self.provenance {
+            let test = match record {
+                StdfRecord::Ptr(r) => Some(((r.head_num, r.site_num), 1)),
+                StdfRecord::Ftr(r) => Some(((r.head_num, r.site_num), 1)),
+                StdfRecord::Mpr(r) => Some(((r.head_num, r.site_num), u32::from(r.rslt_cnt) + 1)),
+                _ => None,
+            };
+            // The existing per-test 4096-byte reservation covers these 16-byte entries.
+            if let Some((site, count)) = test {
+                origins
+                    .entry(site)
+                    .or_default()
+                    .extend((0..count).map(|i| RowProvenance {
+                        record_sequence: self.record_sequence,
+                        expansion_index: i,
+                    }));
+            }
+        }
         if let Some(part) = self.context.push_record(record) {
             let key = (part.head_num, part.site_num);
+            self.last_provenance = self
+                .provenance
+                .as_mut()
+                .and_then(|p| p.remove(&key))
+                .unwrap_or_default();
             let batch = crate::batch_builder::build_batch(std::slice::from_ref(&part));
             if let Some((tests, bytes)) = self.pending.remove(&key) {
                 self.tests -= tests;

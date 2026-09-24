@@ -62,6 +62,8 @@ Start-Process examples/viewer/generated/selection.html
 
 See [viewer behavior, provenance, budgets, and verification](docs/single-file-viewer-proposal.md) for details and supported boundaries.
 
+For external sample files, see [public STDF experiments](examples/public-stdf/README.md): pinned downloads, provenance notes, tested record counts, and compact offline reports. These third-party samples have separate reuse terms; use **All attempts** when their coordinates cannot resolve under the viewer identity policy.
+
 ## Report style and language
 
 Every generated Dashboard, Sanity, and Traceability HTML report has top-right
@@ -732,6 +734,11 @@ Includes reference-style record formatting, header/footer, scales, timestamps,
 and generic data formatting. Existing output is overwritten; its parent directory
 must already exist. The complete text is assembled in memory before writing,
 so this command is not a bounded-memory export.
+
+For colored record and field highlighting in Notepad++, import the
+[STDF ASCII language definition](config/notepad-plus-plus/README.md).
+Export to `decoded.stdfascii` for automatic language selection, or choose
+**Language > STDF ASCII** when opening an existing `.txt` export.
 
 ### `batch-check`: Validate a Directory
 

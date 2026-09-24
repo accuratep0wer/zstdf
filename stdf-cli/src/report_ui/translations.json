@@ -3337,5 +3337,82 @@
     "未解決",
     "미해결",
     "Ungeklärt"
+  ],
+  "Record type": [
+    "Record type",
+    "记录类型",
+    "レコード種別",
+    "레코드 유형",
+    "Datensatztyp"
+  ],
+  "Measured value": [
+    "Measured value",
+    "测量值",
+    "測定値",
+    "측정값",
+    "Messwert"
+  ],
+  "Source record sequence": [
+    "Source record sequence",
+    "源文件记录序号",
+    "ソースレコード順序",
+    "원본 레코드 순서",
+    "Quelldatensatzfolge"
+  ],
+  "Test / series": [
+    "Test / series",
+    "测试项 / 系列",
+    "テスト / 系列",
+    "테스트 / 계열",
+    "Test / Datenreihe"
+  ],
+  "Attempt count": [
+    "Attempt count",
+    "测试次数",
+    "試行数",
+    "시도 수",
+    "Anzahl Versuche"
+  ],
+  "Device count": [
+    "Device count",
+    "器件数量",
+    "デバイス数",
+    "디바이스 수",
+    "Anzahl Bauteile"
+  ],
+  "Cumulative probability (%)": [
+    "Cumulative probability (%)",
+    "累积概率 (%)",
+    "累積確率 (%)",
+    "누적 확률 (%)",
+    "Kumulative Wahrscheinlichkeit (%)"
+  ],
+  "Scatter axis has incompatible units; narrow the selection": [
+    "Scatter axis has incompatible units; narrow the selection",
+    "散点图同一轴的单位不一致，请缩小选择范围",
+    "散布図の同一軸に異なる単位があります。選択範囲を絞ってください",
+    "산점도 축의 단위가 일치하지 않습니다. 선택 범위를 좁히세요",
+    "Die Streudiagrammachse enthält unterschiedliche Einheiten; Auswahl eingrenzen"
+  ],
+  "Description unavailable": [
+    "Description unavailable",
+    "无描述",
+    "説明なし",
+    "설명 없음",
+    "Beschreibung nicht verfügbar"
+  ],
+  "Unknown / mixed bins": [
+    "Unknown / mixed bins",
+    "未知 / 混合 Bin",
+    "不明 / 混在ビン",
+    "알 수 없음 / 혼합 빈",
+    "Unbekannte / gemischte Bins"
+  ],
+  "Map endpoint color": [
+    "Map endpoint color",
+    "色阶终点颜色",
+    "カラースケールの終点色",
+    "색상 범위 끝 색상",
+    "Endfarbe der Farbskala"
   ]
 }

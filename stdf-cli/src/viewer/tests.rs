@@ -5,6 +5,98 @@ fn query_defaults_are_latest() {
     assert_eq!(query::Query::default().population, "latest");
 }
 
+#[test]
+fn sampled_trend_keeps_source_endpoints_in_record_order() {
+    let f = Fixture::new();
+    let mut b = start();
+    for x in 1..=2205 {
+        b.extend(unit(1, x, x as f32 / 10., false));
+    }
+    b.extend(end());
+    let c = f.cache(&b);
+    let q = query::Query {
+        plot: "trend".into(),
+        color: "none".into(),
+        ..Default::default()
+    };
+    let data = query::plot(&c, &q).unwrap();
+    let s = data["series"].as_object().unwrap().values().next().unwrap();
+    let points = s["points"].as_array().unwrap();
+    assert_eq!(s["count"], 2205);
+    assert_eq!(s["sampled"], true);
+    assert_eq!(points.first().unwrap()["record"], 5);
+    assert_eq!(points.last().unwrap()["record"], 6617);
+    assert!(points
+        .windows(2)
+        .all(|w| w[0]["record"].as_u64() < w[1]["record"].as_u64()));
+    assert!(points.len() <= data["points_limit_per_series"].as_u64().unwrap() as usize);
+}
+
+#[test]
+fn scatter_reports_axis_identity_units_and_full_bounds() {
+    let f = Fixture::new();
+    let mut b = start();
+    for x in 1..=3 {
+        b.extend(pir(1));
+        b.extend(ptr(1, 10, "Voltage", x as f32, 0));
+        let mut current = ptr(1, 20, "Current", x as f32 / 100., 0);
+        *current.last_mut().unwrap() = b'A';
+        b.extend(current);
+        b.extend(prr(1, x, false));
+    }
+    b.extend(end());
+    let c = f.cache(&b);
+    let q = query::Query {
+        plot: "scatter".into(),
+        tests: vec![
+            json!(["PTR", 10, "Voltage", null]).to_string(),
+            json!(["PTR", 20, "Current", null]).to_string(),
+        ],
+        ..Default::default()
+    };
+    let data = query::plot(&c, &q).unwrap();
+    assert_eq!(data["x_test"], q.tests[0]);
+    assert_eq!(data["y_test"], q.tests[1]);
+    assert_eq!(data["x_units"], json!(["V"]));
+    assert_eq!(data["y_units"], json!(["A"]));
+    assert_eq!(data["x_min"], 1.);
+    assert_eq!(data["x_max"], 3.);
+    assert!((data["y_max"].as_f64().unwrap() - 0.03).abs() < 1e-8);
+}
+
+#[test]
+fn scatter_rejects_multiple_units_on_the_same_axis() {
+    let f = Fixture::new();
+    let mut b = start();
+    for x in 1..=2 {
+        b.extend(pir(1));
+        b.extend(ptr(1, 10, "Voltage", x as f32, 0));
+        let mut other = ptr(1, 20, "Other", x as f32, 0);
+        if x == 1 {
+            *other.last_mut().unwrap() = b'A';
+        }
+        b.extend(other);
+        b.extend(prr(1, x, false));
+    }
+    b.extend(end());
+    let c = f.cache(&b);
+    let q = query::Query {
+        plot: "scatter".into(),
+        tests: vec![
+            json!(["PTR", 10, "Voltage", null]).to_string(),
+            json!(["PTR", 20, "Other", null]).to_string(),
+        ],
+        ..Default::default()
+    };
+    let data = query::plot(&c, &q).unwrap();
+    assert!(data["unavailable"]
+        .as_str()
+        .unwrap()
+        .contains("incompatible units"));
+    assert!(data.get("correlation").is_none());
+    assert_eq!(data["y_units"], json!(["A", "V"]));
+}
+
 struct Fixture(PathBuf);
 impl Fixture {
     fn new() -> Self {
@@ -669,4 +761,28 @@ fn paging_reuses_disk_query_index_and_cleans_its_own_scratch() {
         .file_name()
         .to_string_lossy()
         .starts_with(".viewer-query-")));
+}
+
+#[test]
+fn bin_descriptions_preserve_run_site_and_number() {
+    let f = Fixture::new();
+    let mut b = start();
+    for (sub, site, number, name) in [(40, 1, 1u16, "Good"), (50, 255, 10, "Functional pass")] {
+        let mut body = vec![1, site];
+        body.extend(number.to_le_bytes());
+        body.extend(1u32.to_le_bytes());
+        body.push(b'P');
+        body.extend(cn(name));
+        b.extend(rec(1, sub, body));
+    }
+    b.extend(unit(1, 1, 1., false));
+    b.extend(end());
+    let c = f.cache(&b);
+    assert_eq!(c.manifest.bin_definitions.len(), 2);
+    assert_eq!(
+        c.manifest.bin_definitions[0],
+        json!({"level":"hard_bin","run":1,"head":1,"site":1,"number":1,"name":"Good"})
+    );
+    assert_eq!(c.manifest.bin_definitions[1]["site"], 255);
+    assert_eq!(c.manifest.bin_definitions[1]["name"], "Functional pass");
 }

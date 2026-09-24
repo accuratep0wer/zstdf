@@ -164,6 +164,7 @@ pub fn prepare(args: &Arguments) -> CliResult<Cache> {
             measurements: 0,
             inventory: BTreeMap::new(),
             runs: Vec::new(),
+            bin_definitions: Vec::new(),
             wafers: Vec::new(),
             fragments: BTreeMap::new(),
             files: BTreeMap::new(),
@@ -319,6 +320,12 @@ fn scan(cache: &mut Cache) -> CliResult<()> {
                     return Err("MRR with unfinished units".into());
                 }
             }
+            StdfRecord::Hbr(r) => {
+                cache.manifest.bin_definitions.push(json!({"level":"hard_bin","run":run,"head":r.head_num,"site":r.site_num,"number":r.hbin_num,"name":r.hbin_nam}));
+            }
+            StdfRecord::Sbr(r) => {
+                cache.manifest.bin_definitions.push(json!({"level":"soft_bin","run":run,"head":r.head_num,"site":r.site_num,"number":r.sbin_num,"name":r.sbin_nam}));
+            }
             StdfRecord::Sdr(r) => {
                 for s in &r.site_num {
                     groups.insert((r.head_num, *s), r.site_grp);
@@ -445,6 +452,7 @@ fn scan(cache: &mut Cache) -> CliResult<()> {
             }
             if serde_json::to_vec(&cache.manifest.runs)?.len()
                 + serde_json::to_vec(&cache.manifest.wafers)?.len()
+                + serde_json::to_vec(&cache.manifest.bin_definitions)?.len()
                 > cache.memory / 16
             {
                 return Err("run/wafer metadata exceeds budget".into());

@@ -97,6 +97,25 @@ Statistics use all included values, sample standard deviation, and linearly inte
 
 Plot point budgets depend on the memory budget, with at most about 2,000 points per series. Reduced rendering is labeled; exact statistics are unaffected. Scatter renders at most 20,000 pairs and labels reduction. Wafer-map selections exceeding 20,000 entries fail and require a narrower scope. More than 256 plot series also requires narrowing the selection.
 
+## Chart axes and record identity
+
+Data Log starts with a frozen **Record type** column (PTR, MPR, FTR, etc.), followed by the source record number. Older saved layouts acquire this column when opened. The record number still navigates to the original source evidence.
+
+| View | Horizontal axis | Vertical axis |
+| --- | --- | --- |
+| Histogram | Selected test and units, or measured value and common units for multiple tests | Integer observation count; right-hand scale is percentage of the plotted numeric population |
+| Box / Range | Test/series categories, including site/result channel when present | Measurement value and units; separate panels for incompatible units |
+| Probability | Selected measurement and units | Empirical cumulative probability, 0-100% |
+| Trend | Integer source-record sequence, from 1 through the source's final record | Selected measurement and units |
+| Scatter | First selected test and its units | Second selected test and its units |
+| Pareto | Integer device count for Latest/First, or attempt count for All attempts | Hard bin, soft bin, test, or FTR-pattern categories |
+| Bin / Parametric Wafer Map | Integer wafer X coordinates | Integer wafer Y coordinates |
+| Timing | Tabular PRR duration in milliseconds and recorded UTC start time | No invented per-test timing axis |
+
+Trend does not renumber filtered or sampled measurements. Its axis retains gaps for other source records, missing results, and excluded attempts. Sampling preserves the first and last selected numeric source records and orders retained points by source record, including interleaved sites. Scatter bounds cover all paired numeric values, even if rendering is reduced. A Scatter axis containing multiple units is rejected visually until the selection is narrowed; different units on its two distinct axes are supported.
+
+Map rotation and Y-flip labels show the transformed coordinate variable/sign. Cell borders may lie at half-coordinate offsets, while axis ticks remain integer die coordinates. Custom plot labels and numeric zoom/bounds remain available. Long test labels use an abbreviated visible caption with the complete name in its tooltip.
+
 ## Storage, provenance, and budgets
 
 The viewer retains `eav-v2` and uses a separately versioned viewer manifest. It creates a quota-limited seekable source spool, measurement EAV fragments, and companion Parquet tables for record locations, device attempts, and executions. Run and wafer metadata are in the manifest; field evidence is a disk-indexed companion stream. The companion tables expose typed ID, attempt, run, test, and numeric value columns alongside serialized row evidence.
@@ -137,6 +156,7 @@ cargo test --workspace --exclude stdf-py
 cargo check -p stdf-py
 cargo build --release -p stdf-cli
 node scripts/smoke_viewer.cjs
+node scripts/smoke_viewer_axes.cjs
 
 # A larger source and measured indexing/query run; psutil is required by the monitor.
 python examples/viewer/generate_demo.py --units 10000 --source-only --output-dir target/viewer-stress
@@ -168,3 +188,23 @@ Query timings include the local Fetch client startup. Disk sizes are end-of-phas
 CTSR/CTRR shmoo/margin plots and dedicated ATER/GDR activity views are subsequent-release work; raw records remain inspectable now. FFC Pareto explains its unavailable status until a documented first-failing-cycle mapping exists. CYCL_CNT is not treated as FFC.
 
 Live Result streaming, Pattern Debug, test-program editing, DC profiling files, and foreground/background execution timelines require inputs beyond one ordinary STDF and are outside this implementation. Manufacturing step completeness remains the independent traceability command's responsibility.
+
+
+### Wafer-map legends and colors
+
+Bin Wafer Map defaults to hard-bin coloring. Its map control also offers soft
+bins and verdict overlays. Each displayed bin has a distinct swatch, bin number
+and recorded HBR/SBR description. Descriptions are resolved within the source
+run and head/site, with aggregate definitions used as fallback. Conflicting
+applicable descriptions are retained; absent descriptions are labeled unavailable.
+Unknown or spatially mixed bins use grey. Colors identify categories, not severity.
+
+Parametric Wafer Map shows a continuous background-to-selected-color legend,
+with Min and Max computed from the displayed coordinate aggregates. The chosen
+endpoint color is retained in the pane/session. Missing values remain grey;
+a constant-valued map uses the endpoint color. The existing min/mean/max
+aggregation selection remains explicit.
+
+Viewer cache version v5 retains bin descriptions. Opening a source builds a new
+versioned viewer cache automatically; existing measurement datasets are unchanged.
+Existing offline HTML files must be exported again to acquire these controls.

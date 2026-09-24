@@ -18,7 +18,7 @@ mod store;
 mod tests;
 mod web;
 
-const VERSION: &str = "viewer-v4";
+const VERSION: &str = "viewer-v5";
 #[derive(Debug, Args)]
 pub struct Arguments {
     input: PathBuf,
@@ -122,6 +122,8 @@ struct Manifest {
     measurements: u64,
     inventory: BTreeMap<String, u64>,
     runs: Vec<Value>,
+    #[serde(default)]
+    bin_definitions: Vec<Value>,
     wafers: Vec<Option<String>>,
     fragments: BTreeMap<String, Vec<Fragment>>,
     files: BTreeMap<String, String>,

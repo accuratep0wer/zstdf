@@ -552,10 +552,28 @@ struct Stats {
     hist_max: f64,
     sampled: bool,
     ppk: Option<f64>,
+    #[serde(skip)]
+    first_point: Option<Row>,
+    #[serde(skip)]
+    last_point: Option<Row>,
 }
 impl Stats {
     fn push(&mut self, r: &Row) {
         if let Some(x) = r.value {
+            if self
+                .first_point
+                .as_ref()
+                .is_none_or(|p| (r.record, r.id) < (p.record, p.id))
+            {
+                self.first_point = Some(r.clone());
+            }
+            if self
+                .last_point
+                .as_ref()
+                .is_none_or(|p| (r.record, r.id) > (p.record, p.id))
+            {
+                self.last_point = Some(r.clone());
+            }
             self.count += 1;
             let delta = x - self.mean;
             self.mean += delta / self.count as f64;
@@ -668,7 +686,7 @@ fn plot_data(cache: &Cache, q: &Query) -> CliResult<Value> {
             }
         }
     }
-    let point_limit = (cache.memory / 32 / groups.len().max(1) / 2048).clamp(1, 2000) as u64;
+    let point_limit = (cache.memory / 32 / groups.len().max(1) / 2048).clamp(3, 2000) as u64;
     let mut sorted = sort.finish()?;
     let mut indices: BTreeMap<String, u64> = BTreeMap::new();
     let percent = [q.low_whisker, 25., 50., 75., q.high_whisker];
@@ -715,7 +733,9 @@ fn plot_data(cache: &Cache, q: &Query) -> CliResult<Value> {
         let s = groups.get_mut(&key).unwrap();
         if r.value.is_some() {
             let n = seen.entry(key).or_default();
-            let stride = s.count.div_ceil(point_limit).max(1);
+            // Reserve two slots for the true first/last source records, even when
+            // PRR completion order differs from measurement record order.
+            let stride = s.count.div_ceil(point_limit - 2).max(1);
             if *n % stride == 0 {
                 s.points.push(r);
             }
@@ -725,6 +745,11 @@ fn plot_data(cache: &Cache, q: &Query) -> CliResult<Value> {
         Ok(())
     })?;
     for s in groups.values_mut() {
+        s.points.extend(s.first_point.take());
+        s.points.extend(s.last_point.take());
+        s.points.sort_by_key(|r| (r.record, r.id));
+        s.points.dedup_by_key(|r| r.id);
+        s.sampled = s.count > s.points.len() as u64;
         s.sigma = (s.count > 1).then(|| (s.m2 / (s.count - 1) as f64).sqrt());
         if !s.variable_limits {
             if let (Some(l), Some(h), Some(sd)) = (s.low, s.high, s.sigma) {
@@ -759,6 +784,13 @@ fn scatter(cache: &Cache, q: &Query) -> CliResult<Value> {
     let mut count = 0u64;
     let mut unpaired = 0;
     let mut points = Vec::new();
+    let (mut x_units, mut y_units) = (BTreeSet::new(), BTreeSet::new());
+    let (mut xmin, mut xmax, mut ymin, mut ymax) = (
+        f64::INFINITY,
+        f64::NEG_INFINITY,
+        f64::INFINITY,
+        f64::NEG_INFINITY,
+    );
     let (mut mx, mut my, mut xx, mut yy, mut xy) = (0., 0., 0., 0., 0.);
     let mut emit = |g: &[Row]| {
         let a = g
@@ -772,6 +804,12 @@ fn scatter(cache: &Cache, q: &Query) -> CliResult<Value> {
         if let (Some(a), Some(b)) = (a, b) {
             let x = a.value.unwrap();
             let y = b.value.unwrap();
+            x_units.insert(a.units.clone());
+            y_units.insert(b.units.clone());
+            xmin = xmin.min(x);
+            xmax = xmax.max(x);
+            ymin = ymin.min(y);
+            ymax = ymax.max(y);
             count += 1;
             let dx = x - mx;
             let dy = y - my;
@@ -800,8 +838,16 @@ fn scatter(cache: &Cache, q: &Query) -> CliResult<Value> {
         }
     }
     emit(&group);
+    if x_units.len() > 1 || y_units.len() > 1 {
+        return Ok(
+            json!({"unavailable":"Scatter axis has incompatible units; narrow the selection",
+            "x_test":q.tests[0],"y_test":q.tests[1],"x_units":x_units,"y_units":y_units,"count":count,"unpaired":unpaired}),
+        );
+    }
     Ok(
-        json!({"points":points,"count":count,"unpaired":unpaired,"sampled":count>20000,"correlation":if count>1&&xx>0.&&yy>0.{Some(xy/(xx*yy).sqrt())}else{None},"population":q.population}),
+        json!({"points":points,"count":count,"unpaired":unpaired,"sampled":count>20000,"correlation":if count>1&&xx>0.&&yy>0.{Some(xy/(xx*yy).sqrt())}else{None},"population":q.population,
+            "x_test":q.tests[0],"y_test":q.tests[1],"x_units":x_units,"y_units":y_units,
+            "x_min":xmin.is_finite().then_some(xmin),"x_max":xmax.is_finite().then_some(xmax),"y_min":ymin.is_finite().then_some(ymin),"y_max":ymax.is_finite().then_some(ymax)}),
     )
 }
 fn pareto(cache: &Cache, q: &Query) -> CliResult<Value> {

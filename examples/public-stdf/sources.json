@@ -1,0 +1,74 @@
+[
+  {
+    "file": "pystdf/lot2.stdf",
+    "repository": "cmars/pystdf",
+    "commit": "2215079c00e2f7b4c0be133baef4bf2a70d25859",
+    "source_path": "data/lot2.stdf",
+    "url": "https://raw.githubusercontent.com/cmars/pystdf/2215079c00e2f7b4c0be133baef4bf2a70d25859/data/lot2.stdf",
+    "bytes": 4418001,
+    "sha256": "e2a77df87fbf97c17e8e1a48bb4a702aa2307e1ce6abb41291022269af085958"
+  },
+  {
+    "file": "pystdf/lot3.stdf",
+    "repository": "cmars/pystdf",
+    "commit": "2215079c00e2f7b4c0be133baef4bf2a70d25859",
+    "source_path": "data/lot3.stdf",
+    "url": "https://raw.githubusercontent.com/cmars/pystdf/2215079c00e2f7b4c0be133baef4bf2a70d25859/data/lot3.stdf",
+    "bytes": 4558921,
+    "sha256": "30ddd7ec4c351ded218d65147724c9e9a71731a1553cee7199c2ff01ced0caa0"
+  },
+  {
+    "file": "pystdf/README",
+    "repository": "cmars/pystdf",
+    "commit": "2215079c00e2f7b4c0be133baef4bf2a70d25859",
+    "source_path": "data/README",
+    "url": "https://raw.githubusercontent.com/cmars/pystdf/2215079c00e2f7b4c0be133baef4bf2a70d25859/data/README",
+    "bytes": 376,
+    "sha256": "ee91fa88d7d4e12d2dec282aa91e7a95c7fadb2fe230c3a318f0651803d7d127"
+  },
+  {
+    "file": "pystdf/LICENSE.txt",
+    "repository": "cmars/pystdf",
+    "commit": "2215079c00e2f7b4c0be133baef4bf2a70d25859",
+    "source_path": "LICENSE.txt",
+    "url": "https://raw.githubusercontent.com/cmars/pystdf/2215079c00e2f7b4c0be133baef4bf2a70d25859/LICENSE.txt",
+    "bytes": 17987,
+    "sha256": "ab15fd526bd8dd18a9e77ebc139656bf4d33e97fc7238cd11bf60e2b9b8666c6"
+  },
+  {
+    "file": "stdfreader/a595.stdf",
+    "repository": "showjim/STDFReader",
+    "commit": "6ebaa2608c81e77f921e65010433d2dcde82f160",
+    "source_path": "sample_stdf/a595.stdf",
+    "url": "https://raw.githubusercontent.com/showjim/STDFReader/6ebaa2608c81e77f921e65010433d2dcde82f160/sample_stdf/a595.stdf",
+    "bytes": 2101549,
+    "sha256": "1a835188e49010c78505e8cc1bacde1be22aa2e4c91be2898dba23808c68a94f"
+  },
+  {
+    "file": "stdfreader/LICENSE",
+    "repository": "showjim/STDFReader",
+    "commit": "6ebaa2608c81e77f921e65010433d2dcde82f160",
+    "source_path": "LICENSE",
+    "url": "https://raw.githubusercontent.com/showjim/STDFReader/6ebaa2608c81e77f921e65010433d2dcde82f160/LICENSE",
+    "bytes": 18092,
+    "sha256": "8177f97513213526df2cf6184d8ff986c675afb514d4e68a404010521b880643"
+  },
+  {
+    "file": "rust-stdf/lot2.stdf.gz",
+    "repository": "noonchen/rust-stdf",
+    "commit": "5160dc3859ea1ed19c94f008a1a6133299715993",
+    "source_path": "demo_stdf/lot2.stdf.gz",
+    "url": "https://raw.githubusercontent.com/noonchen/rust-stdf/5160dc3859ea1ed19c94f008a1a6133299715993/demo_stdf/lot2.stdf.gz",
+    "bytes": 209178,
+    "sha256": "37235c192dfd0005d2aefd7508a5e15407aeeb5b0576a6930028a1ee8845837b"
+  },
+  {
+    "file": "rust-stdf/LICENSE",
+    "repository": "noonchen/rust-stdf",
+    "commit": "5160dc3859ea1ed19c94f008a1a6133299715993",
+    "source_path": "LICENSE",
+    "url": "https://raw.githubusercontent.com/noonchen/rust-stdf/5160dc3859ea1ed19c94f008a1a6133299715993/LICENSE",
+    "bytes": 1064,
+    "sha256": "cca5d245e5c6ac76f9deedaa33a0f103f963ce24edd2e573fce4b0ed128c3115"
+  }
+]

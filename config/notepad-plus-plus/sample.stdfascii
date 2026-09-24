@@ -1,0 +1,331 @@
+Starting /opt/hp93000/soc/formatter/bin/STDFreader:
+
+  STDF is a trademark of Teradyne, Inc.
+
+Data from file 'demo.stdf'
+FAR Record
+  CPU_TYPE:      2
+  STDF_VER:      4
+MIR Record
+  SETUP_T:       1720000090 (03-Jul-2024 09:48:10)
+  START_T:       1720000100 (03-Jul-2024 09:48:20)
+  STAT_NUM:      1
+  MODE_COD:      'P'
+  RTST_COD:      ' '
+  PROT_COD:      ' '
+  BURN_TIM:      0
+  CMOD_COD:      ' '
+  LOT_ID:        VIEWER_LOT
+  PART_TYP:      SYNTHETIC_DEVICE
+  NODE_NAM:      LOCAL
+  TSTR_TYP:      SIMULATED
+  JOB_NAM:       DEMO_JOB
+  JOB_REV:       v1
+WIR Record
+  HEAD_NUM:      1
+  SITE_GRP:      1
+  START_T:       1720000100 (03-Jul-2024 09:48:20)
+  WAFER_ID:      W1
+PIR Record
+  HEAD_NUM:      1
+  SITE_NUM:      2
+PIR Record
+  HEAD_NUM:      1
+  SITE_NUM:      1
+PTR Record
+  TEST_NUM:      100
+  HEAD_NUM:      1
+  SITE_NUM:      2
+  TEST_FLG:      0x0
+  PARM_FLG:      0x0
+  RESULT:        2.000000000
+  TEST_TXT:      Voltage
+  ALARM_ID:      
+  OPT_FLAG:      0x0
+  LO_LIMIT:      0.000000000
+  HI_LIMIT:      10.000000000
+  UNITS:          V
+PTR Record
+  TEST_NUM:      101
+  HEAD_NUM:      1
+  SITE_NUM:      2
+  TEST_FLG:      0x0
+  PARM_FLG:      0x0
+  RESULT:        0.200000003
+  TEST_TXT:      Leakage
+  ALARM_ID:      
+  OPT_FLAG:      0x0
+  LO_LIMIT:      0.000000000
+  HI_LIMIT:      10.000000000
+  UNITS:          mA
+PTR Record
+  TEST_NUM:      102
+  HEAD_NUM:      1
+  SITE_NUM:      2
+  TEST_FLG:      0x0
+  PARM_FLG:      0x0
+  RESULT:        2.400000095
+  TEST_TXT:      Reference
+  ALARM_ID:      
+  OPT_FLAG:      0x0
+  LO_LIMIT:      0.000000000
+  HI_LIMIT:      10.000000000
+  UNITS:          V
+FTR Record
+  TEST_NUM:      200
+  HEAD_NUM:      1
+  SITE_NUM:      2
+  TEST_FLG:      0x0
+  OPT_FLAG:      0xC0
+  CYCL_CNT:      0
+  REL_VADR:      0
+  REPT_CNT:      0
+  NUM_FAIL:      0
+  XFAIL_AD:      0
+  YFAIL_AD:      0
+  VECT_OFF:      0
+  RTN_ICNT:      0
+  PGM_ICNT:      0
+  FAIL_PIN:      
+  VECT_NAM:      pattern/scan
+MPR Record
+  TEST_NUM:      300
+  HEAD_NUM:      1
+  SITE_NUM:      2
+  TEST_FLG:      0x0
+  PARM_FLG:      0x0
+  RTN_ICNT:      0
+  RSLT_CNT:      2
+  RTN_RSLT:      2.000000000, 2.500000000
+  TEST_TXT:      Channels
+PTR Record
+  TEST_NUM:      100
+  HEAD_NUM:      1
+  SITE_NUM:      1
+  TEST_FLG:      0x0
+  PARM_FLG:      0x0
+  RESULT:        2.500000000
+  TEST_TXT:      Voltage
+  ALARM_ID:      
+  OPT_FLAG:      0x0
+  LO_LIMIT:      0.000000000
+  HI_LIMIT:      10.000000000
+  UNITS:          V
+PTR Record
+  TEST_NUM:      101
+  HEAD_NUM:      1
+  SITE_NUM:      1
+  TEST_FLG:      0x0
+  PARM_FLG:      0x0
+  RESULT:        0.250000000
+  TEST_TXT:      Leakage
+  ALARM_ID:      
+  OPT_FLAG:      0x0
+  LO_LIMIT:      0.000000000
+  HI_LIMIT:      10.000000000
+  UNITS:          mA
+PTR Record
+  TEST_NUM:      102
+  HEAD_NUM:      1
+  SITE_NUM:      1
+  TEST_FLG:      0x0
+  PARM_FLG:      0x0
+  RESULT:        3.000000000
+  TEST_TXT:      Reference
+  ALARM_ID:      
+  OPT_FLAG:      0x0
+  LO_LIMIT:      0.000000000
+  HI_LIMIT:      10.000000000
+  UNITS:          V
+FTR Record
+  TEST_NUM:      200
+  HEAD_NUM:      1
+  SITE_NUM:      1
+  TEST_FLG:      0x0
+  OPT_FLAG:      0xC0
+  CYCL_CNT:      0
+  REL_VADR:      0
+  REPT_CNT:      0
+  NUM_FAIL:      0
+  XFAIL_AD:      0
+  YFAIL_AD:      0
+  VECT_OFF:      0
+  RTN_ICNT:      0
+  PGM_ICNT:      0
+  FAIL_PIN:      
+  VECT_NAM:      pattern/scan
+MPR Record
+  TEST_NUM:      300
+  HEAD_NUM:      1
+  SITE_NUM:      1
+  TEST_FLG:      0x0
+  PARM_FLG:      0x0
+  RTN_ICNT:      0
+  RSLT_CNT:      2
+  RTN_RSLT:      2.500000000, 3.000000000
+  TEST_TXT:      Channels
+PRR Record
+  HEAD_NUM:      1
+  SITE_NUM:      1
+  PART_FLG:      0x0
+  NUM_TEST:      7
+  HARD_BIN:      1
+  SOFT_BIN:      10
+  X_COORD:       3
+  Y_COORD:       1
+  TEST_T:        32
+  PART_ID:       REPEATED_PART_ID
+PRR Record
+  HEAD_NUM:      1
+  SITE_NUM:      2
+  PART_FLG:      0x0
+  NUM_TEST:      7
+  HARD_BIN:      1
+  SOFT_BIN:      10
+  X_COORD:       2
+  Y_COORD:       1
+  TEST_T:        31
+  PART_ID:       REPEATED_PART_ID
+MRR Record
+  FINISH_T:      1720002000 (03-Jul-2024 10:20:00)
+MIR Record
+  SETUP_T:       1720000190 (03-Jul-2024 09:49:50)
+  START_T:       1720000200 (03-Jul-2024 09:50:00)
+  STAT_NUM:      1
+  MODE_COD:      'P'
+  RTST_COD:      ' '
+  PROT_COD:      ' '
+  BURN_TIM:      0
+  CMOD_COD:      ' '
+  LOT_ID:        VIEWER_LOT
+  PART_TYP:      SYNTHETIC_DEVICE
+  NODE_NAM:      LOCAL
+  TSTR_TYP:      SIMULATED
+  JOB_NAM:       DEMO_JOB
+  JOB_REV:       v1
+WIR Record
+  HEAD_NUM:      1
+  SITE_GRP:      1
+  START_T:       1720000200 (03-Jul-2024 09:50:00)
+  WAFER_ID:      W1
+PIR Record
+  HEAD_NUM:      1
+  SITE_NUM:      1
+PTR Record
+  TEST_NUM:      100
+  HEAD_NUM:      1
+  SITE_NUM:      1
+  TEST_FLG:      0x0
+  PARM_FLG:      0x0
+  RESULT:        2.000000000
+  TEST_TXT:      Voltage
+  ALARM_ID:      
+  OPT_FLAG:      0x0
+  LO_LIMIT:      0.000000000
+  HI_LIMIT:      10.000000000
+  UNITS:          V
+PTR Record
+  TEST_NUM:      101
+  HEAD_NUM:      1
+  SITE_NUM:      1
+  TEST_FLG:      0x0
+  PARM_FLG:      0x0
+  RESULT:        0.200000003
+  TEST_TXT:      Leakage
+  ALARM_ID:      
+  OPT_FLAG:      0x0
+  LO_LIMIT:      0.000000000
+  HI_LIMIT:      10.000000000
+  UNITS:          mA
+PTR Record
+  TEST_NUM:      102
+  HEAD_NUM:      1
+  SITE_NUM:      1
+  TEST_FLG:      0x0
+  PARM_FLG:      0x0
+  RESULT:        2.400000095
+  TEST_TXT:      Reference
+  ALARM_ID:      
+  OPT_FLAG:      0x0
+  LO_LIMIT:      0.000000000
+  HI_LIMIT:      10.000000000
+  UNITS:          V
+FTR Record
+  TEST_NUM:      200
+  HEAD_NUM:      1
+  SITE_NUM:      1
+  TEST_FLG:      0x0
+  OPT_FLAG:      0xC0
+  CYCL_CNT:      0
+  REL_VADR:      0
+  REPT_CNT:      0
+  NUM_FAIL:      0
+  XFAIL_AD:      0
+  YFAIL_AD:      0
+  VECT_OFF:      0
+  RTN_ICNT:      0
+  PGM_ICNT:      0
+  FAIL_PIN:      
+  VECT_NAM:      pattern/scan
+MPR Record
+  TEST_NUM:      300
+  HEAD_NUM:      1
+  SITE_NUM:      1
+  TEST_FLG:      0x0
+  PARM_FLG:      0x0
+  RTN_ICNT:      0
+  RSLT_CNT:      2
+  RTN_RSLT:      2.000000000, 2.500000000
+  TEST_TXT:      Channels
+PRR Record
+  HEAD_NUM:      1
+  SITE_NUM:      1
+  PART_FLG:      0x0
+  NUM_TEST:      7
+  HARD_BIN:      1
+  SOFT_BIN:      10
+  X_COORD:       2
+  Y_COORD:       1
+  TEST_T:        31
+  PART_ID:       REPEATED_PART_ID
+MRR Record
+  FINISH_T:      1720002000 (03-Jul-2024 10:20:00)
+MIR Record
+  SETUP_T:       1720000290 (03-Jul-2024 09:51:30)
+  START_T:       1720000300 (03-Jul-2024 09:51:40)
+  STAT_NUM:      1
+  MODE_COD:      'P'
+  RTST_COD:      ' '
+  PROT_COD:      ' '
+  BURN_TIM:      0
+  CMOD_COD:      ' '
+  LOT_ID:        VIEWER_LOT
+  PART_TYP:      SYNTHETIC_DEVICE
+  NODE_NAM:      LOCAL
+  TSTR_TYP:      SIMULATED
+  JOB_NAM:       DEMO_JOB
+  JOB_REV:       v1
+WIR Record
+  HEAD_NUM:      1
+  SITE_GRP:      1
+  START_T:       1720000300 (03-Jul-2024 09:51:40)
+  WAFER_ID:      W2
+DTR Record
+  TEXT_DAT:      Synthetic source: no tester measurements implied.
+PIR Record
+  HEAD_NUM:      1
+  SITE_NUM:      1
+PRR Record
+  HEAD_NUM:      1
+  SITE_NUM:      1
+  PART_FLG:      0x0
+  NUM_TEST:      7
+  HARD_BIN:      1
+  SOFT_BIN:      10
+  X_COORD:       2
+  Y_COORD:       1
+  TEST_T:        31
+  PART_ID:       REPEATED_PART_ID
+MRR Record
+  FINISH_T:      1720002000 (03-Jul-2024 10:20:00)
+End of file. Done!

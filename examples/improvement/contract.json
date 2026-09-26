@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "objective": "Demonstrate acceptance and rejection using simulated cost, not a product performance benchmark",
+  "source_paths": ["evaluate.py", "workload.json"],
+  "allowed_changes": ["workload.json"],
+  "protected_paths": ["evaluate.py"],
+  "gates": [
+    {"name": "exact-results", "argv": ["{python}", "evaluate.py", "check"]}
+  ],
+  "benchmark": {
+    "argv": ["{python}", "evaluate.py", "measure"],
+    "metric": "simulated_cost",
+    "direction": "lower",
+    "min_relative_gain": 0.1,
+    "repeats": 3
+  },
+  "limits": {
+    "max_rounds": 3,
+    "max_no_gain": 2,
+    "wall_seconds": 60,
+    "command_seconds": 5,
+    "output_bytes": 1048576
+  }
+}

@@ -2,6 +2,12 @@
 
 Licensed under [Apache-2.0](LICENSE). See [License and commercial use](#license-and-commercial-use).
 
+Development uses a [coordinator-led multi-agent workflow](docs/development/multi-agent.md)
+with explicit file ownership, task handoffs and independent review. See
+[AGENTS.md](AGENTS.md) for repository instructions. This framework is for developing
+zstdf; running the CLI does not require AI agents or an API key.
+For bounded iterative optimization, see the [improvement workflow and runnable demo](docs/development/improvement.md).
+
 Rust tools for reading semiconductor Standard Test Data Format (STDF) files,
 exporting Parquet data, validating records, and generating interactive HTML
 dashboards. An optional Python extension exposes the conversion APIs as `_zstdf`.

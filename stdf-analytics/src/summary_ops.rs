@@ -272,8 +272,12 @@ pub fn accumulate_retest(
                 .checked_add(n - 1)
                 .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "count overflow"))?;
         }
-        let first = history.attempts.first().unwrap().1;
-        let last = history.attempts.last().unwrap().1;
+        let Some((_, first)) = history.attempts.first() else {
+            continue;
+        };
+        let Some((_, last)) = history.attempts.last() else {
+            continue;
+        };
         first_acc.add(AttemptDisposition {
             verdict: first.verdict,
             identity_resolved: true,

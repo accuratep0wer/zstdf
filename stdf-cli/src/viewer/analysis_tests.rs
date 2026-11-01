@@ -833,12 +833,9 @@ fn analysis_path_traversal_ids_are_denied() {
         req["evidence_ids"] = json!([bad]);
         assert!(f.execute(&req).is_err(), "accepted evidence_id {bad}");
     }
-    assert!(evidence::open_attempts(
-        &f.dataset(),
-        "../outside",
-        &EvidenceLimits::default()
-    )
-    .is_err());
+    assert!(
+        evidence::open_attempts(&f.dataset(), "../outside", &EvidenceLimits::default()).is_err()
+    );
     assert!(evidence::open_attempts(
         &f.dataset(),
         &format!("../{}", "a".repeat(61)),

@@ -8,8 +8,8 @@
 use crate::attempt_yield::{AttemptDisposition, Ratio, Verdict, YieldAccumulator, YieldSummary};
 use crate::attempt_yield_op::{
     encode_counts, encode_yields, in_population, in_scope, population_of, u64_str, valid_id,
-    AttemptRecord, CompiledScope, Coverage, Population, Request, IDENTITY_LATEST,
-    MAX_EVIDENCE_IDS, MAX_REQUEST_BYTES, SOURCE_POLICY,
+    AttemptRecord, CompiledScope, Coverage, Population, Request, IDENTITY_LATEST, MAX_EVIDENCE_IDS,
+    MAX_REQUEST_BYTES, SOURCE_POLICY,
 };
 use serde_json::{json, Value};
 use std::collections::{BTreeMap, HashSet};
@@ -73,8 +73,8 @@ pub fn parse_summary_request(bytes: &[u8]) -> Result<(SummaryKind, Request), Str
     if bytes.len() as u64 > MAX_REQUEST_BYTES {
         return Err("summary request exceeds 1 MiB".into());
     }
-    let request: Request = serde_json::from_slice(bytes)
-        .map_err(|e| format!("invalid summary request: {e}"))?;
+    let request: Request =
+        serde_json::from_slice(bytes).map_err(|e| format!("invalid summary request: {e}"))?;
     let kind = kind_of_version(&request.version)
         .ok_or_else(|| "unsupported summary request version".to_string())?;
     validate_summary_request(kind, &request)?;
@@ -459,9 +459,7 @@ pub fn merge_group_maps(
     Ok(())
 }
 
-pub fn summaries_of(
-    groups: &BTreeMap<String, YieldAccumulator>,
-) -> BTreeMap<String, YieldSummary> {
+pub fn summaries_of(groups: &BTreeMap<String, YieldAccumulator>) -> BTreeMap<String, YieldSummary> {
     groups
         .iter()
         .map(|(k, v)| (k.clone(), v.summary()))
@@ -472,6 +470,7 @@ pub fn summaries_of(
 mod tests {
     use super::*;
     use crate::attempt_yield_op::compile_scope;
+    use std::collections::HashMap;
 
     fn row(
         attempt: u64,
@@ -551,14 +550,9 @@ mod tests {
             row(3, 1, 1, "L1", 0, None, None),             // unresolved
             row(4, 1, 1, "L1", 0, Some("b"), Some(true)),  // single pass
         ];
-        let summary = accumulate_retest(
-            rows,
-            &"s".repeat(64),
-            Population::AllAttempts,
-            &scope,
-            None,
-        )
-        .unwrap();
+        let summary =
+            accumulate_retest(rows, &"s".repeat(64), Population::AllAttempts, &scope, None)
+                .unwrap();
         assert_eq!(summary.unresolved_identity_attempts, 1);
         assert_eq!(summary.devices, 2);
         assert_eq!(summary.retested_devices, 1);

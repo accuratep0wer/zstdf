@@ -180,8 +180,7 @@ pub(crate) fn execute_with_telemetry(
                         acc.add(AttemptDisposition {
                             verdict: Verdict::from_prr_flags(row.flags),
                             identity_resolved: row.ecid.is_some(),
-                            excluded: source_excludes
-                                .is_some_and(|set| set.contains(&row.attempt)),
+                            excluded: source_excludes.is_some_and(|set| set.contains(&row.attempt)),
                         })?;
                     }
                     total.merge(&acc)?;
@@ -244,11 +243,15 @@ pub(crate) fn execute_with_telemetry(
                     first_fail = first_fail
                         .checked_add(part.first_fail_known)
                         .ok_or("count overflow")?;
-                    recovered = recovered.checked_add(part.recovered).ok_or("count overflow")?;
+                    recovered = recovered
+                        .checked_add(part.recovered)
+                        .ok_or("count overflow")?;
                     first_pass = first_pass
                         .checked_add(part.first_pass_known)
                         .ok_or("count overflow")?;
-                    degraded = degraded.checked_add(part.degraded).ok_or("count overflow")?;
+                    degraded = degraded
+                        .checked_add(part.degraded)
+                        .ok_or("count overflow")?;
                     merge_summary_into(&mut first_total, &part.first)?;
                     merge_summary_into(&mut latest_total, &part.latest)?;
                 }

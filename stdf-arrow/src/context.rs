@@ -40,25 +40,13 @@ struct ActivePart {
     tests: Vec<TestResult>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct StdfContext {
     lot_id: String,
     wafer_ids: HashMap<(u8, u8), Option<String>>,
     site_groups: HashMap<(u8, u8), u8>,
     active_parts: HashMap<(u8, u8), ActivePart>,
     part_seq: u64,
-}
-
-impl Default for StdfContext {
-    fn default() -> Self {
-        Self {
-            lot_id: String::new(),
-            wafer_ids: HashMap::new(),
-            site_groups: HashMap::new(),
-            active_parts: HashMap::new(),
-            part_seq: 0,
-        }
-    }
 }
 
 impl StdfContext {

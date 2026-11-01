@@ -358,10 +358,10 @@ pub fn rows(cache: &Cache, q: &Query) -> CliResult<Value> {
         };
         let bits = if marked {
             annotation_count += 1;
-            1 | u8::from(failed) * 2
-                | u8::from(row.alarm) * 4
-                | u8::from(excluded) * 8
-                | u8::from(alert) * 16
+            1 | (u8::from(failed) * 2)
+                | (u8::from(row.alarm) * 4)
+                | (u8::from(excluded) * 8)
+                | (u8::from(alert) * 16)
         } else {
             0
         };
@@ -723,7 +723,7 @@ fn plot_data(cache: &Cache, q: &Query) -> CliResult<Value> {
         let probability = *i as f64 / s.count as f64 * 100.;
         if s.cdf.last().is_some_and(|p| p["value"].as_f64() == Some(n)) {
             s.cdf.last_mut().unwrap()["probability"] = json!(probability);
-        } else if (*i - 1) % s.count.div_ceil(point_limit).max(1) == 0 || *i == s.count {
+        } else if (*i - 1).is_multiple_of(s.count.div_ceil(point_limit).max(1)) || *i == s.count {
             s.cdf.push(json!({"value":n,"probability":probability,"record":row.record,"attempt":row.attempt}));
         }
     }
@@ -736,7 +736,7 @@ fn plot_data(cache: &Cache, q: &Query) -> CliResult<Value> {
             // Reserve two slots for the true first/last source records, even when
             // PRR completion order differs from measurement record order.
             let stride = s.count.div_ceil(point_limit - 2).max(1);
-            if *n % stride == 0 {
+            if (*n).is_multiple_of(stride) {
                 s.points.push(r);
             }
             *n += 1;

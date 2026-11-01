@@ -17,7 +17,7 @@ jobs:
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
         with:
-          components: rustfmt
+          components: rustfmt, clippy
 
       - name: Format
         run: cargo fmt --all -- --check
@@ -25,11 +25,14 @@ jobs:
       - name: License declarations
         run: py -3.12 scripts/check_licenses.py
 
+      - name: Clippy
+        run: cargo clippy --workspace --locked -- -D warnings
+
       - name: Check
-        run: cargo check --workspace
+        run: cargo check --workspace --locked
 
       - name: Test
-        run: cargo test --workspace
+        run: cargo test --workspace --locked
 
       - name: Fuzz smoke
         run: cargo run -p stdf-core --bin fuzz_decode -- --iterations 1500 --max-len 1024
@@ -42,3 +45,17 @@ jobs:
 
       - name: Analytics spill smoke
         run: cargo run -p stdf-analytics --bin spill_stress -- 10000
+
+      - name: Build release CLI
+        run: cargo build --release -p stdf-cli --locked
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Viewer demo and smoke
+        run: |
+          py -3.12 examples/viewer/generate_demo.py
+          npm install --no-save playwright
+          node scripts/smoke_viewer.cjs

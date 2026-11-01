@@ -110,6 +110,15 @@ fn read_catalog(root: &Path, max_bytes: usize) -> Result<DatasetCatalog> {
 
 pub fn verify_catalog(root: &Path) -> Result<DatasetCatalog> {
     let catalog = load_catalog(root)?;
+    verify_catalog_data(root, &catalog)?;
+    Ok(catalog)
+}
+
+/// Verify a captured catalog without consulting the mutable current manifest.
+pub(crate) fn verify_catalog_data(root: &Path, catalog: &DatasetCatalog) -> Result<()> {
+    if catalog.version != 1 || catalog.schema_version != stdf_arrow::schema::SCHEMA_VERSION {
+        return Err(invalid("unsupported catalog/schema version"));
+    }
     let mut seen = BTreeSet::new();
     for (id, source) in &catalog.sources {
         if id != &sha256(source.source_path.as_bytes()) {
@@ -117,7 +126,7 @@ pub fn verify_catalog(root: &Path) -> Result<DatasetCatalog> {
         }
         verify_source(root, source, &mut seen)?;
     }
-    Ok(catalog)
+    Ok(())
 }
 fn verify_source(root: &Path, source: &SourceVersion, seen: &mut BTreeSet<PathBuf>) -> Result<()> {
     for hash in [&source.source_sha256, &source.options_sha256] {
@@ -244,7 +253,7 @@ pub fn convert_dataset(
                 .ok_or_else(|| invalid("output file limit exhausted"))?;
             // Keep the writer configuration stable across input ordering; check the total separately.
             let result = crate::dataset::fragments::files_to_partitioned_fragments_with_limit(
-                &[path.clone()],
+                std::slice::from_ref(&path),
                 &objects.join(generation),
                 keys,
                 &writer_options,
@@ -407,11 +416,11 @@ fn replace_file(from: &Path, to: &Path) -> Result<()> {
     Ok(())
 }
 
-struct CatalogGuard {
+pub(crate) struct CatalogGuard {
     _file: File,
 }
 impl CatalogGuard {
-    fn acquire(root: &Path) -> Result<Self> {
+    pub(crate) fn acquire(root: &Path) -> Result<Self> {
         if fs::symlink_metadata(root.join(".catalog.guard"))
             .is_ok_and(|m| m.file_type().is_symlink())
         {
@@ -570,13 +579,15 @@ pub(crate) fn inject_failure(_point: u8) -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    static FIXTURE_SEQUENCE: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
     struct Fixture(PathBuf);
     impl Fixture {
         fn new() -> Self {
             let path = std::env::temp_dir().join(format!(
-                "catalog-{}-{}",
+                "catalog-{}-{}-{}",
                 std::process::id(),
-                crate::monotonic_nanos()
+                crate::monotonic_nanos(),
+                FIXTURE_SEQUENCE.fetch_add(1, std::sync::atomic::Ordering::Relaxed)
             ));
             fs::create_dir(&path).unwrap();
             Self(path)

@@ -94,7 +94,7 @@ pub fn prepare(args: &Arguments) -> CliResult<Cache> {
         .clone()
         .unwrap_or_else(|| std::env::temp_dir().join("zstdf-viewer"));
     fs::create_dir_all(&base)?;
-    let root = base.join(format!("{VERSION}-{}", &hash));
+    let root = base.join(format!("{VERSION}-{hash}"));
     if root.exists() {
         let manifest_file = File::open(root.join("manifest.json"))?;
         if manifest_file.metadata()?.len() > args.memory_limit_mib as u64 * 1024 * 1024 / 8 {
@@ -446,7 +446,7 @@ fn scan(cache: &mut Cache) -> CliResult<()> {
             ..Row::default()
         })?;
         *cache.manifest.inventory.entry(kind).or_default() += 1;
-        if id % 1024 == 0 {
+        if id.is_multiple_of(1024) {
             if store::disk_bytes(&cache.root)? > cache.disk / 2 {
                 return Err("viewer indexing disk budget exceeded".into());
             }
@@ -615,7 +615,7 @@ fn build_attempts(cache: &mut Cache) -> CliResult<()> {
             }
             flags.seek(SeekFrom::Start(row.id))?;
             flags.write_all(&[
-                u8::from(row.first == Some(true)) | u8::from(row.latest == Some(true)) * 2
+                u8::from(row.first == Some(true)) | (u8::from(row.latest == Some(true)) * 2)
             ])?;
             for name in [
                 if row.latest == Some(true) {
@@ -801,7 +801,7 @@ fn convert(cache: &mut Cache) -> CliResult<()> {
     Ok(())
 }
 
-fn digest_parquet(paths: &[PathBuf], cache: &Cache) -> CliResult<(String, u64)> {
+pub(super) fn digest_parquet(paths: &[PathBuf], cache: &Cache) -> CliResult<(String, u64)> {
     let mut sort = cache.spill()?;
     let mut count = 0;
     for path in paths {

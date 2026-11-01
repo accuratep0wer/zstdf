@@ -8,6 +8,10 @@ with explicit file ownership, task handoffs and independent review. See
 zstdf; running the CLI does not require AI agents or an API key.
 For bounded iterative optimization, see the [improvement workflow and runnable demo](docs/development/improvement.md).
 
+The [reviewed local-first architecture and implementation backlog](docs/architecture/overview.md)
+distinguishes current capabilities from proposed snapshot and reproducibility work.
+DuckDB and runtime AI remain optional future adapters.
+
 Rust tools for reading semiconductor Standard Test Data Format (STDF) files,
 exporting Parquet data, validating records, and generating interactive HTML
 dashboards. An optional Python extension exposes the conversion APIs as `_zstdf`.
@@ -163,6 +167,8 @@ cd zstdf
 
 Run all following build commands from this folder, which contains the top-level
 `Cargo.toml`. The first build needs internet access to download dependencies.
+The similarly named `crates/` directory holds legacy scaffolding and is **not**
+a Cargo workspace member; use the nine root crates listed in that `Cargo.toml`.
 
 ### 3. Test and Build the CLI
 
@@ -895,6 +901,31 @@ The Arrow schema remains `eav-v2`. Conversion fingerprints changed so catalog
 and file-per-source retries regenerate old results rather than reusing an
 older conversion. Single-file `--no-overwrite` deliberately returns existing
 output; omit it when regenerating a single-file export with MPR/FTR coverage.
+
+### `snapshot`: Retain a Historical EAV Catalog Selection
+
+```powershell
+$captured = .\target\release\zstdf-cli.exe snapshot create dataset | ConvertFrom-Json
+.\target\release\zstdf-cli.exe snapshot list dataset
+.\target\release\zstdf-cli.exe snapshot verify dataset $captured.snapshot_id
+.\target\release\zstdf-cli.exe snapshot select dataset $captured.snapshot_id
+.\target\release\zstdf-cli.exe snapshot current dataset
+```
+
+The saved catalog references retained managed Parquet generations, so verification
+is independent of later current-catalog updates. Expected-input completeness
+remains unknown and raw STDF is not archived. `--allow-incomplete` explicitly
+permits partial/failed/interrupted catalogs. `select` updates the explicit current
+snapshot; conversion and ordinary `create` leave that selection alone. Use
+`create dataset --select` to capture and then select. Existing dashboards still
+use the conversion catalog. See [snapshot commands, reader selection, limits and demo](docs/snapshots.md).
+
+To preserve every record and PRR attempt for a frozen source, use
+`snapshot retain-evidence DATASET SNAPSHOT_ID SOURCE_ID INPUT`. Verify with
+`snapshot verify-evidence DATASET EVIDENCE_ID` and inspect with `evidence-record`
+or `evidence-attempt`. These bundles retain native viewer evidence and decompressed
+STDF independently of temporary caches; they do not change dashboard inputs.
+See [retained evidence commands, coverage and resource limits](docs/retained-evidence.md).
 
 ### `verify-dataset`: Check Dataset Integrity
 

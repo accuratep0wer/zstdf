@@ -18,11 +18,16 @@ mod latest_pareto;
 mod partitioned;
 mod report_ui;
 mod sanity;
+mod snapshot;
+mod telemetry;
 mod traceability;
 mod viewer;
 
 #[cfg(test)]
 mod dataset_tests;
+
+#[cfg(test)]
+mod snapshot_tests;
 
 type CliResult<T> = Result<T, Box<dyn Error>>;
 
@@ -36,6 +41,8 @@ struct Cli {
 
 #[derive(Debug, Subcommand)]
 enum Command {
+    /// Create, list or verify immutable selections of retained EAV catalog generations.
+    Snapshot(snapshot::Arguments),
     /// Open one STDF in a local Parquet-backed engineering workspace, or export offline HTML.
     View(viewer::Arguments),
     /// Audit CP/FT source fields and preview run metadata and per-unit first values.
@@ -132,6 +139,7 @@ fn main() {
 
 fn execute(cli: Cli, out: &mut impl Write) -> CliResult<()> {
     match cli.command {
+        Command::Snapshot(args) => snapshot::execute(args, out),
         Command::View(args) => viewer::execute(args, out),
         Command::Sanity(args) => sanity::execute(args, out),
         Command::FtrPareto(args) => ftr_pareto::execute(args, out),
@@ -300,13 +308,11 @@ fn dashboard_command(
 
 fn dump(input: PathBuf, limit: Option<usize>, out: &mut impl Write) -> CliResult<()> {
     let reader = StdfReader::open(input)?;
-    let mut count = 0usize;
-    for record in reader.records() {
+    for (count, record) in reader.records().enumerate() {
         if limit.is_some_and(|limit| count >= limit) {
             break;
         }
         writeln!(out, "{}", record?)?;
-        count += 1;
     }
     Ok(())
 }

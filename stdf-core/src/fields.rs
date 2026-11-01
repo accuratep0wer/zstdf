@@ -172,7 +172,7 @@ impl<'a> FieldReader<'a> {
         if bit_count == 0 {
             return Ok((0, Vec::new()));
         }
-        let byte_count = (bit_count as usize + 7) / 8;
+        let byte_count = (bit_count as usize).div_ceil(8);
         let bytes = self.read_bytes(byte_count)?;
         Ok((bit_count, bytes.to_vec()))
     }
@@ -190,7 +190,7 @@ impl<'a> FieldReader<'a> {
         if count == 0 {
             return Ok(Vec::new());
         }
-        let byte_count = (count + 1) / 2;
+        let byte_count = count.div_ceil(2);
         let bytes = self.read_bytes(byte_count)?;
         let mut result = Vec::with_capacity(count);
         for i in 0..count {

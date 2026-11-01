@@ -17,3 +17,8 @@
 /examples/viewer/generated/
 /examples/public-stdf/downloads/
 /examples/public-stdf/generated/
+/examples/Detail data views.html
+/examples/Detail data views_files/
+/examples/propose function spec.pdf
+retry-codex.ps1
+.cursor/hooks/*.log

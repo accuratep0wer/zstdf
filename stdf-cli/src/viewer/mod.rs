@@ -11,6 +11,12 @@ use std::path::{Path, PathBuf};
 use std::sync::{atomic::AtomicBool, Arc};
 use stdf_validate::fields::Field;
 
+pub(crate) mod analysis;
+#[cfg(test)]
+mod analysis_tests;
+pub(crate) mod evidence;
+#[cfg(test)]
+mod evidence_tests;
 mod ingest;
 mod query;
 mod store;
@@ -44,6 +50,9 @@ pub struct Arguments {
     port: u16,
     #[arg(long)]
     no_open: bool,
+    /// Append local run-telemetry JSONL events; omit to preserve prior behavior.
+    #[arg(long)]
+    telemetry_json: Option<PathBuf>,
 }
 
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
@@ -192,10 +201,27 @@ impl Cache {
 }
 
 pub fn execute(args: Arguments, out: &mut impl Write) -> CliResult<()> {
+    let options = crate::telemetry::TelemetryOptions {
+        json_path: args.telemetry_json.clone(),
+    };
+    let mut telemetry = crate::telemetry::RunTelemetry::start("view", &options);
+    telemetry.budget("memory_mib", 0, args.memory_limit_mib as u64);
+    telemetry.budget("disk_mib", 0, args.disk_limit_mib);
     if args.memory_limit_mib < 64 || args.disk_limit_mib < 64 || args.export_size_mib == 0 {
+        telemetry.finish_error();
         return Err("viewer needs at least 64 MiB memory/disk and a positive export limit".into());
     }
-    let cache = ingest::prepare(&args)?;
+    telemetry.phase("ingest");
+    let cache = match ingest::prepare(&args) {
+        Ok(cache) => cache,
+        Err(error) => {
+            telemetry.finish_from_error(&error.to_string());
+            return Err(error);
+        }
+    };
+    telemetry.counter("attempts", cache.manifest.attempts);
+    telemetry.counter("measurements", cache.manifest.measurements);
+    telemetry.counter("records", cache.manifest.records);
     writeln!(
         out,
         "Viewer: {} attempts, {} measurements; cache {}",
@@ -204,24 +230,46 @@ pub fn execute(args: Arguments, out: &mut impl Write) -> CliResult<()> {
         cache.root.display()
     )?;
     if let Some(path) = &args.export_html {
+        telemetry.phase("export");
         let q = query::Query::default();
-        let html = web::export(
+        let html = match web::export(
             &cache,
             &q,
             &args.export_scope,
             args.export_size_mib * 1024 * 1024,
             args.flow.as_deref(),
-        )?;
+        ) {
+            Ok(html) => html,
+            Err(error) => {
+                telemetry.finish_from_error(&error.to_string());
+                return Err(error);
+            }
+        };
         if path.canonicalize().ok() == args.input.canonicalize().ok() {
+            telemetry.finish_error();
             return Err("report cannot replace source".into());
         }
-        store::atomic_write_checked(path, html.as_bytes(), || {
+        if let Err(error) = store::atomic_write_checked(path, html.as_bytes(), || {
             cache
                 .check()
                 .map_err(|e| std::io::Error::other(e.to_string()))
-        })?;
+        }) {
+            telemetry.finish_from_error(&error.to_string());
+            return Err(error);
+        }
         writeln!(out, "Offline viewer: {}", path.display())?;
+        telemetry.finish_ok();
         return Ok(());
     }
-    web::serve(cache, &args, out)
+    telemetry.phase("serve");
+    match web::serve(cache, &args, out) {
+        Ok(()) => {
+            telemetry.finish_ok();
+            Ok(())
+        }
+        Err(error) => {
+            telemetry.finish_from_error(&error.to_string());
+            Err(error)
+        }
+    }
 }

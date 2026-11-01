@@ -3,6 +3,26 @@
 Phase 7B adds a repeatable synthetic benchmark runner that does not require
 nightly Rust or external tooling.
 
+## CLI run telemetry
+
+`convert`, `view` (ingest/export/serve), and analysis `execute` emit local-first
+`RunTelemetry` events: phase name, elapsed/phase milliseconds, counters, budget
+use, and a terminal status (`ok`, `cancelled`, `quota`, or `error`). Stderr
+receives one-line summaries. Pass `--telemetry-json <path>` to append JSONL
+objects with `version: run-telemetry-v1`. Omitting the flag preserves prior
+command results; only optional stderr/JSONL diagnostics are added. This is not
+OpenTelemetry and does not export spans to a collector.
+
+Synthetic acceptance sketch:
+
+```powershell
+zstdf-cli convert input.stdf --output-dir dataset --layout catalog --telemetry-json tel.jsonl
+zstdf-cli view input.stdf --cache-dir cache --export-html out.html --telemetry-json tel.jsonl
+```
+
+Cancel/quota failures emit a matching terminal event before the process exits
+nonzero. Analysis callers can pass the same helper around `analysis::execute`.
+
 Run:
 
 ```powershell

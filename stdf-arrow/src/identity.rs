@@ -63,7 +63,7 @@ impl CoordinateCandidates {
 fn positive_integer(value: Option<f32>) -> Option<i64> {
     let value = f64::from(value?);
     (value.is_finite() && value > 0.0 && value.fract() == 0.0 && value < 2_f64.powi(63))
-        .then(|| value as i64)
+        .then_some(value as i64)
 }
 
 /// Prefer explicit axis tokens (including camelCase) over a bare substring.

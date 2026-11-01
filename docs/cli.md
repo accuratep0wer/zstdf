@@ -82,6 +82,69 @@ fail before input/output processing.
 for detailed field-by-field text export, including formatted timestamps and
 inherited PTR scale/unit information.
 
+## Viewer and attempt-yield (Windows)
+
+Build the release CLI once, then open the synthetic viewer demo. Keep the
+terminal open for the local loopback service:
+
+```powershell
+cargo build --release -p stdf-cli --locked
+python examples/viewer/generate_demo.py
+.\target\release\zstdf-cli.exe view examples\viewer\generated\demo.stdf
+```
+
+Optional offline HTML from the same demo:
+
+```powershell
+Start-Process examples\viewer\generated\selection.html
+```
+
+Browser smoke (Playwright + Edge) after the release build and demo generation:
+
+```powershell
+node scripts/smoke_viewer.cjs
+```
+
+Attempt-yield (`attempt-yield-request-v1` / `attempt-yield-result-v1`) runs over
+retained evidence for a frozen catalog snapshot. Population `all_attempts`
+(`prr-attempt-yield-v1`) counts every physical PRR, including PRR-only and
+identity-unresolved attempts. Population `latest_device`
+(`prr-latest-device-yield-v1`) requires `identity_policy:
+latest-ecid-start-t-v1` and uses retained latest flags; neither population uses
+Dashboard `coordinate-v1` merging. Retain evidence first (see
+[retained evidence](retained-evidence.md)), then run:
+
+```powershell
+.\target\release\zstdf-cli.exe snapshot attempt-yield path\to\dataset request.json
+.\target\release\zstdf-cli.exe snapshot attempt-yield path\to\dataset request.json --telemetry-json tel.jsonl
+```
+
+Stdout is the attempt-yield result JSON. Optional `--telemetry-json` appends
+`run-telemetry-v1` JSONL only (same flag exists on `convert` and `view`). Shared
+evidence-budget flags match other `snapshot` evidence commands. Successful runs
+also publish `analysis-receipt-v1` under
+`dataset/analysis/<execution_id>/{result,receipt}.json`. Focused regression:
+
+```powershell
+cargo test -p stdf-cli attempt_yield --locked
+```
+
+Example request shape (IDs are decimal strings):
+
+```json
+{
+  "version": "attempt-yield-request-v1",
+  "snapshot_id": "<snapshot_id>",
+  "evidence_ids": ["<evidence_id>"],
+  "population": "all_attempts",
+  "source_policy": "catalog-source-id-v1",
+  "allow_partial": false
+}
+```
+
+For latest-device yield, set `"population": "latest_device"` and
+`"identity_policy": "latest-ecid-start-t-v1"`.
+
 ## Multi-file Conversion (Phase 10B)
 
 Convert files or recursively scan directories:

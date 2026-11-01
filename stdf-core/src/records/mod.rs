@@ -61,6 +61,10 @@ use crate::header::RecordHeader;
 use crate::types::{ByteOrder, RecordType, VarData};
 
 /// The decoded STDF record enum — one variant per known record, plus Unknown fallback.
+///
+/// Variants mirror on-wire STDF layouts (MIR/SDR are naturally large); boxing would
+/// change the public API for little gain in a decode-heavy path.
+#[allow(clippy::large_enum_variant)]
 #[derive(Debug, Clone)]
 pub enum StdfRecord {
     Far(Far),

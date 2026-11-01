@@ -111,6 +111,7 @@ fn to_py_err(error: impl std::fmt::Display) -> PyErr {
 }
 
 #[pyfunction]
+#[allow(clippy::too_many_arguments)] // mirrors the Python kwargs surface for FragmentOptions
 #[pyo3(signature = (input_paths, output_dir, partition_by=None, memory_limit_mib=256, max_pending_tests=100_000, max_open_writers=4, row_group_rows=65_536, max_output_files=10_000))]
 fn write_parquet_partitioned(
     py: Python<'_>,

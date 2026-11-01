@@ -268,6 +268,7 @@ impl Read for HashingReader {
     }
 }
 
+#[allow(clippy::type_complexity)] // private helper; boxing the iterator would add a heap hop
 fn open_records(
     path: &Path,
 ) -> Result<(

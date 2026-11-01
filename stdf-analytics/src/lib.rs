@@ -4,6 +4,9 @@
 //! Bounded scratch storage for the forthcoming disk-backed dashboard engine.
 //! This crate does not change the existing dashboard's counting semantics.
 
+pub mod attempt_yield;
+pub mod attempt_yield_op;
+
 use std::fs::{self, File, OpenOptions};
 use std::io::{self, Read, Write};
 use std::path::{Path, PathBuf};

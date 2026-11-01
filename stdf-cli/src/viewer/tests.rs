@@ -120,6 +120,7 @@ impl Fixture {
             cancel_file: None,
             port: 0,
             no_open: true,
+            telemetry_json: None,
         }
     }
     fn cache(&self, bytes: &[u8]) -> Cache {

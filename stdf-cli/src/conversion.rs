@@ -1,4 +1,4 @@
-use super::{convert, convert_files, partitioned, CliResult};
+use super::{convert, convert_files, partitioned, telemetry, CliResult};
 use std::io::Write;
 use std::path::PathBuf;
 use stdf_parquet::PartitionKey;
@@ -52,9 +52,17 @@ pub struct Arguments {
     /// Catalog only: continue after failed inputs, but still exit nonzero.
     #[arg(long, requires = "output_dir")]
     continue_on_error: bool,
+    /// Append local run-telemetry JSONL events; omit to preserve prior behavior.
+    #[arg(long)]
+    telemetry_json: Option<PathBuf>,
 }
 
 pub fn execute(mut args: Arguments, out: &mut impl Write) -> CliResult<()> {
+    let options = telemetry::TelemetryOptions {
+        json_path: args.telemetry_json.take(),
+    };
+    let mut telemetry = telemetry::RunTelemetry::start("convert", &options);
+    telemetry.phase("validate");
     let catalog = args.layout == Some(Layout::Catalog);
     let catalog_options = args.memory_limit_mib.is_some()
         || args.max_pending_tests.is_some()
@@ -64,13 +72,21 @@ pub fn execute(mut args: Arguments, out: &mut impl Write) -> CliResult<()> {
         || args.continue_on_error;
     // Reject incompatible options before opening any input or output.
     if !catalog && catalog_options {
+        telemetry.finish_error();
         return Err("resource limits and --continue-on-error require --layout catalog".into());
     }
     if catalog && (args.batch_size.is_some() || args.no_overwrite) {
+        telemetry.finish_error();
         return Err("--layout catalog does not accept --batch-size or --no-overwrite; use --row-group-rows, and catalog retries automatically verify and reuse completed sources".into());
     }
-    if let Some(output_dir) = args.output_dir {
+    let result = if let Some(output_dir) = args.output_dir {
         if catalog {
+            telemetry.phase("catalog");
+            telemetry.budget(
+                "memory_mib",
+                0,
+                args.memory_limit_mib.unwrap_or(256) as u64,
+            );
             partitioned::execute(
                 partitioned::Arguments {
                     inputs: args.paths,
@@ -88,6 +104,7 @@ pub fn execute(mut args: Arguments, out: &mut impl Write) -> CliResult<()> {
                 out,
             )
         } else {
+            telemetry.phase("files");
             convert_files(
                 args.paths,
                 output_dir,
@@ -100,6 +117,7 @@ pub fn execute(mut args: Arguments, out: &mut impl Write) -> CliResult<()> {
         }
     } else {
         if args.paths.len() != 2 {
+            telemetry.finish_error();
             return Err(
                 "use convert <input> <output.parquet>, or convert <inputs...> --output-dir <dir>"
                     .into(),
@@ -108,15 +126,18 @@ pub fn execute(mut args: Arguments, out: &mut impl Write) -> CliResult<()> {
         let output = args.paths.pop().unwrap();
         let input = args.paths.pop().unwrap();
         if input.is_dir() || output.is_dir() {
+            telemetry.finish_error();
             return Err("directory conversion requires --output-dir <dir>".into());
         }
         // A pair of source files must not be mistaken for INPUT OUTPUT.
         if super::is_stdf_path(&output) {
+            telemetry.finish_error();
             return Err(
                 "output must not be an STDF input path; use --output-dir <dir> for multiple inputs"
                     .into(),
             );
         }
+        telemetry.phase("single");
         convert(
             input,
             output,
@@ -124,5 +145,10 @@ pub fn execute(mut args: Arguments, out: &mut impl Write) -> CliResult<()> {
             args.no_overwrite,
             out,
         )
+    };
+    match &result {
+        Ok(()) => telemetry.finish_ok(),
+        Err(error) => telemetry.finish_from_error(&error.to_string()),
     }
+    result
 }

@@ -127,7 +127,7 @@ impl<R: Read> Iterator for StreamingRecordReader<R> {
         self.next_event()
             .map(|event| {
                 event.map(|e| {
-                    e.decoded.unwrap_or_else(|_| StdfRecord::Unknown {
+                    e.decoded.unwrap_or(StdfRecord::Unknown {
                         typ: e.header.rec_typ,
                         sub: e.header.rec_sub,
                         data: e.body,

@@ -85,6 +85,17 @@ enum Action {
         #[arg(long)]
         telemetry_json: Option<PathBuf>,
     },
+    /// Run a versioned retained-evidence analysis request (attempt-yield, site,
+    /// lot, or retest). Same adapter as `attempt-yield`; dispatches on request.version.
+    Analyze {
+        dataset: PathBuf,
+        /// Path to a versioned analysis request JSON body.
+        request: PathBuf,
+        #[command(flatten)]
+        budget: EvidenceBudget,
+        #[arg(long)]
+        telemetry_json: Option<PathBuf>,
+    },
     /// Pin the verified current EAV catalog; expected input completeness stays unknown.
     Create {
         input: PathBuf,
@@ -152,11 +163,17 @@ pub fn execute(args: Arguments, out: &mut impl Write) -> CliResult<()> {
             request,
             budget,
             telemetry_json,
+        }
+        | Action::Analyze {
+            dataset,
+            request,
+            budget,
+            telemetry_json,
         } => {
             let options = TelemetryOptions {
                 json_path: telemetry_json,
             };
-            let mut telemetry = telemetry::RunTelemetry::start("attempt-yield", &options);
+            let mut telemetry = telemetry::RunTelemetry::start("analysis", &options);
             analysis::execute_with_telemetry(
                 &dataset,
                 &request,

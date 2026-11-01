@@ -164,9 +164,18 @@ the latter is known-verdict yield, not a silent removal of unknown tests. A zero
 denominator gives null with a reason. Missing identities do not exclude physical
 attempts under all-attempts, but affect deduplicated eligibility explicitly.
 
-Lot comparison, site variation, retest impact and Pareto follow only after their
-shared policy/coverage envelope is tested. Site differences alone do not prove
-hardware causality or GR&R; qualification/reliability decisions need study metadata.
+Shipped ANA-002 summaries reuse the attempt-yield request envelope fields with
+distinct request/result versions:
+
+- `site-variation-request-v1` → per `(head, site)` yield; unresolved visible
+- `lot-comparison-request-v1` → per `lot_id` yield; unresolved visible
+- `retest-impact-request-v1` → per-source ECID first/last attempt impact,
+  recovery/degradation among known verdicts; unresolved identity counted
+  separately; `latest_device` keeps full history only for ECIDs with a selected
+  latest flag
+
+Pareto remains deferred. Site differences alone do not prove hardware causality
+or GR&R; qualification/reliability decisions need study metadata.
 
 ## Receipt and reproducibility
 

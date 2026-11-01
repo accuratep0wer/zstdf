@@ -99,6 +99,17 @@ fn request(snapshot: &str, bundles: &[Value]) -> Value {
     })
 }
 
+fn summary_request(version: &str, snapshot: &str, bundles: &[Value]) -> Value {
+    json!({
+        "version": version,
+        "snapshot_id": snapshot,
+        "evidence_ids": bundles.iter().map(|b| b["evidence_id"].clone()).collect::<Vec<_>>(),
+        "population": "all_attempts",
+        "source_policy": "catalog-source-id-v1",
+        "allow_partial": false
+    })
+}
+
 fn cn(s: &str) -> Vec<u8> {
     let mut out = vec![s.len() as u8];
     out.extend(s.as_bytes());
@@ -739,4 +750,140 @@ fn attempt_yield_cancel_quota_and_malformed_request_preserve_dataset_state() {
         current
     );
     assert_eq!(evidence::list(&f.dataset()).unwrap(), before);
+}
+
+#[test]
+fn site_variation_and_lot_comparison_keep_unresolved_visible() {
+    let f = Fixture::new();
+    let (snapshot, _, bundle) = f.setup(&rich());
+    let site = f
+        .execute(&summary_request(
+            "site-variation-request-v1",
+            &snapshot,
+            &[bundle.clone()],
+        ))
+        .unwrap();
+    assert_eq!(site["version"], "site-variation-result-v1");
+    assert_eq!(site["operation"], "prr-site-variation-v1");
+    assert_eq!(site["counts"], counts(5, 5, 0, 2, 1, 2, 1));
+    assert!(site["sites"].as_array().unwrap().len() >= 2);
+    assert_eq!(site["analysis"]["status"], "complete");
+
+    let lot = f
+        .execute(&summary_request(
+            "lot-comparison-request-v1",
+            &snapshot,
+            &[bundle],
+        ))
+        .unwrap();
+    assert_eq!(lot["version"], "lot-comparison-result-v1");
+    assert_eq!(lot["operation"], "prr-lot-comparison-v1");
+    assert_eq!(lot["counts"]["unresolved"], "1");
+    let lots = lot["lots"].as_array().unwrap();
+    assert_eq!(lots.len(), 1);
+    assert_eq!(lots[0]["label"], "LOT-A");
+}
+
+#[test]
+fn retest_impact_reports_recovery_for_ecid_history() {
+    let f = Fixture::new();
+    let mut bytes = start();
+    prr_only(&mut bytes, 1, 1, 8, 1); // fail first
+    finish(&mut bytes, 200);
+    bytes.extend(run("LOT-A", "W1", 300));
+    prr_only(&mut bytes, 1, 1, 0, 1); // pass later, same XY/ECID
+    finish(&mut bytes, 400);
+    let (snapshot, _, bundle) = f.setup(&bytes);
+    let response = f
+        .execute(&summary_request(
+            "retest-impact-request-v1",
+            &snapshot,
+            &[bundle],
+        ))
+        .unwrap();
+    assert_eq!(response["version"], "retest-impact-result-v1");
+    assert_eq!(response["operation"], "prr-retest-impact-v1");
+    assert_eq!(response["counts"]["devices"], "1");
+    assert_eq!(response["counts"]["retested_devices"], "1");
+    assert_eq!(response["counts"]["recovered"], "1");
+    assert_eq!(response["first"]["counts"]["fail"], "1");
+    assert_eq!(response["latest"]["counts"]["pass"], "1");
+    assert_eq!(
+        response["rates"]["recovery_rate_known"]["ratio"],
+        json!({"numerator": "1", "denominator": "1"})
+    );
+}
+
+#[test]
+fn analysis_path_traversal_ids_are_denied() {
+    let f = Fixture::new();
+    let (snapshot, _, bundle) = f.setup(&rich());
+    let valid = request(&snapshot, &[bundle]);
+    for bad in [
+        "../outside",
+        "..\\outside",
+        "a/b",
+        "a\\b",
+        &format!("{}{}", "../", "a".repeat(61)),
+    ] {
+        let mut req = valid.clone();
+        req["snapshot_id"] = json!(bad);
+        assert!(f.execute(&req).is_err(), "accepted snapshot_id {bad}");
+        let mut req = valid.clone();
+        req["evidence_ids"] = json!([bad]);
+        assert!(f.execute(&req).is_err(), "accepted evidence_id {bad}");
+    }
+    assert!(evidence::open_attempts(
+        &f.dataset(),
+        "../outside",
+        &EvidenceLimits::default()
+    )
+    .is_err());
+    assert!(evidence::open_attempts(
+        &f.dataset(),
+        &format!("../{}", "a".repeat(61)),
+        &EvidenceLimits::default()
+    )
+    .is_err());
+}
+
+#[test]
+fn analysis_receipt_publication_faults_leave_no_complete_bundle() {
+    let f = Fixture::new();
+    let (snapshot, _, bundle) = f.setup(&rich());
+    let req = request(&snapshot, &[bundle]);
+    let before = list_complete_analysis(&f.dataset());
+
+    analysis::inject_fail_after_result();
+    assert!(f.execute(&req).is_err());
+    assert_eq!(list_complete_analysis(&f.dataset()), before);
+
+    analysis::inject_fail_before_rename();
+    assert!(f.execute(&req).is_err());
+    assert_eq!(list_complete_analysis(&f.dataset()), before);
+
+    let ok = f.execute(&req).unwrap();
+    assert_eq!(ok["analysis"]["status"], "complete");
+    let relative = ok["analysis"]["relative_path"].as_str().unwrap();
+    assert!(f.dataset().join(relative).join("result.json").is_file());
+    assert!(f.dataset().join(relative).join("receipt.json").is_file());
+}
+
+fn list_complete_analysis(dataset: &Path) -> BTreeSet<String> {
+    let root = dataset.join("analysis");
+    if !root.exists() {
+        return BTreeSet::new();
+    }
+    fs::read_dir(root)
+        .unwrap()
+        .filter_map(|e| e.ok())
+        .filter(|e| {
+            let name = e.file_name();
+            let name = name.to_string_lossy();
+            !name.starts_with('.')
+                && e.path().join("result.json").is_file()
+                && e.path().join("receipt.json").is_file()
+        })
+        .map(|e| e.file_name().to_string_lossy().into_owned())
+        .collect()
 }

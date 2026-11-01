@@ -1,0 +1,30 @@
+[package]
+name = "stdf-core-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2021"
+license = "Apache-2.0"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+stdf-core = { path = "../stdf-core" }
+
+[[bin]]
+name = "decode_all"
+path = "fuzz_targets/decode_all.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "truncate_prefix"
+path = "fuzz_targets/truncate_prefix.rs"
+test = false
+doc = false
+bench = false
+
+# Separate workspace so `cargo test --workspace` does not build libFuzzer.
+[workspace]

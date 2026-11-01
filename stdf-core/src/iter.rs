@@ -226,15 +226,13 @@ pub struct DecodeResult {
 pub fn summarize(data: &[u8]) -> DecodeSummary {
     let mut summary = DecodeSummary::default();
 
-    let byte_order = match detect_byte_order(data) {
-        Some(bo) => {
-            summary.byte_order = Some(bo);
-            bo
+    let byte_order = match detect_byte_order_result(data) {
+        Ok(byte_order) => {
+            summary.byte_order = Some(byte_order);
+            byte_order
         }
-        None => {
-            summary
-                .errors
-                .push("cannot detect byte order from FAR".to_string());
+        Err(err) => {
+            summary.errors.push(err.to_string());
             return summary;
         }
     };

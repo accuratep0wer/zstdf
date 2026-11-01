@@ -77,3 +77,29 @@ jobs:
           py -3.12 examples/viewer/generate_demo.py
           npm install --no-save playwright
           node scripts/smoke_viewer.cjs
+
+  fuzz:
+    name: cargo-fuzz smoke
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install nightly Rust
+        uses: dtolnay/rust-toolchain@nightly
+        with:
+          components: llvm-tools
+
+      - name: Install cargo-fuzz
+        run: cargo install cargo-fuzz --locked --version 0.13.1
+
+      - name: Seed corpus
+        run: python3 fuzz/seed_corpus.py
+
+      - name: decode_all smoke
+        working-directory: fuzz
+        run: cargo +nightly fuzz run decode_all -- -max_total_time=20
+
+      - name: truncate_prefix smoke
+        working-directory: fuzz
+        run: cargo +nightly fuzz run truncate_prefix -- -max_total_time=20

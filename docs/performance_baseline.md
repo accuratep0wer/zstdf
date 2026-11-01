@@ -23,6 +23,14 @@ zstdf-cli view input.stdf --cache-dir cache --export-html out.html --telemetry-j
 Cancel/quota failures emit a matching terminal event before the process exits
 nonzero. Analysis callers can pass the same helper around `analysis::execute`.
 
+## Dashboard spill rewrite (skipped)
+
+`stdf-analytics::SpillStore` remains available for future disk-backed dashboard
+aggregations. Wiring it into `stdf-cli/src/dashboard.rs` in-memory maps was
+skipped because changing aggregation order or intermediate materialization
+risks Dashboard `coordinate-v1` yield math. Keep current in-memory KPIs until a
+separate experiment proves bitwise-identical yields under spill.
+
 Run:
 
 ```powershell

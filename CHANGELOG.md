@@ -52,9 +52,20 @@ for retry and verification. Shipped `analysis-receipt-v1` bundles publish under
 (content-addressed execution id; create-if-absent / verify-on-replay). See
 [data contracts](docs/architecture/data-contracts.md).
 
+### ANA-002 summaries
+
+Shared retained-evidence adapter also ships:
+
+- `site-variation-request-v1` / `prr-site-variation-v1`
+- `lot-comparison-request-v1` / `prr-lot-comparison-v1`
+- `retest-impact-request-v1` / `prr-retest-impact-v1`
+
+Public entry: `zstdf-cli snapshot analyze <dataset> <request.json>` (attempt-yield
+remains available). Dashboard `coordinate-v1` merging is unchanged.
+
 ### Run telemetry
 
-`convert`, `view`, and `snapshot attempt-yield` accept optional
+`convert`, `view`, `snapshot attempt-yield`, and `snapshot analyze` accept optional
 `--telemetry-json <path>` to append `run-telemetry-v1` JSONL events. Omitting
 the flag preserves prior stdout results; stderr phase lines may still appear
 when the helper runs. This is local diagnostics, not OpenTelemetry export.

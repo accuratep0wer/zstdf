@@ -99,7 +99,7 @@ impl Population {
 }
 
 /// Minimal PRR fields required by the yield adapter (not the viewer Row schema).
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct AttemptRecord {
     pub attempt: u64,
     pub run: u64,
@@ -486,47 +486,69 @@ pub fn result_hash(result: &Value) -> Result<String, String> {
     Ok(sha256_hex(&canonical_json(result)?))
 }
 
-pub fn build_receipt(
-    execution_id: &str,
-    request: &Request,
-    population: Population,
-    result: &Value,
-    coverage: &Coverage,
-    build: &BuildIdentity,
-    status: &str,
-) -> Result<Value, String> {
-    let request_fp = request_fingerprint(request)?;
-    let result_fp = result_hash(result)?;
+/// Versions and operation id recorded on an analysis-receipt-v1 bundle.
+#[derive(Clone, Copy, Debug)]
+pub struct ReceiptMeta<'a> {
+    pub operation: &'a str,
+    pub request_version: &'a str,
+    pub result_version: &'a str,
+}
+
+impl<'a> ReceiptMeta<'a> {
+    pub fn attempt_yield(population: Population) -> Self {
+        Self {
+            operation: population.operation(),
+            request_version: REQUEST_VERSION,
+            result_version: RESULT_VERSION,
+        }
+    }
+}
+
+/// Inputs for a complete `analysis-receipt-v1` document.
+pub struct ReceiptParts<'a> {
+    pub execution_id: &'a str,
+    pub request: &'a Request,
+    pub population: Population,
+    pub result: &'a Value,
+    pub coverage: &'a Coverage,
+    pub build: &'a BuildIdentity,
+    pub status: &'a str,
+    pub meta: ReceiptMeta<'a>,
+}
+
+pub fn build_receipt(parts: ReceiptParts<'_>) -> Result<Value, String> {
+    let request_fp = request_fingerprint(parts.request)?;
+    let result_fp = result_hash(parts.result)?;
     Ok(json!({
         "version": RECEIPT_VERSION,
-        "execution_id": execution_id,
-        "status": status,
+        "execution_id": parts.execution_id,
+        "status": parts.status,
         "request_fingerprint": request_fp,
         "result_hash": result_fp,
-        "snapshot_id": request.snapshot_id,
-        "operation": population.operation(),
-        "request_version": REQUEST_VERSION,
-        "result_version": RESULT_VERSION,
-        "population": population.as_str(),
-        "source_policy": request.source_policy,
-        "identity_policy": request.identity_policy,
-        "allow_partial": request.allow_partial,
-        "evidence_ids": request.evidence_ids,
+        "snapshot_id": parts.request.snapshot_id,
+        "operation": parts.meta.operation,
+        "request_version": parts.meta.request_version,
+        "result_version": parts.meta.result_version,
+        "population": parts.population.as_str(),
+        "source_policy": parts.request.source_policy,
+        "identity_policy": parts.request.identity_policy,
+        "allow_partial": parts.request.allow_partial,
+        "evidence_ids": parts.request.evidence_ids,
         "coverage": {
-            "snapshot_sources": u64_str(coverage.snapshot_sources),
-            "selected_sources": u64_str(coverage.selected_sources),
-            "missing_source_ids": coverage.missing_source_ids,
-            "partial": coverage.partial,
-            "expected_inventory": coverage.expected_inventory,
-            "content_alias_source_count": u64_str(coverage.content_alias_source_count),
-            "catalog_run_status": coverage.catalog_run_status,
-            "catalog_failure_count": u64_str(coverage.catalog_failure_count),
+            "snapshot_sources": u64_str(parts.coverage.snapshot_sources),
+            "selected_sources": u64_str(parts.coverage.selected_sources),
+            "missing_source_ids": parts.coverage.missing_source_ids,
+            "partial": parts.coverage.partial,
+            "expected_inventory": parts.coverage.expected_inventory,
+            "content_alias_source_count": u64_str(parts.coverage.content_alias_source_count),
+            "catalog_run_status": parts.coverage.catalog_run_status,
+            "catalog_failure_count": u64_str(parts.coverage.catalog_failure_count),
         },
-        "counts": result.get("counts").cloned().unwrap_or(Value::Null),
+        "counts": parts.result.get("counts").cloned().unwrap_or(Value::Null),
         "build": {
-            "package_version": build.package_version,
-            "git_sha": build.git_sha,
-            "target": build.target,
+            "package_version": parts.build.package_version,
+            "git_sha": parts.build.git_sha,
+            "target": parts.build.target,
         },
         "platform": std::env::consts::OS,
     }))

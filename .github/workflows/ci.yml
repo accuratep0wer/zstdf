@@ -71,6 +71,47 @@ jobs:
           npm install --no-save playwright
           node scripts/smoke_viewer.cjs
 
+  rust-linux:
+    name: Rust workspace (Linux)
+    runs-on: ubuntu-latest
+    # Safe subset: no Playwright/Edge viewer smoke (Windows channel-specific).
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@1.99.1
+        with:
+          components: rustfmt, clippy
+
+      # Pin Python for PyO3/stdf-py: ubuntu-latest system python can be newer
+      # than PyO3's supported max (e.g. 3.14 > 3.13). Match Windows `py -3.12`.
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Format
+        run: cargo fmt --all -- --check
+
+      - name: License declarations
+        run: python scripts/check_licenses.py
+
+      - name: Clippy
+        run: cargo clippy --workspace --locked -- -D warnings
+
+      - name: Test
+        run: cargo test --workspace --exclude stdf-py --locked
+
+      - name: Check Python bindings
+        run: cargo check -p stdf-py --locked
+
+      - name: Analytics spill smoke
+        run: cargo run -p stdf-analytics --bin spill_stress -- 10000
+
+      - name: Build release CLI
+        run: cargo build --release -p stdf-cli --locked
+
   supply-chain:
     name: Supply chain
     runs-on: ubuntu-latest

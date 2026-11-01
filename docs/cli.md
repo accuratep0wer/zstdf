@@ -145,6 +145,25 @@ Example request shape (IDs are decimal strings):
 For latest-device yield, set `"population": "latest_device"` and
 `"identity_policy": "latest-ecid-start-t-v1"`.
 
+Shared ANA-002 summaries reuse the same request envelope fields with distinct
+versions and publish the same `analysis-receipt-v1` layout. Dispatch via
+`snapshot analyze` (or keep `snapshot attempt-yield` for the yield request):
+
+| Request version | Result / operation | Reduction |
+| --- | --- | --- |
+| `site-variation-request-v1` | `site-variation-result-v1` / `prr-site-variation-v1` | Yield by `H{head} / S{site}` |
+| `lot-comparison-request-v1` | `lot-comparison-result-v1` / `prr-lot-comparison-v1` | Yield by `lot_id` |
+| `retest-impact-request-v1` | `retest-impact-result-v1` / `prr-retest-impact-v1` | Per-source ECID first/last; unresolved identity counted separately |
+
+Populations remain `all_attempts` and `latest_device` (with
+`latest-ecid-start-t-v1`). None of these operations use Dashboard
+`coordinate-v1` merging. Retest impact treats ECID namespaces as source-local.
+
+```powershell
+.\target\release\zstdf-cli.exe snapshot analyze path\to\dataset site-request.json
+cargo test -p stdf-cli site_variation lot_comparison retest_impact --locked
+```
+
 ## Multi-file Conversion (Phase 10B)
 
 Convert files or recursively scan directories:

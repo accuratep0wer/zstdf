@@ -6,6 +6,7 @@
 
 pub mod attempt_yield;
 pub mod attempt_yield_op;
+pub mod summary_ops;
 
 use std::fs::{self, File, OpenOptions};
 use std::io::{self, Read, Write};

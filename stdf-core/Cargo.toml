@@ -11,7 +11,12 @@ crate-type = ["rlib"]
 thiserror.workspace = true
 
 [dev-dependencies]
+criterion = { workspace = true }
 proptest = "1"
+
+[[bench]]
+name = "decode"
+harness = false
 
 [lints]
 workspace = true

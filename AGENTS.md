@@ -88,3 +88,20 @@ User instructions and host permissions take precedence.
   accepted score is not independent review, a Git merge or publication permission.
 - Stop at the recorded round, no-gain or resource limit. Preserve the last accepted
   candidate and evidence; never reset shared user work to discard a failed trial.
+
+## Cursor Cloud specific instructions
+
+The Cloud Agent image provides Rust stable with rustfmt and clippy (`/usr/local/cargo`), `python` on `PATH` (Python 3), Node, Microsoft Edge, and Playwright. Browser smoke scripts launch Playwright with the `msedge` channel. Playwright is installed under `/opt/zstdf-node` and exposed at `/node_modules`, so `require('playwright')` resolves from this repository without a local `npm install`.
+
+No service needs to be running before development. From the repository root, use the checks in [docs/development/multi-agent.md](docs/development/multi-agent.md). A release CLI is required before viewer or report commands:
+
+```bash
+cargo test --workspace --exclude stdf-py --locked
+cargo check -p stdf-py --locked
+python scripts/check_licenses.py
+cargo build --release -p stdf-cli --locked
+python examples/viewer/generate_demo.py
+node scripts/smoke_viewer.cjs
+```
+
+The active workspace is the root `Cargo.toml`. The `crates/` directory is not a workspace member.

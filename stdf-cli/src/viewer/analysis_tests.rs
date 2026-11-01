@@ -198,7 +198,15 @@ fn rich() -> Vec<u8> {
     out
 }
 
-fn counts(scoped: u64, eligible: u64, excluded: u64, pass: u64, fail: u64, unknown: u64, unresolved: u64) -> Value {
+fn counts(
+    scoped: u64,
+    eligible: u64,
+    excluded: u64,
+    pass: u64,
+    fail: u64,
+    unknown: u64,
+    unresolved: u64,
+) -> Value {
     json!({
         "scoped_attempts": scoped.to_string(),
         "eligible": eligible.to_string(),
@@ -212,9 +220,8 @@ fn counts(scoped: u64, eligible: u64, excluded: u64, pass: u64, fail: u64, unkno
 
 fn yields(pass: u64, eligible: u64, known: u64) -> Value {
     let ratio = |denominator: u64| {
-        (denominator > 0).then(|| {
-            json!({"numerator": pass.to_string(), "denominator": denominator.to_string()})
-        })
+        (denominator > 0)
+            .then(|| json!({"numerator": pass.to_string(), "denominator": denominator.to_string()}))
     };
     json!({
         "all_attempts": {
@@ -242,12 +249,21 @@ fn attempt_yield_counts_physical_prrs_not_measurements_latest_or_part_ids() {
     assert_eq!(response["counts"], counts(5, 5, 0, 2, 1, 2, 1));
     assert_eq!(response["yields"], yields(2, 5, 3));
     assert_eq!(response["analysis"]["status"], "complete");
-    assert_eq!(response["analysis"]["receipt_version"], "analysis-receipt-v1");
     assert_eq!(
-        response["analysis"]["request_fingerprint"].as_str().unwrap().len(),
+        response["analysis"]["receipt_version"],
+        "analysis-receipt-v1"
+    );
+    assert_eq!(
+        response["analysis"]["request_fingerprint"]
+            .as_str()
+            .unwrap()
+            .len(),
         64
     );
-    assert_eq!(response["analysis"]["result_hash"].as_str().unwrap().len(), 64);
+    assert_eq!(
+        response["analysis"]["result_hash"].as_str().unwrap().len(),
+        64
+    );
     let published = f
         .dataset()
         .join(response["analysis"]["relative_path"].as_str().unwrap());
@@ -256,8 +272,14 @@ fn attempt_yield_counts_physical_prrs_not_measurements_latest_or_part_ids() {
     assert_eq!(response["sources"].as_array().unwrap().len(), 1);
     assert_eq!(response["sources"][0]["source_id"], source);
     assert_eq!(response["sources"][0]["evidence_id"], bundle["evidence_id"]);
-    assert_eq!(response["sources"][0]["source_sha256"], bundle["source_sha256"]);
-    assert_eq!(response["sources"][0]["content_sha256"], bundle["content_sha256"]);
+    assert_eq!(
+        response["sources"][0]["source_sha256"],
+        bundle["source_sha256"]
+    );
+    assert_eq!(
+        response["sources"][0]["content_sha256"],
+        bundle["content_sha256"]
+    );
     assert_eq!(response["sources"][0]["available_attempts"], "5");
     assert_eq!(response["sources"][0]["counts"], response["counts"]);
     assert_eq!(response["sources"][0]["yields"], response["yields"]);
@@ -303,9 +325,15 @@ fn attempt_yield_prr_only_multirun_scope_keeps_head_and_site_separate() {
     let (snapshot, source, bundle) = f.setup(&bytes);
     assert_eq!(bundle["measurements"], 0);
     let mut req = request(&snapshot, &[bundle]);
-    assert_eq!(f.execute(&req).unwrap()["counts"], counts(4, 4, 0, 2, 1, 1, 0));
+    assert_eq!(
+        f.execute(&req).unwrap()["counts"],
+        counts(4, 4, 0, 2, 1, 1, 0)
+    );
     req["scope"] = json!({"sites": [{"head": 2, "site": 1}]});
-    assert_eq!(f.execute(&req).unwrap()["counts"], counts(1, 1, 0, 0, 1, 0, 0));
+    assert_eq!(
+        f.execute(&req).unwrap()["counts"],
+        counts(1, 1, 0, 0, 1, 0, 0)
+    );
     req["scope"] = json!({
         "lot_ids": ["LOT-A", "LOT-B"], "wafer_ids": ["W2"],
         "sites": [{"head": 1, "site": 1}],
@@ -315,7 +343,10 @@ fn attempt_yield_prr_only_multirun_scope_keeps_head_and_site_separate() {
     assert_eq!(response["counts"], counts(1, 1, 0, 0, 0, 1, 0));
     assert_eq!(response["yields"], yields(0, 1, 0));
     req["scope"]["lot_ids"] = json!(["LOT-A"]);
-    assert_eq!(f.execute(&req).unwrap()["counts"], counts(0, 0, 0, 0, 0, 0, 0));
+    assert_eq!(
+        f.execute(&req).unwrap()["counts"],
+        counts(0, 0, 0, 0, 0, 0, 0)
+    );
 }
 
 #[test]
@@ -324,16 +355,18 @@ fn attempt_yield_zero_denominators_and_empty_filter_lists_are_explicit() {
     let (snapshot, source, bundle) = f.setup(&rich());
     let mut req = request(&snapshot, &[bundle]);
     req["scope"] = json!({"lot_ids": [], "wafer_ids": [], "sites": [], "runs": []});
-    assert_eq!(f.execute(&req).unwrap()["counts"], counts(5, 5, 0, 2, 1, 2, 1));
-    req["exclude_attempts"] = json!([1, 2, 5].map(|id| {
-        json!({"source_id": source, "attempt_id": id.to_string()})
-    }));
+    assert_eq!(
+        f.execute(&req).unwrap()["counts"],
+        counts(5, 5, 0, 2, 1, 2, 1)
+    );
+    req["exclude_attempts"] =
+        json!([1, 2, 5].map(|id| { json!({"source_id": source, "attempt_id": id.to_string()}) }));
     let unknown_only = f.execute(&req).unwrap();
     assert_eq!(unknown_only["counts"], counts(5, 2, 3, 0, 0, 2, 0));
     assert_eq!(unknown_only["yields"], yields(0, 2, 0));
-    req["exclude_attempts"] = json!([1, 2, 3, 4, 5].map(|id| {
-        json!({"source_id": source, "attempt_id": id.to_string()})
-    }));
+    req["exclude_attempts"] =
+        json!([1, 2, 3, 4, 5]
+            .map(|id| { json!({"source_id": source, "attempt_id": id.to_string()}) }));
     let excluded = f.execute(&req).unwrap();
     assert_eq!(excluded["counts"], counts(5, 0, 5, 0, 0, 0, 0));
     assert_eq!(excluded["yields"], yields(0, 0, 0));
@@ -381,7 +414,10 @@ fn attempt_yield_aliases_are_counted_by_source_and_request_order_is_canonical() 
         {"source_id": bundles[0]["source_id"], "attempt_id": "1"}
     ]);
     // A source-local exclusion must not remove the alias source's attempt 1.
-    assert_eq!(f.execute(&req).unwrap()["counts"], counts(10, 9, 1, 3, 2, 4, 2));
+    assert_eq!(
+        f.execute(&req).unwrap()["counts"],
+        counts(10, 9, 1, 3, 2, 4, 2)
+    );
 }
 
 #[test]
@@ -395,7 +431,10 @@ fn attempt_yield_missing_sources_and_incomplete_catalog_require_partial_opt_in()
     assert_eq!(response["counts"], counts(5, 5, 0, 2, 1, 2, 1));
     assert_eq!(response["coverage"]["snapshot_sources"], "2");
     assert_eq!(response["coverage"]["selected_sources"], "1");
-    assert_eq!(response["coverage"]["missing_source_ids"], json!([bundles[1]["source_id"]]));
+    assert_eq!(
+        response["coverage"]["missing_source_ids"],
+        json!([bundles[1]["source_id"]])
+    );
     assert_eq!(response["coverage"]["partial"], true);
 
     let partial = Fixture::new();
@@ -445,12 +484,28 @@ fn attempt_yield_rejects_unknown_fields_policies_and_noncanonical_ids() {
         req[field] = value;
         assert!(f.execute(&req).is_err(), "accepted invalid {field}");
     }
-    for field in ["version", "snapshot_id", "evidence_ids", "population", "source_policy", "allow_partial"] {
+    for field in [
+        "version",
+        "snapshot_id",
+        "evidence_ids",
+        "population",
+        "source_policy",
+        "allow_partial",
+    ] {
         let mut req = valid.clone();
         req.as_object_mut().unwrap().remove(field);
         assert!(f.execute(&req).is_err(), "accepted missing {field}");
     }
-    for id in [json!(0), json!(1), json!("0"), json!("01"), json!("+1"), json!("-1"), json!("1.0"), json!("18446744073709551616")] {
+    for id in [
+        json!(0),
+        json!(1),
+        json!("0"),
+        json!("01"),
+        json!("+1"),
+        json!("-1"),
+        json!("1.0"),
+        json!("18446744073709551616"),
+    ] {
         let mut req = valid.clone();
         req["exclude_attempts"] = json!([{"source_id": source, "attempt_id": id}]);
         assert!(f.execute(&req).is_err(), "accepted invalid attempt ID {id}");
@@ -473,19 +528,35 @@ fn attempt_yield_rejects_unknown_fields_policies_and_noncanonical_ids() {
 fn attempt_yield_rejects_duplicate_sources_wrong_snapshot_and_invalid_references() {
     let f = Fixture::new();
     let (snapshot, source, bundle) = f.setup(&rich());
-    assert!(f.execute(&request(&snapshot, &[bundle.clone(), bundle.clone()])).is_err());
+    assert!(f
+        .execute(&request(&snapshot, &[bundle.clone(), bundle.clone()]))
+        .is_err());
     // A second valid bundle can share a catalog source but have a different locator.
     let relocated = f.0.join("relocated.stdf");
     fs::write(&relocated, rich()).unwrap();
     let second = f.retain(&snapshot, &source, &relocated);
     assert_ne!(second["evidence_id"], bundle["evidence_id"]);
-    assert!(f.execute(&request(&snapshot, &[bundle.clone(), second])).is_err());
+    assert!(f
+        .execute(&request(&snapshot, &[bundle.clone(), second]))
+        .is_err());
     let valid = request(&snapshot, &[bundle.clone()]);
     for (key, value) in [
-        ("exclude_attempts", json!([{"source_id": source, "attempt_id": "6"}])),
-        ("exclude_attempts", json!([{"source_id": "f".repeat(64), "attempt_id": "1"}])),
-        ("scope", json!({"runs": [{"source_id": source, "run_id": "2"}]})),
-        ("scope", json!({"runs": [{"source_id": "f".repeat(64), "run_id": "1"}]})),
+        (
+            "exclude_attempts",
+            json!([{"source_id": source, "attempt_id": "6"}]),
+        ),
+        (
+            "exclude_attempts",
+            json!([{"source_id": "f".repeat(64), "attempt_id": "1"}]),
+        ),
+        (
+            "scope",
+            json!({"runs": [{"source_id": source, "run_id": "2"}]}),
+        ),
+        (
+            "scope",
+            json!({"runs": [{"source_id": "f".repeat(64), "run_id": "1"}]}),
+        ),
     ] {
         let mut req = valid.clone();
         req[key] = value;
@@ -525,7 +596,11 @@ fn attempt_yield_corrupt_selected_evidence_fails_even_when_scope_is_empty() {
     let (snapshot, bundles) = f.aliases();
     let mut req = request(&snapshot, &bundles);
     req["scope"] = json!({"lot_ids": ["ABSENT"]});
-    let corrupt = f.dataset().join("evidence").join(bundles[1]["evidence_id"].as_str().unwrap()).join("attempts.idx");
+    let corrupt = f
+        .dataset()
+        .join("evidence")
+        .join(bundles[1]["evidence_id"].as_str().unwrap())
+        .join("attempts.idx");
     fs::write(corrupt, b"corrupt index").unwrap();
     assert!(f.execute(&req).is_err());
     req["allow_partial"] = json!(true);
@@ -553,10 +628,7 @@ fn attempt_yield_receipt_is_stable_for_identical_request_and_survives_replay() {
     assert_eq!(receipt["version"], "analysis-receipt-v1");
     assert_eq!(receipt["status"], "complete");
     assert_eq!(receipt["result_hash"], first["analysis"]["result_hash"]);
-    assert_eq!(
-        receipt["execution_id"],
-        first["analysis"]["execution_id"]
-    );
+    assert_eq!(receipt["execution_id"], first["analysis"]["execution_id"]);
 }
 
 #[test]
@@ -589,7 +661,10 @@ fn analysis_receipt_staging_failure_leaves_no_complete_bundle() {
     let (snapshot, _, bundle) = f.setup(&rich());
     let req = request(&snapshot, &[bundle]);
     let first = f.execute(&req).unwrap();
-    let relative = first["analysis"]["relative_path"].as_str().unwrap().to_string();
+    let relative = first["analysis"]["relative_path"]
+        .as_str()
+        .unwrap()
+        .to_string();
     let complete = f.dataset().join(&relative);
     assert!(complete.join("receipt.json").is_file());
     // Simulate a crash leaving only staging: no complete pointer under analysis/<id>.
@@ -600,7 +675,10 @@ fn analysis_receipt_staging_failure_leaves_no_complete_bundle() {
     assert!(!stage.join("receipt.json").is_file());
     assert!(complete.join("receipt.json").is_file());
     let replay = f.execute(&req).unwrap();
-    assert_eq!(replay["analysis"]["execution_id"], first["analysis"]["execution_id"]);
+    assert_eq!(
+        replay["analysis"]["execution_id"],
+        first["analysis"]["execution_id"]
+    );
     assert!(complete.join("receipt.json").is_file());
     assert!(stage.exists());
 }
@@ -617,9 +695,18 @@ fn attempt_yield_cancel_quota_and_malformed_request_preserve_dataset_state() {
     let cancel = f.0.join("cancel");
     fs::write(&cancel, b"cancel").unwrap();
     for limits in [
-        EvidenceLimits { cancel_file: Some(cancel), ..Default::default() },
-        EvidenceLimits { memory_limit_mib: 0, ..Default::default() },
-        EvidenceLimits { disk_limit_mib: 0, ..Default::default() },
+        EvidenceLimits {
+            cancel_file: Some(cancel),
+            ..Default::default()
+        },
+        EvidenceLimits {
+            memory_limit_mib: 0,
+            ..Default::default()
+        },
+        EvidenceLimits {
+            disk_limit_mib: 0,
+            ..Default::default()
+        },
     ] {
         assert!(f.execute_with(&req, &limits).is_err());
     }
@@ -643,7 +730,13 @@ fn attempt_yield_cancel_quota_and_malformed_request_preserve_dataset_state() {
     let mut too_many = req;
     too_many["evidence_ids"] = json!(vec!["0".repeat(64); 257]);
     assert!(f.execute(&too_many).is_err());
-    assert_eq!(fs::read(f.dataset().join("_catalog.json")).unwrap(), catalog);
-    assert_eq!(fs::read(f.dataset().join("_current_snapshot.json")).unwrap(), current);
+    assert_eq!(
+        fs::read(f.dataset().join("_catalog.json")).unwrap(),
+        catalog
+    );
+    assert_eq!(
+        fs::read(f.dataset().join("_current_snapshot.json")).unwrap(),
+        current
+    );
     assert_eq!(evidence::list(&f.dataset()).unwrap(), before);
 }

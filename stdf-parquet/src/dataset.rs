@@ -237,7 +237,8 @@ fn partition_value(value: Option<&str>) -> Result<String> {
             encoded.push(byte as char);
         } else {
             use std::fmt::Write;
-            write!(&mut encoded, "%{byte:02X}").unwrap();
+            write!(&mut encoded, "%{byte:02X}")
+                .map_err(|_| invalid("partition percent-encoding failed"))?;
         }
     }
     if encoded.len() > 180 {
@@ -319,7 +320,11 @@ impl DatasetLock {
             path,
             file: Some(file),
         };
-        writeln!(lock.file.as_mut().unwrap(), "pid={}", std::process::id())?;
+        let file = lock
+            .file
+            .as_mut()
+            .ok_or_else(|| invalid("conversion lock was not opened"))?;
+        writeln!(file, "pid={}", std::process::id())?;
         Ok(lock)
     }
 }

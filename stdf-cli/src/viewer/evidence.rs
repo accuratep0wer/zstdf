@@ -272,7 +272,10 @@ fn read_json<T: serde::de::DeserializeOwned + Serialize>(
 }
 fn identity(bundle: &EvidenceBundle) -> CliResult<String> {
     let mut value = serde_json::to_value(bundle)?;
-    value.as_object_mut().unwrap().remove("evidence_id");
+    value
+        .as_object_mut()
+        .ok_or("evidence bundle did not encode as an object")?
+        .remove("evidence_id");
     let mut hash = Sha256::new();
     hash.update(b"zstdf:viewer-evidence-v1\0");
     hash.update(serde_json::to_vec(&value)?);
@@ -665,7 +668,10 @@ impl VerifiedAttempts {
         if row.id != self.next || row.attempt != self.next || row.kind != "PRR" {
             return Err("retained attempt index returned a different PRR".into());
         }
-        self.next = self.next.checked_add(1).ok_or("attempt sequence overflow")?;
+        self.next = self
+            .next
+            .checked_add(1)
+            .ok_or("attempt sequence overflow")?;
         Ok(Some(row))
     }
 }

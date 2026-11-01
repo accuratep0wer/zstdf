@@ -9,3 +9,6 @@ crate-type = ["rlib"]
 
 [dependencies]
 thiserror.workspace = true
+
+[lints]
+workspace = true

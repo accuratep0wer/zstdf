@@ -1,6 +1,18 @@
 // Copyright 2026 zstdf contributors. SPDX-License-Identifier: Apache-2.0
 use super::*;
 
+fn json_u64(value: &Value, what: &str) -> CliResult<u64> {
+    value
+        .as_u64()
+        .ok_or_else(|| format!("viewer {what} is not an integer").into())
+}
+
+fn json_f64(value: &Value, what: &str) -> CliResult<f64> {
+    value
+        .as_f64()
+        .ok_or_else(|| format!("viewer {what} is not a number").into())
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(default, deny_unknown_fields)]
 pub struct Query {
@@ -233,7 +245,10 @@ pub fn visit(
         &q.attempts,
         |mut r| {
             if table == "records" && r.attempt > 0 {
-                let a: Row = attempt_index.as_mut().unwrap().get(r.attempt)?;
+                let index = attempt_index
+                    .as_mut()
+                    .ok_or("attempt index was not opened for record rows")?;
+                let a: Row = index.get(r.attempt)?;
                 r.site = a.site;
                 r.head = a.head;
                 r.wafer = a.wafer;
@@ -482,23 +497,22 @@ fn summaries(cache: &Cache, q: &Query) -> CliResult<Value> {
                 None => "unknown",
             },
         ] {
-            g[k] = json!(g[k].as_u64().unwrap() + 1);
+            g[k] = json!(json_u64(&g[k], k)? + 1);
         }
         if let Some(v) = r.value {
             g["min"] = json!(g["min"].as_f64().map_or(v, |n| n.min(v)));
             g["max"] = json!(g["max"].as_f64().map_or(v, |n| n.max(v)));
-            g["sum"] = json!(g["sum"].as_f64().unwrap() + v);
-            g["numeric"] = json!(g["numeric"].as_u64().unwrap() + 1);
+            g["sum"] = json!(json_f64(&g["sum"], "sum")? + v);
+            g["numeric"] = json!(json_u64(&g["numeric"], "numeric")? + 1);
         }
         Ok(())
     })?;
     let mut values: Vec<_> = groups
         .into_values()
         .map(|mut v| {
-            v["mean"] = json!(if v["numeric"] == 0 {
-                None
-            } else {
-                Some(v["sum"].as_f64().unwrap() / v["numeric"].as_u64().unwrap() as f64)
+            v["mean"] = json!(match (v["sum"].as_f64(), v["numeric"].as_u64()) {
+                (Some(sum), Some(numeric)) if numeric > 0 => Some(sum / numeric as f64),
+                _ => None,
             });
             v
         })
@@ -693,9 +707,11 @@ fn plot_data(cache: &Cache, q: &Query) -> CliResult<Value> {
     while let Some(item) = sorted.next_record()? {
         cache.check()?;
         let (key, row): (String, Row) = serde_json::from_slice(&item.value)?;
-        let n = row.value.unwrap();
+        let n = row
+            .value
+            .ok_or("histogram point is missing a numeric result")?;
         let i = indices.entry(key.clone()).or_default();
-        let s = groups.get_mut(&key).unwrap();
+        let s = groups.get_mut(&key).ok_or("histogram group is missing")?;
         if s.quantiles.is_empty() {
             s.quantiles = vec![0.; 5];
             s.histogram = vec![0; q.bins];
@@ -722,7 +738,9 @@ fn plot_data(cache: &Cache, q: &Query) -> CliResult<Value> {
         *i += 1;
         let probability = *i as f64 / s.count as f64 * 100.;
         if s.cdf.last().is_some_and(|p| p["value"].as_f64() == Some(n)) {
-            s.cdf.last_mut().unwrap()["probability"] = json!(probability);
+            if let Some(last) = s.cdf.last_mut() {
+                last["probability"] = json!(probability);
+            }
         } else if (*i - 1).is_multiple_of(s.count.div_ceil(point_limit).max(1)) || *i == s.count {
             s.cdf.push(json!({"value":n,"probability":probability,"record":row.record,"attempt":row.attempt}));
         }
@@ -730,7 +748,7 @@ fn plot_data(cache: &Cache, q: &Query) -> CliResult<Value> {
     let mut seen: BTreeMap<String, u64> = BTreeMap::new();
     visit(cache, &q, true, |r| {
         let key = group_key(&r);
-        let s = groups.get_mut(&key).unwrap();
+        let s = groups.get_mut(&key).ok_or("plot group is missing")?;
         if r.value.is_some() {
             let n = seen.entry(key).or_default();
             // Reserve two slots for the true first/last source records, even when
@@ -792,7 +810,7 @@ fn scatter(cache: &Cache, q: &Query) -> CliResult<Value> {
         f64::NEG_INFINITY,
     );
     let (mut mx, mut my, mut xx, mut yy, mut xy) = (0., 0., 0., 0., 0.);
-    let mut emit = |g: &[Row]| {
+    let mut emit = |g: &[Row]| -> CliResult<()> {
         let a = g
             .iter()
             .filter(|r| r.test == q.tests[0])
@@ -802,8 +820,12 @@ fn scatter(cache: &Cache, q: &Query) -> CliResult<Value> {
             .filter(|r| r.test == q.tests[1])
             .max_by_key(|r| r.record);
         if let (Some(a), Some(b)) = (a, b) {
-            let x = a.value.unwrap();
-            let y = b.value.unwrap();
+            let x = a
+                .value
+                .ok_or("scatter x point is missing a numeric result")?;
+            let y = b
+                .value
+                .ok_or("scatter y point is missing a numeric result")?;
             x_units.insert(a.units.clone());
             y_units.insert(b.units.clone());
             xmin = xmin.min(x);
@@ -824,11 +846,12 @@ fn scatter(cache: &Cache, q: &Query) -> CliResult<Value> {
         } else if !g.is_empty() {
             unpaired += 1;
         }
+        Ok(())
     };
     while let Some(item) = stream.next_record()? {
         let r: Row = serde_json::from_slice(&item.value)?;
         if r.attempt != id {
-            emit(&group);
+            emit(&group)?;
             group.clear();
             id = r.attempt;
         }
@@ -837,7 +860,7 @@ fn scatter(cache: &Cache, q: &Query) -> CliResult<Value> {
             return Err("scatter duplicate-series budget exceeded".into());
         }
     }
-    emit(&group);
+    emit(&group)?;
     if x_units.len() > 1 || y_units.len() > 1 {
         return Ok(
             json!({"unavailable":"Scatter axis has incompatible units; narrow the selection",
@@ -900,9 +923,9 @@ fn pareto(cache: &Cache, q: &Query) -> CliResult<Value> {
                 Some(false) => "fail",
                 None => "unknown",
             };
-            e[verdict] = json!(e[verdict].as_u64().unwrap() + 1);
+            e[verdict] = json!(json_u64(&e[verdict], verdict)? + 1);
             if bins || p == Some(false) {
-                e["count"] = json!(e["count"].as_u64().unwrap() + 1);
+                e["count"] = json!(json_u64(&e["count"], "count")? + 1);
                 e["groups"][&group] = json!(e["groups"][&group].as_u64().unwrap_or(0) + 1);
             }
         }
@@ -934,7 +957,7 @@ fn pareto(cache: &Cache, q: &Query) -> CliResult<Value> {
             }
         })
         .collect();
-    modes.sort_by_key(|v| std::cmp::Reverse(v["count"].as_u64().unwrap()));
+    modes.sort_by_key(|v| std::cmp::Reverse(v["count"].as_u64().unwrap_or(0)));
     if serde_json::to_vec(&modes)?.len() > cache.memory / 8 {
         return Err("Pareto response exceeds memory budget".into());
     }

@@ -60,7 +60,7 @@ impl Config {
                     config.tests_per_part = parse_next(&mut args, "--tests-per-part");
                 }
                 "--help" | "-h" => print_help_and_exit(),
-                unknown => panic!("unknown argument: {unknown}"),
+                unknown => fail(&format!("unknown argument: {unknown}")),
             }
         }
         config
@@ -71,10 +71,17 @@ fn parse_next<T: std::str::FromStr>(
     args: &mut std::iter::Peekable<impl Iterator<Item = String>>,
     name: &str,
 ) -> T {
-    args.next()
-        .unwrap_or_else(|| panic!("{name} requires a value"))
+    let Some(value) = args.next() else {
+        fail(&format!("{name} requires a value"));
+    };
+    value
         .parse()
-        .unwrap_or_else(|_| panic!("{name} value is invalid"))
+        .unwrap_or_else(|_| fail(&format!("{name} value is invalid")))
+}
+
+fn fail(message: &str) -> ! {
+    eprintln!("{message}");
+    std::process::exit(2);
 }
 
 fn print_help_and_exit() -> ! {

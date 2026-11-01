@@ -361,14 +361,16 @@ fn generate(args: &Arguments, out: &mut impl Write) -> CliResult<()> {
             }
         }
     }
-    let root = args.output_dir.as_deref().unwrap_or_else(|| {
-        args.text_summary
-            .as_ref()
-            .unwrap()
+    let root = if let Some(dir) = args.output_dir.as_deref() {
+        dir
+    } else if let Some(summary) = args.text_summary.as_ref() {
+        summary
             .parent()
             .filter(|p| !p.as_os_str().is_empty())
             .unwrap_or(Path::new("."))
-    });
+    } else {
+        return Err("sanity output directory is not set".into());
+    };
     let mut stage = storage::Stage::new(
         root,
         args.disk_limit_mib
@@ -487,7 +489,7 @@ fn generate(args: &Arguments, out: &mut impl Write) -> CliResult<()> {
         report.validation_failed,
         args.output_dir
             .as_ref()
-            .unwrap()
+            .ok_or("sanity report directory is not set")?
             .join("report.html")
             .display()
     )?;

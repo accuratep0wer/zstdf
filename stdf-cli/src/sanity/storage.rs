@@ -6,7 +6,15 @@ use parquet::arrow::ArrowWriter;
 use parquet::basic::Compression;
 use parquet::file::properties::WriterProperties;
 use std::sync::atomic::{AtomicU64, Ordering};
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, MutexGuard};
+
+fn lock_quota(quota: &Mutex<(u64, u64)>) -> MutexGuard<'_, (u64, u64)> {
+    // A poisoned quota means another thread panicked while holding the disk
+    // budget. Keep the recorded usage instead of aborting the report.
+    quota
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner())
+}
 
 pub struct LimitedFile {
     file: File,
@@ -14,7 +22,7 @@ pub struct LimitedFile {
 }
 impl Write for LimitedFile {
     fn write(&mut self, b: &[u8]) -> std::io::Result<usize> {
-        let mut q = self.quota.lock().unwrap();
+        let mut q = lock_quota(&self.quota);
         if (b.len() as u64) > q.1.saturating_sub(q.0) {
             return Err(std::io::Error::other("sanity disk limit exceeded"));
         }
@@ -86,7 +94,7 @@ impl Stage {
         let p = self.path.join(name);
         let size = fs::metadata(&p)?.len();
         fs::remove_file(p)?;
-        self.quota.lock().unwrap().0 -= size;
+        lock_quota(&self.quota).0 -= size;
         Ok(())
     }
     pub fn manifest(&self, profile_hash: &str, checks_hash: &str) -> CliResult<()> {
@@ -121,7 +129,7 @@ impl Stage {
         check: impl FnOnce() -> Result<(), String>,
     ) -> CliResult<()> {
         {
-            let mut q = self.quota.lock().unwrap();
+            let mut q = lock_quota(&self.quota);
             if html.len() as u64 > q.1.saturating_sub(q.0) {
                 return Err("disk budget cannot hold atomic report copy".into());
             }
@@ -141,7 +149,7 @@ impl Stage {
         check: impl FnOnce() -> Result<(), String>,
     ) -> CliResult<()> {
         {
-            let mut q = self.quota.lock().unwrap();
+            let mut q = lock_quota(&self.quota);
             if text.len() as u64 > q.1.saturating_sub(q.0) {
                 return Err("disk budget cannot hold atomic text summary".into());
             }

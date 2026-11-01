@@ -75,11 +75,10 @@ fn export_layout(
             {
                 let mut e: Evidence = evidence_index.get(r.record)?;
                 if let Some(flow) = flow {
-                    e.fields =
-                        checks
-                            .as_ref()
-                            .unwrap()
-                            .project(&e.kind, &flow.to_lowercase(), &e.fields);
+                    let loaded = checks
+                        .as_ref()
+                        .ok_or("sanity checks were not loaded for this flow")?;
+                    e.fields = loaded.project(&e.kind, &flow.to_lowercase(), &e.fields);
                 }
                 bytes += serde_json::to_vec(&e)?.len();
                 source.seek(SeekFrom::Start(e.offset))?;
@@ -127,7 +126,10 @@ fn export_layout(
         let mut summaries = Vec::new();
         loop {
             let page = query::rows(cache, &sq)?;
-            summaries.extend(page["rows"].as_array().unwrap().iter().cloned());
+            let rows = page["rows"]
+                .as_array()
+                .ok_or("query page is missing a rows array")?;
+            summaries.extend(rows.iter().cloned());
             if serde_json::to_vec(&summaries)?.len() > limit / 2 {
                 return Err("summary exceeds attachment budget; narrow selection".into());
             }
@@ -227,7 +229,7 @@ pub(super) fn handle(
         return Err("invalid request".into());
     }
     let method = parts[0].to_string();
-    let path = parts[1].split('?').next().unwrap().to_string();
+    let path = parts[1].split('?').next().unwrap_or("").to_string();
     let headers: BTreeMap<String, String> = lines
         .filter_map(|s| s.split_once(':'))
         .map(|(k, v)| (k.to_lowercase(), v.trim().to_string()))
@@ -267,7 +269,9 @@ pub(super) fn handle(
         bytes.extend_from_slice(&b[..n]);
     }
     let input: Value = serde_json::from_slice(&bytes[header_end..header_end + len])?;
-    let command = path.strip_prefix(base).unwrap();
+    let command = path
+        .strip_prefix(base)
+        .ok_or("viewer command is outside the API prefix")?;
     let result = match command {
         "inspect" => {
             let id = input["id"].as_u64().ok_or("missing record ID")?;

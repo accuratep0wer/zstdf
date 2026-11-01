@@ -70,7 +70,7 @@ impl Profiles {
                     }
                     for (name, value) in &s.mir {
                         if !fields::layout("MIR")
-                            .unwrap()
+                            .ok_or("MIR field layout is unavailable")?
                             .split_whitespace()
                             .any(|t| t.split(':').next() == Some(name))
                             || !matches!(value, Value::String(_) | Value::Number(_))

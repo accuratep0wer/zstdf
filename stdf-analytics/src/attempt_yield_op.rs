@@ -153,8 +153,8 @@ pub fn parse_request(bytes: &[u8]) -> Result<Request, String> {
     if bytes.len() as u64 > MAX_REQUEST_BYTES {
         return Err("attempt-yield request exceeds 1 MiB".into());
     }
-    let request: Request = serde_json::from_slice(bytes)
-        .map_err(|e| format!("invalid attempt-yield request: {e}"))?;
+    let request: Request =
+        serde_json::from_slice(bytes).map_err(|e| format!("invalid attempt-yield request: {e}"))?;
     validate_request(&request)?;
     Ok(request)
 }
@@ -179,7 +179,9 @@ pub fn validate_request(request: &Request) -> Result<(), String> {
         Population::LatestDevice => match request.identity_policy.as_deref() {
             Some(IDENTITY_LATEST) => {}
             Some(_) => return Err("unsupported identity_policy".into()),
-            None => return Err("latest_device requires identity_policy latest-ecid-start-t-v1".into()),
+            None => {
+                return Err("latest_device requires identity_policy latest-ecid-start-t-v1".into())
+            }
         },
     }
     if request.evidence_ids.is_empty() || request.evidence_ids.len() > MAX_EVIDENCE_IDS {
@@ -418,7 +420,10 @@ pub fn build_result(
 
 pub fn encode_counts(summary: &YieldSummary) -> Value {
     let mut map = Map::new();
-    map.insert("scoped_attempts".into(), json!(u64_str(summary.scoped_attempts)));
+    map.insert(
+        "scoped_attempts".into(),
+        json!(u64_str(summary.scoped_attempts)),
+    );
     map.insert("eligible".into(), json!(u64_str(summary.eligible)));
     map.insert("excluded".into(), json!(u64_str(summary.excluded)));
     map.insert("pass".into(), json!(u64_str(summary.pass)));

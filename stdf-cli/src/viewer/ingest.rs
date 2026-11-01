@@ -383,7 +383,7 @@ fn scan(cache: &mut Cache) -> CliResult<()> {
                 }
             }
             if let StdfRecord::Prr(r) = &record {
-                let a = active.remove(&s).unwrap();
+                let a = active.remove(&s).ok_or("PRR without a matching open PIR")?;
                 let xy = r
                     .x_coord
                     .zip(r.y_coord)

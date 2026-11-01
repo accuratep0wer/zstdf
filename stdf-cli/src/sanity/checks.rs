@@ -46,7 +46,7 @@ pub(super) fn layout(record: &str) -> Option<&'static str> {
 }
 fn format(kind: &str) -> String {
     let (kind, array) = (
-        kind.split('@').next().unwrap().trim_end_matches('?'),
+        kind.split('@').next().unwrap_or(kind).trim_end_matches('?'),
         kind.contains('@'),
     );
     format!(

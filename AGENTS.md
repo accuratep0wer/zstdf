@@ -61,6 +61,11 @@ User instructions and host permissions take precedence.
 - Keep pull requests reviewable. `scripts/check_pr_size.py` warns in CI when a
   diff exceeds 800 non-generated lines and is not entirely deletions or
   generated files. Split the change when that warning fires.
+- Production Rust forbids `unsafe_code`. `stdf-io` (read-only mmap) and
+  `stdf-parquet` (rename and process-liveness FFI) deny it instead, and allow
+  it only on those functions, each with a `SAFETY` comment. `clippy::unwrap_used`
+  and `clippy::panic` are denied outside tests. `rust-toolchain.toml` pins the
+  compiler, and `cargo deny check` runs in CI.
 - In a shared checkout, the coordinator serializes Cargo builds, demo generation,
   browser suites and release executable replacement. Workers request that slot.
 - Use separate output directories for independent experiments. Do not kill an

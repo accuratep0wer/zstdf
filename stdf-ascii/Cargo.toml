@@ -6,3 +6,6 @@ license.workspace = true
 
 [dependencies]
 stdf-core = { path = "../stdf-core" }
+
+[lints]
+workspace = true

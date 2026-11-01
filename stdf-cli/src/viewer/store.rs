@@ -147,7 +147,7 @@ impl TableWriter {
                 if self.lookup_attempt != 0 {
                     self.lookup
                         .as_mut()
-                        .unwrap()
+                        .ok_or("measurement lookup was not opened")?
                         .push(self.lookup_attempt, &self.lookup_fragments)?;
                 }
                 self.lookup_attempt = row.attempt;
@@ -223,8 +223,18 @@ impl TableWriter {
             sha256: stdf_parquet::catalog::sha256_file(&self.root.join(&path))?,
             path,
             rows: self.rows.len(),
-            first: self.rows.iter().map(|r| r.id).min().unwrap(),
-            last: self.rows.iter().map(|r| r.id).max().unwrap(),
+            first: self
+                .rows
+                .iter()
+                .map(|r| r.id)
+                .min()
+                .ok_or("cannot record an empty fragment")?,
+            last: self
+                .rows
+                .iter()
+                .map(|r| r.id)
+                .max()
+                .ok_or("cannot record an empty fragment")?,
             tests: self
                 .rows
                 .iter()
@@ -233,7 +243,11 @@ impl TableWriter {
                 .collect(),
             runs: self.rows.iter().map(|r| r.run).collect(),
         });
-        self.metadata_bytes += serde_json::to_vec(self.fragments.last().unwrap())?.len() * 4;
+        let fragment = self
+            .fragments
+            .last()
+            .ok_or("fragment metadata was not recorded")?;
+        self.metadata_bytes += serde_json::to_vec(fragment)?.len() * 4;
         if self.metadata_bytes > self.budget {
             return Err(
                 "companion index metadata exceeds memory budget; increase --memory-limit-mib"

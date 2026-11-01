@@ -299,7 +299,9 @@ fn scan(path: &Path, budget: &mut Budget) -> CliResult<(String, Vec<Attempt>)> {
                 part.tests.insert(key, test);
             }
             if let StdfRecord::Prr(prr) = &record {
-                let part = active.remove(&site).unwrap();
+                let part = active
+                    .remove(&site)
+                    .ok_or("PRR without a matching open PIR")?;
                 let prr_xy = prr
                     .x_coord
                     .zip(prr.y_coord)

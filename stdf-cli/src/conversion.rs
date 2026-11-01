@@ -82,11 +82,7 @@ pub fn execute(mut args: Arguments, out: &mut impl Write) -> CliResult<()> {
     let result = if let Some(output_dir) = args.output_dir {
         if catalog {
             telemetry.phase("catalog");
-            telemetry.budget(
-                "memory_mib",
-                0,
-                args.memory_limit_mib.unwrap_or(256) as u64,
-            );
+            telemetry.budget("memory_mib", 0, args.memory_limit_mib.unwrap_or(256) as u64);
             partitioned::execute(
                 partitioned::Arguments {
                     inputs: args.paths,
@@ -123,8 +119,14 @@ pub fn execute(mut args: Arguments, out: &mut impl Write) -> CliResult<()> {
                     .into(),
             );
         }
-        let output = args.paths.pop().unwrap();
-        let input = args.paths.pop().unwrap();
+        let Some(output) = args.paths.pop() else {
+            telemetry.finish_error();
+            return Err("convert is missing an output path".into());
+        };
+        let Some(input) = args.paths.pop() else {
+            telemetry.finish_error();
+            return Err("convert is missing an input path".into());
+        };
         if input.is_dir() || output.is_dir() {
             telemetry.finish_error();
             return Err("directory conversion requires --output-dir <dir>".into());

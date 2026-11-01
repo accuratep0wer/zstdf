@@ -192,7 +192,11 @@ mod tests {
         for high in 0u8..8 {
             for (low, &verdict) in expected.iter().enumerate() {
                 let flags = (high << 5) | low as u8;
-                assert_eq!(Verdict::from_prr_flags(flags), verdict, "flags={flags:#04x}");
+                assert_eq!(
+                    Verdict::from_prr_flags(flags),
+                    verdict,
+                    "flags={flags:#04x}"
+                );
             }
         }
     }
@@ -342,7 +346,10 @@ mod tests {
         assert_eq!(expected.summary().eligible, 4);
         assert_eq!(expected.summary().excluded, 1);
         assert_eq!(expected.summary().unresolved, 2);
-        assert_eq!((a.summary().scoped_attempts, b.summary().scoped_attempts), (2, 2));
+        assert_eq!(
+            (a.summary().scoped_attempts, b.summary().scoped_attempts),
+            (2, 2)
+        );
         assert_eq!(c.summary().scoped_attempts, 1);
         let mut with_empty = expected.clone();
         with_empty.merge(&YieldAccumulator::default()).unwrap();

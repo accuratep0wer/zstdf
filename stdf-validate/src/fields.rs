@@ -35,11 +35,16 @@ pub fn characterization_fields(body: &[u8], order: ByteOrder) -> Result<Vec<Fiel
         wire.push((start, r.position() - start, v));
     }
     let mut fields = unchecked_gdr_fields(body, order);
-    fields.extend(custom.fields.into_iter().map(|f| {
-        let (start, len, v) = &wire[f.index];
-        Field {
+    for f in custom.fields {
+        let (start, len, v) = wire
+            .get(f.index)
+            .ok_or_else(|| format!("characterization field {} is outside the GDR body", f.name))?;
+        let kind = v["kind"]
+            .as_str()
+            .ok_or_else(|| format!("characterization field {} is missing a kind", f.name))?;
+        fields.push(Field {
             name: f.name,
-            kind: v["kind"].as_str().unwrap().into(),
+            kind: kind.into(),
             byte_start: *start,
             byte_len: *len,
             presence: "present".into(),
@@ -50,8 +55,8 @@ pub fn characterization_fields(body: &[u8], order: ByteOrder) -> Result<Vec<Fiel
             matches_default: None,
             inherited_from: None,
             issues: Vec::new(),
-        }
-    }));
+        });
+    }
     Ok(fields)
 }
 

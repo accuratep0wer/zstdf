@@ -25,6 +25,12 @@ jobs:
       - name: License declarations
         run: py -3.12 scripts/check_licenses.py
 
+      - name: Pull request size warning
+        if: github.event_name == 'pull_request'
+        run: |
+          git fetch --no-tags origin ${{ github.base_ref }}
+          py -3.12 scripts/check_pr_size.py --base origin/${{ github.base_ref }}
+
       - name: Clippy
         run: cargo clippy --workspace --locked -- -D warnings
 

@@ -4,6 +4,7 @@
 pub mod error;
 pub mod fields;
 pub mod header;
+pub mod invariants;
 pub mod iter;
 pub mod records;
 pub mod types;
@@ -11,6 +12,7 @@ pub mod types;
 pub use error::{Result, StdfError};
 pub use fields::FieldReader;
 pub use header::RecordHeader;
+pub use invariants::{decoding_invariants, prefix_stable};
 pub use iter::{
     decode_with_summary, detect_byte_order, detect_byte_order_result, raw_records, records,
     summarize, DecodeResult, DecodeSummary, RawRecord, RawRecordIter, RecordIter,
@@ -28,26 +30,11 @@ mod hardening_tests;
 ///
 /// For streaming use, prefer [`RecordIter`] or [`RawRecordIter`].
 pub fn decode_all(data: &[u8]) -> (Vec<StdfRecord>, Option<StdfError>) {
-    let byte_order = match detect_byte_order(data) {
-        Some(bo) => bo,
-        None => {
-            if data.len() < 6 {
-                return (
-                    Vec::new(),
-                    Some(StdfError::UnexpectedEof {
-                        position: 0,
-                        expected: 6,
-                    }),
-                );
-            }
-            return (
-                Vec::new(),
-                Some(StdfError::InvalidFar {
-                    typ: data[2],
-                    sub: data[3],
-                }),
-            );
-        }
+    // Same FAR gate as decode_with_summary: unsupported STDF_VER and a FAR
+    // whose CPU_TYPE does not match its header are errors with no records.
+    let byte_order = match detect_byte_order_result(data) {
+        Ok(byte_order) => byte_order,
+        Err(err) => return (Vec::new(), Some(err)),
     };
 
     let mut records = Vec::new();

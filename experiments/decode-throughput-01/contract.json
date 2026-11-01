@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "objective": "Increase decode throughput on the pinned public STDF samples without changing recorded counts",
+  "source_paths": [
+    "stdf-core/src",
+    "stdf-core/Cargo.toml",
+    "stdf-core/benches",
+    "Cargo.lock",
+    "fixtures/stdf/golden",
+    "stdf-core/tests",
+    "examples/public-stdf/expected.json",
+    "scripts/bench_adapter.py",
+    "scripts/public_stdf_gate.py"
+  ],
+  "allowed_changes": [
+    "stdf-core/src",
+    "stdf-core/Cargo.toml",
+    "stdf-core/benches",
+    "Cargo.lock"
+  ],
+  "protected_paths": [
+    "stdf-core/src/bin/decode_throughput.rs",
+    "stdf-core/tests",
+    "fixtures/stdf/golden",
+    "examples/public-stdf/expected.json",
+    "scripts/bench_adapter.py",
+    "scripts/public_stdf_gate.py"
+  ],
+  "gates": [
+    {
+      "name": "stdf-core",
+      "argv": ["cargo", "test", "-p", "stdf-core", "--locked"]
+    },
+    {
+      "name": "public-stdf",
+      "argv": ["{python}", "scripts/public_stdf_gate.py"]
+    }
+  ],
+  "benchmark": {
+    "argv": ["{python}", "scripts/bench_adapter.py"],
+    "metric": "records_per_sec",
+    "direction": "higher",
+    "min_relative_gain": 0.3,
+    "repeats": 5
+  },
+  "limits": {
+    "max_rounds": 3,
+    "max_no_gain": 2,
+    "wall_seconds": 7200,
+    "command_seconds": 900,
+    "output_bytes": 1048576
+  }
+}

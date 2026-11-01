@@ -290,11 +290,10 @@ fn generate(args: &Arguments, out: &mut impl Write, cancel: Arc<AtomicBool>) -> 
         budget.check()?;
         let next = String::from_utf8(record.key)?;
         if key.as_ref().is_some_and(|k| *k != next) {
-            emit(
-                key.take().unwrap(),
-                std::mem::take(&mut attempts),
-                &mut json,
-            )?;
+            let Some(current) = key.take() else {
+                return Err("traceability group key is missing".into());
+            };
+            emit(current, std::mem::take(&mut attempts), &mut json)?;
             group_bytes = 0;
         }
         key = Some(next);
@@ -312,7 +311,9 @@ fn generate(args: &Arguments, out: &mut impl Write, cancel: Arc<AtomicBool>) -> 
     json.extend_from_slice(b"]}");
     // Bound escaping too: adversarial '<' strings can expand sixfold.
     let template = crate::report_ui::decorate(include_str!("report.html").to_owned());
-    let (prefix, suffix) = template.split_once("__TRACE_DATA__").unwrap();
+    let (prefix, suffix) = template
+        .split_once("__TRACE_DATA__")
+        .ok_or("traceability report template is missing __TRACE_DATA__")?;
     let mut html = Vec::new();
     let mut writer = LimitedWriter {
         bytes: &mut html,

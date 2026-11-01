@@ -780,28 +780,36 @@ fn push_quality(groups: &mut BTreeMap<String, (usize, usize)>, row: &TestRow) {
         value.0 += 1;
     }
     if row.part_merge_key.is_none() {
-        groups.get_mut("unresolved coordinate identity").unwrap().1 += 1;
+        bump_quality(groups, "unresolved coordinate identity");
     }
     if row.wafer_id.is_none() {
-        groups.get_mut("missing wafer_id").unwrap().1 += 1;
+        bump_quality(groups, "missing wafer_id");
     }
     if row.part_id.is_empty() {
-        groups.get_mut("missing part_id").unwrap().1 += 1;
+        bump_quality(groups, "missing part_id");
     }
     if row.x_coord.is_none() || row.y_coord.is_none() {
-        groups.get_mut("missing x/y coordinate").unwrap().1 += 1;
+        bump_quality(groups, "missing x/y coordinate");
     }
     if row.test_pass.is_none() {
-        groups.get_mut("missing test_pass").unwrap().1 += 1;
+        bump_quality(groups, "missing test_pass");
     }
     if row.result.is_none() {
-        groups.get_mut("missing result").unwrap().1 += 1;
+        bump_quality(groups, "missing result");
     }
     if row.lo_limit.is_none() || row.hi_limit.is_none() {
-        groups.get_mut("missing limits").unwrap().1 += 1;
+        bump_quality(groups, "missing limits");
     }
     if row.test_time_ms.is_none() {
-        groups.get_mut("missing test_time_ms").unwrap().1 += 1;
+        bump_quality(groups, "missing test_time_ms");
+    }
+}
+
+fn bump_quality(groups: &mut BTreeMap<String, (usize, usize)>, label: &str) {
+    // Labels are inserted by quality_seed. A missing label is a programming
+    // mistake; skip rather than abort an otherwise complete report.
+    if let Some(slot) = groups.get_mut(label) {
+        slot.1 += 1;
     }
 }
 

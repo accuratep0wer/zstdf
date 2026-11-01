@@ -370,7 +370,10 @@ impl<'a> WriterCache<'a> {
                 self.created += 1;
                 self.peak_open = self.peak_open.max(self.open.len());
             }
-            let item = self.open.get_mut(&key).unwrap();
+            let item = self
+                .open
+                .get_mut(&key)
+                .ok_or_else(|| super::invalid("open fragment disappeared after it was inserted"))?;
             count = count.min(self.options.row_group_rows - item.rows);
             item.writer.write(&batch.slice(offset, count))?;
             item.rows += count;
@@ -408,7 +411,9 @@ fn write_receipt(
     rows: usize,
 ) -> Result<()> {
     let fragments = outputs.iter().map(|o| {
-        let relative = o.output_path.strip_prefix(destination).unwrap();
+        let relative = o.output_path.strip_prefix(destination).map_err(|_| {
+            super::invalid("fragment output is not under the destination directory")
+        })?;
         Ok(json!({ "path": relative.to_string_lossy(), "rows": o.rows, "batches": o.batches, "sha256": crate::catalog::sha256_file(&stage.join(relative))? }))
     }).collect::<Result<Vec<_>>>()?;
     let receipt = json!({ "version": 2, "rows": rows, "fragments": fragments });

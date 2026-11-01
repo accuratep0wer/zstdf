@@ -35,6 +35,18 @@ The runner's acceptance decision does not replace independent semantic review.
 The coordinator must still check the final diff against the task contract before
 integration. A worktree provides editing isolation, not a security sandbox.
 
+## Real decode-throughput experiment
+
+The synthetic demonstration below is a teaching fixture. Its `simulated_cost`
+metric is not a zstdf result. The first product experiment is
+[experiments/decode-throughput-01](../../experiments/decode-throughput-01/contract.json).
+It measures `records_per_sec` from the pinned public samples through
+`scripts/bench_adapter.py`. The gain threshold was set from the recorded noise
+baseline in that directory, above the observed run-to-run spread. Correctness
+gates include `cargo test -p stdf-core` and the public-sample count test.
+Protected paths include the tests, golden fixtures, `expected.json`, and the
+adapter. A faster candidate that fails a gate is rejected.
+
 ## Run the synthetic demonstration
 
 From the repository root, with Python 3.11+:

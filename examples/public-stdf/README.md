@@ -1,6 +1,6 @@
 # Public STDF samples for local experiments
 
-Three distinct public files have been downloaded and checked with zstdf. Their original bytes, source commits, URLs, and SHA-256 hashes are recorded in [sources.json](sources.json). Downloads and generated reports are ignored by Git.
+Three distinct public files have been downloaded and checked with zstdf. Their original bytes, source commits, URLs, and SHA-256 hashes are recorded in [sources.json](sources.json). Decoder record counts and viewer latest-selection counts are recorded in [expected.json](expected.json), which CI asserts after `download.py` verifies those hashes. Downloads and generated reports are ignored by Git.
 
 ## Samples and verified coverage
 

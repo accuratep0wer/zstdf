@@ -401,15 +401,20 @@ fn replace_file(from: &Path, to: &Path) -> Result<()> {
     Ok(())
 }
 #[cfg(windows)]
+#[allow(unsafe_code)]
 fn replace_file(from: &Path, to: &Path) -> Result<()> {
     use std::os::windows::ffi::OsStrExt;
     #[link(name = "kernel32")]
+    // SAFETY: kernel32 is a system library. The signature matches MoveFileExW.
+    // Both pointers are NUL-terminated wide paths encoded below and live for
+    // the call. MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH is 1 | 8.
     unsafe extern "system" {
         fn MoveFileExW(from: *const u16, to: *const u16, flags: u32) -> i32;
     }
     let from: Vec<u16> = from.as_os_str().encode_wide().chain(Some(0)).collect();
     let to: Vec<u16> = to.as_os_str().encode_wide().chain(Some(0)).collect();
     // Same-directory replacement retains the previous snapshot if the operation fails.
+    // SAFETY: `from` and `to` are NUL-terminated and not used after this call.
     if unsafe { MoveFileExW(from.as_ptr(), to.as_ptr(), 1 | 8) } == 0 {
         return Err(std::io::Error::last_os_error().into());
     }
@@ -511,13 +516,19 @@ pub fn recover_dataset(root: &Path) -> Result<Vec<PathBuf>> {
     Ok(removed)
 }
 #[cfg(windows)]
+#[allow(unsafe_code)]
 fn process_alive(pid: u32) -> Result<bool> {
     #[link(name = "kernel32")]
+    // SAFETY: kernel32 is a system library. Signatures match OpenProcess,
+    // GetExitCodeProcess, and CloseHandle. PROCESS_QUERY_LIMITED_INFORMATION
+    // is 0x1000. Handles are closed on every path that receives one.
     unsafe extern "system" {
         fn OpenProcess(access: u32, inherit: i32, pid: u32) -> *mut std::ffi::c_void;
         fn GetExitCodeProcess(handle: *mut std::ffi::c_void, code: *mut u32) -> i32;
         fn CloseHandle(handle: *mut std::ffi::c_void) -> i32;
     }
+    // SAFETY: pid is a process id, not a pointer. A null handle means the
+    // process cannot be opened; it is not dereferenced.
     let handle = unsafe { OpenProcess(0x1000, 0, pid) };
     if handle.is_null() {
         let error = std::io::Error::last_os_error();
@@ -528,8 +539,11 @@ fn process_alive(pid: u32) -> Result<bool> {
         };
     }
     let mut code = 0;
+    // SAFETY: `handle` came from OpenProcess and is non-null. `code` is a
+    // local u32. CloseHandle runs even when the query fails.
     let ok = unsafe { GetExitCodeProcess(handle, &mut code) };
     let error = std::io::Error::last_os_error();
+    // SAFETY: `handle` is the same non-null process handle and is not used again.
     unsafe {
         CloseHandle(handle);
     }
@@ -540,7 +554,10 @@ fn process_alive(pid: u32) -> Result<bool> {
     }
 }
 #[cfg(unix)]
+#[allow(unsafe_code)]
 fn process_alive(pid: u32) -> Result<bool> {
+    // SAFETY: libc kill is the POSIX process-existence probe. signal 0 does
+    // not deliver a signal. The pid is checked to be a positive i32 first.
     unsafe extern "C" {
         fn kill(pid: i32, signal: i32) -> i32;
     }
@@ -548,6 +565,7 @@ fn process_alive(pid: u32) -> Result<bool> {
         .ok()
         .filter(|p| *p > 0)
         .ok_or_else(|| invalid("invalid process id"))?;
+    // SAFETY: pid is positive and signal is 0, which only checks existence.
     if unsafe { kill(pid, 0) } == 0 {
         return Ok(true);
     }

@@ -11,6 +11,7 @@ members = [
     "stdf-analytics",
 ]
 resolver = "2"
+exclude = ["fuzz"]
 
 [workspace.package]
 version = "0.1.0"
@@ -27,4 +28,16 @@ clap = { version = "4", features = ["derive"] }
 rayon = "1.10"
 flate2 = "1"
 criterion = { version = "0.5", features = ["html_reports"] }
+
+# Production code forbids unsafe. stdf-io and stdf-parquet override this to
+# deny and allow it only on the mmap and FFI functions. unwrap and panic are
+# denied outside tests (see clippy.toml). expect_used and indexing_slicing stay
+# off: CI passes `-D warnings`, so a warn-level lint would fail the build, and
+# indexing_slicing would flag ordinary parser indexing.
+[workspace.lints.rust]
+unsafe_code = "forbid"
+
+[workspace.lints.clippy]
+unwrap_used = "deny"
+panic = "deny"
 

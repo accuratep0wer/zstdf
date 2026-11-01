@@ -33,8 +33,8 @@ pub(crate) fn execute_with_telemetry(
         let request = read_request(request_path)?;
         let population = population_of(&request).map_err(|e| e.to_string())?;
         let snapshot = verify_snapshot(dataset, &request.snapshot_id)?;
-        let catalog_incomplete = snapshot.catalog.run.status != "complete"
-            || !snapshot.catalog.run.failures.is_empty();
+        let catalog_incomplete =
+            snapshot.catalog.run.status != "complete" || !snapshot.catalog.run.failures.is_empty();
         if catalog_incomplete && !request.allow_partial {
             return Err("snapshot catalog run is incomplete; allow_partial required".into());
         }
@@ -96,14 +96,14 @@ pub(crate) fn execute_with_telemetry(
             .collect();
         let run_refs: HashMap<&str, &HashSet<u64>> =
             run_sets.iter().map(|(k, v)| (k.as_str(), v)).collect();
-        let compiled = compile_scope(request.scope.as_ref(), &run_refs).map_err(|e| e.to_string())?;
+        let compiled =
+            compile_scope(request.scope.as_ref(), &run_refs).map_err(|e| e.to_string())?;
         let attempt_inventory: HashMap<&str, u64> = loaded
             .iter()
             .map(|item| (item.bundle.source_id.as_str(), item.bundle.attempts))
             .collect();
-        let excluded =
-            compile_excludes(request.exclude_attempts.as_ref(), &attempt_inventory)
-                .map_err(|e| e.to_string())?;
+        let excluded = compile_excludes(request.exclude_attempts.as_ref(), &attempt_inventory)
+            .map_err(|e| e.to_string())?;
 
         if let Some(t) = telemetry.as_mut() {
             t.phase("reduce");
@@ -143,7 +143,8 @@ pub(crate) fn execute_with_telemetry(
             );
         }
 
-        let alias_count = content_alias_count(loaded.iter().map(|i| i.bundle.content_sha256.as_str()));
+        let alias_count =
+            content_alias_count(loaded.iter().map(|i| i.bundle.content_sha256.as_str()));
         let partial = !missing.is_empty() || catalog_incomplete;
         let coverage = Coverage {
             snapshot_sources: snapshot.catalog.sources.len() as u64,
@@ -157,10 +158,7 @@ pub(crate) fn execute_with_telemetry(
         };
         let mut result = build_result(population, &total.summary(), &per_source, &coverage);
         if let Some(t) = telemetry.as_mut() {
-            t.counter(
-                "scoped_attempts",
-                total.summary().scoped_attempts,
-            );
+            t.counter("scoped_attempts", total.summary().scoped_attempts);
             t.phase("publish_receipt");
         }
         let analysis = publish_receipt(dataset, &request, population, &result, &coverage, limits)?;
@@ -249,13 +247,7 @@ fn publish_receipt(
     let result_fp = result_hash(result).map_err(|e| e.to_string())?;
     let id = execution_id(&request_fp, &result_fp, &build);
     let receipt = build_receipt(
-        &id,
-        request,
-        population,
-        result,
-        coverage,
-        &build,
-        "complete",
+        &id, request, population, result, coverage, &build, "complete",
     )
     .map_err(|e| e.to_string())?;
 

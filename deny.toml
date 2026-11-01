@@ -1,0 +1,46 @@
+# Supply-chain policy checked by `cargo deny check` in CI.
+# Path dependencies inside this workspace have no version requirement, so
+# wildcard bans are allowed. Duplicate crate versions warn and do not fail CI.
+
+[graph]
+targets = [
+    "x86_64-unknown-linux-gnu",
+    "x86_64-pc-windows-msvc",
+]
+all-features = false
+
+[advisories]
+yanked = "deny"
+ignore = [
+    { id = "RUSTSEC-2024-0436", reason = "paste 1.0.15 is unmaintained and is only reachable through parquet 55. No compatible upgrade exists." },
+    { id = "RUSTSEC-2026-0176", reason = "Fixed in pyo3 >=0.29. arrow 55's pyarrow binding and stdf-py require pyo3 0.24, so this cannot be upgraded alone." },
+    { id = "RUSTSEC-2026-0177", reason = "Fixed in pyo3 >=0.29. Same 0.24 pin as RUSTSEC-2026-0176. stdf-py does not call PyCFunction::new_closure." },
+    { id = "RUSTSEC-2026-0391", reason = "Fixed in zstd >=0.14.3. parquet 55 requires zstd ^0.13. This workspace does not reuse zstd stream contexts." },
+    { id = "RUSTSEC-2026-0398", reason = "Fixed in zstd-safe >=8.2.0, which ships with zstd 0.14. parquet 55 cannot take that line. The seekable feature is not enabled." },
+    { id = "RUSTSEC-2026-0403", reason = "Same zstd-safe 7.2.4 pin as RUSTSEC-2026-0398, via parquet 55." },
+    { id = "RUSTSEC-2026-0410", reason = "wasm32-only allocator shim. This workspace does not build wasm32. The fix needs zstd-sys >=2.1.2, which parquet 55 cannot take." },
+]
+
+[licenses]
+confidence-threshold = 0.8
+allow = [
+    "Apache-2.0",
+    "Apache-2.0 WITH LLVM-exception",
+    "MIT",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "Unicode-3.0",
+    "Zlib",
+    "BSL-1.0",
+    "Unlicense",
+]
+
+[bans]
+multiple-versions = "warn"
+wildcards = "allow"
+highlight = "all"
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]

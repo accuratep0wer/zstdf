@@ -18,6 +18,8 @@ pub(crate) mod evidence;
 #[cfg(test)]
 mod evidence_tests;
 mod ingest;
+#[cfg(test)]
+mod public_stdf_tests;
 mod query;
 mod store;
 #[cfg(test)]

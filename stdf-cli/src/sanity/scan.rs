@@ -624,7 +624,9 @@ pub(super) fn scan(
                     );
                 }
                 if record == "PRR" {
-                    let a = active.remove(&site).unwrap();
+                    let a = active
+                        .remove(&site)
+                        .ok_or("PRR without a matching open PIR")?;
                     let unit = &mut report.units[a.index];
                     let x = field(&fields, "X_COORD")
                         .and_then(|f| f.effective.as_i64())
@@ -836,7 +838,7 @@ pub(super) fn scan(
         .sources
         .iter_mut()
         .find(|s| s.id == source)
-        .unwrap()
+        .ok_or("scan source disappeared before completion was recorded")?
         .scan_complete = complete;
     Ok(())
 }

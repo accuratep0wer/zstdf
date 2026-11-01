@@ -341,18 +341,25 @@ fn write_record(file: &mut File, row: &Record) -> io::Result<()> {
     file.write_all(&row.key)?;
     file.write_all(&row.value)
 }
+fn read_u64(bytes: &[u8]) -> io::Result<u64> {
+    let array: [u8; 8] = bytes
+        .try_into()
+        .map_err(|_| invalid("scratch record header is not 8 bytes"))?;
+    Ok(u64::from_le_bytes(array))
+}
+
 fn read_record(file: &mut File, max: usize) -> io::Result<Option<Record>> {
     let mut header = [0; 24];
     if file.read(&mut header[..1])? == 0 {
         return Ok(None);
     }
     file.read_exact(&mut header[1..])?;
-    let key = u64::from_le_bytes(header[..8].try_into().unwrap());
-    let value = u64::from_le_bytes(header[8..16].try_into().unwrap());
+    let key = read_u64(&header[..8])?;
+    let value = read_u64(&header[8..16])?;
     if key.checked_add(value).is_none_or(|n| n > max as u64) {
         return Err(invalid("scratch record limit exceeded"));
     }
-    let sequence = u64::from_le_bytes(header[16..].try_into().unwrap());
+    let sequence = read_u64(&header[16..])?;
     let mut row = Record {
         key: vec![0; key as usize],
         value: vec![0; value as usize],

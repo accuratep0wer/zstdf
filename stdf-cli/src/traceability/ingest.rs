@@ -160,7 +160,9 @@ pub fn read(
                     return Err("MRR with unclosed test instances".into());
                 }
                 let key = run_key.take().ok_or("MRR without MIR")?;
-                runs.get_mut(&key).unwrap().finish = (mrr.finish_t != 0).then_some(mrr.finish_t);
+                runs.get_mut(&key)
+                    .ok_or("MRR does not match an open MIR")?
+                    .finish = (mrr.finish_t != 0).then_some(mrr.finish_t);
             }
             StdfRecord::Sdr(sdr) => {
                 let mut hardware = BTreeMap::new();

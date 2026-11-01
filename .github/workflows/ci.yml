@@ -15,7 +15,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@1.99.1
         with:
           components: rustfmt, clippy
 
@@ -25,13 +25,31 @@ jobs:
       - name: License declarations
         run: py -3.12 scripts/check_licenses.py
 
+      - name: Pull request size warning
+        if: github.event_name == 'pull_request'
+        run: |
+          git fetch --no-tags origin ${{ github.base_ref }}
+          py -3.12 scripts/check_pr_size.py --base origin/${{ github.base_ref }}
+
       - name: Clippy
         run: cargo clippy --workspace --locked -- -D warnings
+
+      - name: Supply chain
+        uses: EmbarkStudios/cargo-deny-action@v2
+        with:
+          command: check
+          arguments: "--locked"
+          rust-version: "1.99.1"
 
       - name: Check
         run: cargo check --workspace --locked
 
+      - name: Download pinned public STDF samples
+        run: py -3.12 examples/public-stdf/download.py
+
       - name: Test
+        env:
+          ZSTDF_REQUIRE_PUBLIC: "1"
         run: cargo test --workspace --locked
 
       - name: Fuzz smoke
@@ -59,3 +77,29 @@ jobs:
           py -3.12 examples/viewer/generate_demo.py
           npm install --no-save playwright
           node scripts/smoke_viewer.cjs
+
+  fuzz:
+    name: cargo-fuzz smoke
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install nightly Rust
+        uses: dtolnay/rust-toolchain@nightly
+        with:
+          components: llvm-tools
+
+      - name: Install cargo-fuzz
+        run: cargo install cargo-fuzz --locked --version 0.13.1
+
+      - name: Seed corpus
+        run: python3 fuzz/seed_corpus.py
+
+      - name: decode_all smoke
+        working-directory: fuzz
+        run: cargo +nightly fuzz run decode_all -- -max_total_time=20
+
+      - name: truncate_prefix smoke
+        working-directory: fuzz
+        run: cargo +nightly fuzz run truncate_prefix -- -max_total_time=20

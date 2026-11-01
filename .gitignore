@@ -1,5 +1,7 @@
 /target/
 **/target/
+/fuzz/corpus/**/public-*
+/fuzz/artifacts/
 /output.parquet
 /output.parquet.manifest.json
 /dashboard.html

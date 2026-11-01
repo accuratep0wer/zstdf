@@ -43,6 +43,7 @@ pub struct StdfReader {
 impl StdfReader {
     /// Open an STDF file. Auto-detects gzip by `.gz` extension and
     /// magic bytes. Uses mmap for plain files, buffer for gzip.
+    #[allow(unsafe_code)]
     pub fn open<P: AsRef<Path>>(path: P) -> IoResult<Self> {
         let path = path.as_ref();
         let source = if is_gzip(path)? {
@@ -55,8 +56,9 @@ impl StdfReader {
             StdfSource::Buffer(buf)
         } else {
             let file = fs::File::open(path)?;
-            // SAFETY: memmap2 is widely used and safe for read-only file access
-            // as long as the file is not modified externally during mapping.
+            // SAFETY: memmap2's read-only map keeps `file` alive with the map.
+            // Callers use this for a local STDF file that is not truncated
+            // while the reader exists. Gzip input does not take this path.
             let mmap = unsafe { Mmap::map(&file)? };
             StdfSource::Mmap(mmap)
         };

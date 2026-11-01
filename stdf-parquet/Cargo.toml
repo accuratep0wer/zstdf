@@ -15,3 +15,13 @@ thiserror.workspace = true
 serde_json = "1"
 serde = { version = "1", features = ["derive"] }
 sha2 = "0.10"
+
+# Not workspace = true: Cargo rejects mixing inherited lints with an override.
+# unsafe_code is deny here, not forbid, so the FFI helpers can allow it.
+[lints.rust]
+unsafe_code = "deny"
+
+[lints.clippy]
+unwrap_used = "deny"
+panic = "deny"
+undocumented_unsafe_blocks = "deny"

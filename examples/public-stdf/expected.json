@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "note": "Counts are test attempts and raw records from the decoder, plus the viewer latest-selection population. Checksums and byte sizes stay in sources.json. PRR counts are attempts, not deduplicated devices.",
+  "samples": [
+    {
+      "file": "pystdf/lot2.stdf",
+      "byte_order": "big-endian",
+      "truncated": false,
+      "record_counts": {"PRR": 1569, "PTR": 52403, "FTR": 0, "MPR": 0},
+      "latest_attempts": 0,
+      "unresolved_latest_attempts": 1569
+    },
+    {
+      "file": "pystdf/lot3.stdf",
+      "byte_order": "big-endian",
+      "truncated": false,
+      "record_counts": {"PRR": 1619, "PTR": 54123, "FTR": 0, "MPR": 0},
+      "latest_attempts": 0,
+      "unresolved_latest_attempts": 1619
+    },
+    {
+      "file": "stdfreader/a595.stdf",
+      "byte_order": "big-endian",
+      "truncated": false,
+      "record_counts": {"PRR": 336, "PTR": 31605, "FTR": 4649, "MPR": 0},
+      "latest_attempts": 270,
+      "unresolved_latest_attempts": 66
+    }
+  ],
+  "byte_identical_pairs": [
+    {"compressed": "rust-stdf/lot2.stdf.gz", "plain": "pystdf/lot2.stdf"}
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "host": "linux x86_64, rustc 1.99.1, release decode_throughput",
+  "protocol": "For each of lot2, lot3, and a595: one warmup decode_all, then 8 timed decode_all calls. records_per_sec is total records divided by total timed seconds. Ten separate process starts.",
+  "samples_records_per_sec": [
+    1762128.115682959,
+    1779035.4690337027,
+    1872622.8803987438,
+    2002844.5714515878,
+    1967526.0636579478,
+    1941454.0803059367,
+    2041183.6652359408,
+    1983409.0368973392,
+    1939636.6875194847,
+    1666902.8846556218
+  ],
+  "median": 1940545.3839127107,
+  "max_relative_deviation_from_median": 0.14101319223225023,
+  "population_stdev_relative": 0.05961996658509253,
+  "later_adapter_sample_records_per_sec": 2334320.521330602,
+  "later_adapter_relative_to_median": 0.203,
+  "min_relative_gain": 0.3,
+  "rationale": "Inside the ten runs the largest deviation from the median was 0.141. A later invocation of the same release binary, through scripts/bench_adapter.py, was about 0.203 above that median. min_relative_gain is 0.30 so it is above both observations. The runner also takes the median of five paired repeats. Do not lower the threshold after a candidate fails; remeasure on the evaluation host first."
+}

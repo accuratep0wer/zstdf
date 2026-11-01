@@ -34,13 +34,6 @@ jobs:
       - name: Clippy
         run: cargo clippy --workspace --locked -- -D warnings
 
-      - name: Supply chain
-        uses: EmbarkStudios/cargo-deny-action@v2
-        with:
-          command: check
-          arguments: "--locked"
-          rust-version: "1.99.1"
-
       - name: Check
         run: cargo check --workspace --locked
 
@@ -77,6 +70,20 @@ jobs:
           py -3.12 examples/viewer/generate_demo.py
           npm install --no-save playwright
           node scripts/smoke_viewer.cjs
+
+  supply-chain:
+    name: Supply chain
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: cargo deny
+        uses: EmbarkStudios/cargo-deny-action@v2
+        with:
+          command: check
+          arguments: "--locked"
+          rust-version: "1.99.1"
 
   fuzz:
     name: cargo-fuzz smoke

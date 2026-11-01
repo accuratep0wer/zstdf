@@ -37,7 +37,12 @@ jobs:
       - name: Check
         run: cargo check --workspace --locked
 
+      - name: Download pinned public STDF samples
+        run: py -3.12 examples/public-stdf/download.py
+
       - name: Test
+        env:
+          ZSTDF_REQUIRE_PUBLIC: "1"
         run: cargo test --workspace --locked
 
       - name: Fuzz smoke

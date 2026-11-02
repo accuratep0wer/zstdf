@@ -1,10 +1,11 @@
 // Copyright 2026 zstdf contributors. SPDX-License-Identifier: Apache-2.0
 //! Shared retained-evidence analysis adapter (not Dashboard coordinate-v1 merge).
 //!
-//! Dispatches versioned request envelopes for attempt-yield, site variation,
-//! lot comparison and retest impact. Attempt rows are scanned with cooperative
-//! cancel checks; corrupt selected evidence always fails before a complete
-//! result is published.
+//! Dispatches versioned request envelopes for attempt-yield, site / lot / wafer
+//! comparison and retest impact. Inventory is collected without buffering all
+//! attempts; each evidence source is then stream-scanned with cooperative cancel
+//! checks. Corrupt selected evidence always fails before a complete result is
+//! published. Retest still materializes one source at a time for ECID history.
 use super::evidence::{self, EvidenceBundle, EvidenceLimits};
 use super::{CliResult, Row};
 use crate::telemetry::RunTelemetry;
@@ -71,10 +72,9 @@ impl OpKind {
     }
 }
 
-struct LoadedEvidence {
+struct EvidenceMeta {
     bundle: EvidenceBundle,
     run_ids: BTreeSet<u64>,
-    rows: Vec<AttemptRecord>,
 }
 
 /// Execute a versioned analysis request against retained evidence for `dataset`.
@@ -105,34 +105,28 @@ pub(crate) fn execute_with_telemetry(
             t.counter("evidence_ids", request.evidence_ids.len() as u64);
         }
 
-        // Sequential open/scan so each evidence lock is released before the next
-        // acquire. Every selected ID is fully scanned so corrupt indexes fail even
-        // when the later scope would match zero rows.
-        let mut loaded = Vec::with_capacity(request.evidence_ids.len());
+        // Phase 1: open each evidence for inventory/run IDs only (release lock
+        // before the next). Scope compiles from manifests; attempt bodies are
+        // not buffered across sources.
+        let mut metas = Vec::with_capacity(request.evidence_ids.len());
         let mut seen_sources = HashSet::new();
         for evidence_id in &request.evidence_ids {
             deny_traversal_id(evidence_id, "evidence_id")?;
-            let mut attempts = evidence::open_attempts(dataset, evidence_id, limits)?;
+            let attempts = evidence::open_attempts(dataset, evidence_id, limits)?;
             if attempts.bundle.snapshot_id != request.snapshot_id {
                 return Err("evidence snapshot_id does not match request".into());
             }
             if !seen_sources.insert(attempts.bundle.source_id.clone()) {
                 return Err("duplicate catalog source_id among selected evidence".into());
             }
-            let mut rows = Vec::with_capacity(attempts.bundle.attempts as usize);
-            while let Some(row) = attempts.next()? {
-                limits_check(limits)?;
-                rows.push(to_record(&row));
-            }
-            loaded.push(LoadedEvidence {
+            metas.push(EvidenceMeta {
                 bundle: attempts.bundle.clone(),
                 run_ids: attempts.run_ids.clone(),
-                rows,
             });
             drop(attempts);
         }
 
-        let selected: BTreeSet<_> = loaded
+        let selected: BTreeSet<_> = metas
             .iter()
             .map(|item| item.bundle.source_id.clone())
             .collect();
@@ -148,7 +142,7 @@ pub(crate) fn execute_with_telemetry(
             return Err("selected evidence does not cover every snapshot catalog source".into());
         }
 
-        let run_sets: HashMap<String, HashSet<u64>> = loaded
+        let run_sets: HashMap<String, HashSet<u64>> = metas
             .iter()
             .map(|item| {
                 (
@@ -161,7 +155,7 @@ pub(crate) fn execute_with_telemetry(
             run_sets.iter().map(|(k, v)| (k.as_str(), v)).collect();
         let compiled =
             compile_scope(request.scope.as_ref(), &run_refs).map_err(|e| e.to_string())?;
-        let attempt_inventory: HashMap<&str, u64> = loaded
+        let attempt_inventory: HashMap<&str, u64> = metas
             .iter()
             .map(|item| (item.bundle.source_id.as_str(), item.bundle.attempts))
             .collect();
@@ -172,27 +166,30 @@ pub(crate) fn execute_with_telemetry(
             t.phase("reduce");
         }
 
-        let metas: Vec<_> = loaded.iter().map(|i| i.bundle.clone()).collect();
+        let bundles: Vec<_> = metas.iter().map(|i| i.bundle.clone()).collect();
+        // Phase 2: re-open each evidence and stream-scan. Full scan always runs
+        // so corrupt indexes fail even when scope matches zero rows. Scanned
+        // count must equal retained attempt inventory.
         let mut result = match op {
             OpKind::AttemptYield => {
                 let mut total = YieldAccumulator::default();
                 let mut per_source = BTreeMap::new();
-                for item in &loaded {
+                for item in &metas {
                     let source_excludes = excluded.get(item.bundle.source_id.as_str());
                     let mut acc = YieldAccumulator::default();
-                    for row in &item.rows {
-                        limits_check(limits)?;
-                        if !in_population(row, population)
-                            || !in_scope(row, &item.bundle.source_id, &compiled)
+                    stream_attempts(dataset, &item.bundle, limits, |row| {
+                        if !in_population(&row, population)
+                            || !in_scope(&row, &item.bundle.source_id, &compiled)
                         {
-                            continue;
+                            return Ok(());
                         }
                         acc.add(AttemptDisposition {
                             verdict: Verdict::from_prr_flags(row.flags),
                             identity_resolved: row.ecid.is_some(),
                             excluded: source_excludes.is_some_and(|set| set.contains(&row.attempt)),
                         })?;
-                    }
+                        Ok(())
+                    })?;
                     total.merge(&acc)?;
                     per_source.insert(
                         item.bundle.source_id.clone(),
@@ -212,7 +209,7 @@ pub(crate) fn execute_with_telemetry(
                     t.counter("scoped_attempts", total.summary().scoped_attempts);
                 }
                 let coverage =
-                    coverage_of(&snapshot, &selected, missing, catalog_incomplete, &metas);
+                    coverage_of(&snapshot, &selected, missing, catalog_incomplete, &bundles);
                 build_result(population, &total.summary(), &per_source, &coverage)
             }
             OpKind::Summary(SummaryKind::RetestImpact) => {
@@ -227,11 +224,18 @@ pub(crate) fn execute_with_telemetry(
                 let mut degraded = 0u64;
                 let mut first_total = YieldAccumulator::default();
                 let mut latest_total = YieldAccumulator::default();
-                for item in &loaded {
+                for item in &metas {
                     limits_check(limits)?;
                     let source_excludes = excluded.get(item.bundle.source_id.as_str());
+                    // One-source buffer only: ECID history needs the full source
+                    // attempt set, but not every selected source at once.
+                    let mut rows = Vec::with_capacity(item.bundle.attempts as usize);
+                    stream_attempts(dataset, &item.bundle, limits, |row| {
+                        rows.push(row);
+                        Ok(())
+                    })?;
                     let part = accumulate_retest(
-                        item.rows.iter().cloned(),
+                        rows,
                         &item.bundle.source_id,
                         population,
                         &compiled,
@@ -281,23 +285,30 @@ pub(crate) fn execute_with_telemetry(
                     degraded,
                 };
                 let coverage =
-                    coverage_of(&snapshot, &selected, missing, catalog_incomplete, &metas);
+                    coverage_of(&snapshot, &selected, missing, catalog_incomplete, &bundles);
                 build_retest_result(population, &combined, &coverage)
             }
             OpKind::Summary(kind) => {
                 let mut total = YieldAccumulator::default();
                 let mut groups: BTreeMap<String, YieldAccumulator> = BTreeMap::new();
-                for item in &loaded {
+                for item in &metas {
                     limits_check(limits)?;
                     let source_excludes = excluded.get(item.bundle.source_id.as_str());
-                    let (part_total, part_groups) = accumulate_groups(
-                        kind,
-                        item.rows.iter().cloned(),
-                        &item.bundle.source_id,
-                        population,
-                        &compiled,
-                        source_excludes,
-                    )?;
+                    let mut part_total = YieldAccumulator::default();
+                    let mut part_groups: BTreeMap<String, YieldAccumulator> = BTreeMap::new();
+                    stream_attempts(dataset, &item.bundle, limits, |row| {
+                        let (acc_total, acc_groups) = accumulate_groups(
+                            kind,
+                            std::iter::once(row),
+                            &item.bundle.source_id,
+                            population,
+                            &compiled,
+                            source_excludes,
+                        )?;
+                        part_total.merge(&acc_total)?;
+                        merge_group_maps(&mut part_groups, acc_groups)?;
+                        Ok(())
+                    })?;
                     total.merge(&part_total)?;
                     merge_group_maps(&mut groups, part_groups)?;
                 }
@@ -305,7 +316,7 @@ pub(crate) fn execute_with_telemetry(
                     t.counter("scoped_attempts", total.summary().scoped_attempts);
                 }
                 let coverage =
-                    coverage_of(&snapshot, &selected, missing, catalog_incomplete, &metas);
+                    coverage_of(&snapshot, &selected, missing, catalog_incomplete, &bundles);
                 build_grouped_result(
                     kind,
                     population,
@@ -538,6 +549,34 @@ fn to_record(row: &Row) -> AttemptRecord {
         ecid: row.ecid.clone(),
         latest: row.latest,
     }
+}
+
+/// Re-open retained attempts, stream every row, and enforce inventory parity.
+fn stream_attempts(
+    dataset: &Path,
+    bundle: &EvidenceBundle,
+    limits: &EvidenceLimits,
+    mut on_row: impl FnMut(AttemptRecord) -> CliResult<()>,
+) -> CliResult<()> {
+    let mut attempts = evidence::open_attempts(dataset, &bundle.evidence_id, limits)?;
+    if attempts.bundle.evidence_id != bundle.evidence_id
+        || attempts.bundle.source_id != bundle.source_id
+        || attempts.bundle.attempts != bundle.attempts
+    {
+        return Err("evidence inventory changed between analysis phases".into());
+    }
+    let mut scanned = 0u64;
+    while let Some(row) = attempts.next()? {
+        limits_check(limits)?;
+        scanned = scanned
+            .checked_add(1)
+            .ok_or_else(|| "attempt scan count overflow".to_string())?;
+        on_row(to_record(&row))?;
+    }
+    if scanned != bundle.attempts {
+        return Err("scanned attempt count does not match retained inventory".into());
+    }
+    Ok(())
 }
 
 fn build_identity() -> BuildIdentity {

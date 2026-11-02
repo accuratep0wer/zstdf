@@ -1,5 +1,5 @@
 // Copyright 2026 zstdf contributors. SPDX-License-Identifier: Apache-2.0
-//! ANA-002 site / lot / retest summaries over physical PRR attempts.
+//! ANA-002 site / lot / wafer / retest summaries over physical PRR attempts.
 //!
 //! These reducers reuse the attempt-yield request envelope and
 //! [`YieldAccumulator`] counting rules. Dashboard `coordinate-v1` merging is
@@ -23,6 +23,14 @@ pub const LOT_REQUEST_VERSION: &str = "lot-comparison-request-v1";
 pub const LOT_RESULT_VERSION: &str = "lot-comparison-result-v1";
 pub const LOT_OPERATION: &str = "prr-lot-comparison-v1";
 
+pub const WAFER_REQUEST_VERSION: &str = "wafer-comparison-request-v1";
+pub const WAFER_RESULT_VERSION: &str = "wafer-comparison-result-v1";
+pub const WAFER_OPERATION: &str = "prr-wafer-comparison-v1";
+/// Group label when retained attempt wafer is absent (`None`).
+pub const WAFER_MISSING_LABEL: &str = "__missing__";
+/// Group label when retained attempt wafer is present but empty.
+pub const WAFER_EMPTY_LABEL: &str = "__empty__";
+
 pub const RETEST_REQUEST_VERSION: &str = "retest-impact-request-v1";
 pub const RETEST_RESULT_VERSION: &str = "retest-impact-result-v1";
 pub const RETEST_OPERATION: &str = "prr-retest-impact-v1";
@@ -31,6 +39,7 @@ pub const RETEST_OPERATION: &str = "prr-retest-impact-v1";
 pub enum SummaryKind {
     SiteVariation,
     LotComparison,
+    WaferComparison,
     RetestImpact,
 }
 
@@ -39,6 +48,7 @@ impl SummaryKind {
         match self {
             Self::SiteVariation => SITE_REQUEST_VERSION,
             Self::LotComparison => LOT_REQUEST_VERSION,
+            Self::WaferComparison => WAFER_REQUEST_VERSION,
             Self::RetestImpact => RETEST_REQUEST_VERSION,
         }
     }
@@ -47,6 +57,7 @@ impl SummaryKind {
         match self {
             Self::SiteVariation => SITE_RESULT_VERSION,
             Self::LotComparison => LOT_RESULT_VERSION,
+            Self::WaferComparison => WAFER_RESULT_VERSION,
             Self::RetestImpact => RETEST_RESULT_VERSION,
         }
     }
@@ -55,6 +66,7 @@ impl SummaryKind {
         match self {
             Self::SiteVariation => SITE_OPERATION,
             Self::LotComparison => LOT_OPERATION,
+            Self::WaferComparison => WAFER_OPERATION,
             Self::RetestImpact => RETEST_OPERATION,
         }
     }
@@ -64,6 +76,7 @@ pub fn kind_of_version(version: &str) -> Option<SummaryKind> {
     match version {
         SITE_REQUEST_VERSION => Some(SummaryKind::SiteVariation),
         LOT_REQUEST_VERSION => Some(SummaryKind::LotComparison),
+        WAFER_REQUEST_VERSION => Some(SummaryKind::WaferComparison),
         RETEST_REQUEST_VERSION => Some(SummaryKind::RetestImpact),
         _ => None,
     }
@@ -130,6 +143,14 @@ fn lot_key(row: &AttemptRecord) -> String {
     row.lot.clone()
 }
 
+fn wafer_key(row: &AttemptRecord) -> String {
+    match &row.wafer {
+        None => WAFER_MISSING_LABEL.to_owned(),
+        Some(wafer) if wafer.is_empty() => WAFER_EMPTY_LABEL.to_owned(),
+        Some(wafer) => wafer.clone(),
+    }
+}
+
 fn disposition(row: &AttemptRecord, excludes: Option<&HashSet<u64>>) -> AttemptDisposition {
     AttemptDisposition {
         verdict: Verdict::from_prr_flags(row.flags),
@@ -138,7 +159,7 @@ fn disposition(row: &AttemptRecord, excludes: Option<&HashSet<u64>>) -> AttemptD
     }
 }
 
-/// Streaming site or lot aggregation. Caller owns cancel checks between rows.
+/// Streaming site / lot / wafer aggregation. Caller owns cancel checks between rows.
 pub fn accumulate_groups(
     kind: SummaryKind,
     rows: impl IntoIterator<Item = AttemptRecord>,
@@ -156,6 +177,7 @@ pub fn accumulate_groups(
         let key = match kind {
             SummaryKind::SiteVariation => site_key(&row),
             SummaryKind::LotComparison => lot_key(&row),
+            SummaryKind::WaferComparison => wafer_key(&row),
             SummaryKind::RetestImpact => {
                 return Err(io::Error::new(
                     io::ErrorKind::InvalidInput,
@@ -172,7 +194,9 @@ pub fn accumulate_groups(
 
 fn row_in_summary(kind: SummaryKind, row: &AttemptRecord, population: Population) -> bool {
     match kind {
-        SummaryKind::SiteVariation | SummaryKind::LotComparison => in_population(row, population),
+        SummaryKind::SiteVariation | SummaryKind::LotComparison | SummaryKind::WaferComparison => {
+            in_population(row, population)
+        }
         // Retest needs full attempt history for selected devices; handled separately.
         SummaryKind::RetestImpact => true,
     }
@@ -363,6 +387,7 @@ pub fn build_grouped_result(
     let group_field = match kind {
         SummaryKind::SiteVariation => "sites",
         SummaryKind::LotComparison => "lots",
+        SummaryKind::WaferComparison => "wafers",
         SummaryKind::RetestImpact => "groups",
     };
     let mut items = Vec::with_capacity(groups.len());
@@ -485,11 +510,24 @@ mod tests {
         ecid: Option<&str>,
         latest: Option<bool>,
     ) -> AttemptRecord {
+        row_wafer(attempt, head, site, lot, Some("W1"), flags, ecid, latest)
+    }
+
+    fn row_wafer(
+        attempt: u64,
+        head: u8,
+        site: u8,
+        lot: &str,
+        wafer: Option<&str>,
+        flags: u8,
+        ecid: Option<&str>,
+        latest: Option<bool>,
+    ) -> AttemptRecord {
         AttemptRecord {
             attempt,
             run: 1,
             lot: lot.into(),
-            wafer: Some("W1".into()),
+            wafer: wafer.map(str::to_owned),
             head,
             site,
             flags,
@@ -543,6 +581,55 @@ mod tests {
         assert_eq!(total.summary().scoped_attempts, 2);
         assert_eq!(groups["L1"].summary().pass, 1);
         assert_eq!(groups["L2"].summary().fail, 1);
+    }
+
+    #[test]
+    fn wafer_comparison_keeps_missing_and_empty_distinct() {
+        let scope = compile_scope(None, &HashMap::new()).unwrap();
+        // Hand-computed: W1 pass, W2 fail, missing unknown, empty pass.
+        let rows = [
+            row_wafer(1, 1, 1, "L1", Some("W1"), 0, Some("a"), Some(true)),
+            row_wafer(2, 1, 1, "L1", Some("W2"), 8, Some("b"), Some(true)),
+            row_wafer(3, 1, 1, "L1", None, 4, None, None),
+            row_wafer(4, 1, 1, "L1", Some(""), 0, Some("c"), Some(true)),
+        ];
+        let (total, groups) = accumulate_groups(
+            SummaryKind::WaferComparison,
+            rows,
+            &"s".repeat(64),
+            Population::AllAttempts,
+            &scope,
+            None,
+        )
+        .unwrap();
+        let summary = total.summary();
+        assert_eq!(summary.pass, 2);
+        assert_eq!(summary.fail, 1);
+        assert_eq!(summary.unknown, 1);
+        assert_eq!(summary.unresolved, 1);
+        assert_eq!(groups["W1"].summary().pass, 1);
+        assert_eq!(groups["W2"].summary().fail, 1);
+        assert_eq!(groups[WAFER_MISSING_LABEL].summary().unknown, 1);
+        assert_eq!(groups[WAFER_EMPTY_LABEL].summary().pass, 1);
+        let encoded = build_grouped_result(
+            SummaryKind::WaferComparison,
+            Population::AllAttempts,
+            &summary,
+            &summaries_of(&groups),
+            &Coverage {
+                snapshot_sources: 1,
+                selected_sources: 1,
+                missing_source_ids: Vec::new(),
+                partial: false,
+                expected_inventory: "unknown".into(),
+                content_alias_source_count: 0,
+                catalog_run_status: "complete".into(),
+                catalog_failure_count: 0,
+            },
+        );
+        assert_eq!(encoded["version"], WAFER_RESULT_VERSION);
+        assert_eq!(encoded["operation"], WAFER_OPERATION);
+        assert_eq!(encoded["wafers"].as_array().unwrap().len(), 4);
     }
 
     #[test]

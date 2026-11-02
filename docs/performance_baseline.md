@@ -26,10 +26,14 @@ nonzero. Analysis callers can pass the same helper around `analysis::execute`.
 ## Dashboard spill rewrite (skipped)
 
 `stdf-analytics::SpillStore` remains available for future disk-backed dashboard
-aggregations. Wiring it into `stdf-cli/src/dashboard.rs` in-memory maps was
-skipped because changing aggregation order or intermediate materialization
-risks Dashboard `coordinate-v1` yield math. Keep current in-memory KPIs until a
-separate experiment proves bitwise-identical yields under spill.
+aggregations. A 2026-11 residual spike reconfirmed the skip: Dashboard KPI /
+wafer / site / bin yields are computed from in-memory `BTreeMap` part merges
+(`coordinate-v1`), while `SpillStore` is an external-sort record store—not a
+drop-in map backend. There is no locked bitwise-identical KPI golden suite that
+would prove yield math under a rewrite. Keep current in-memory KPIs until a
+separate experiment adds golden KPI fixtures and proves identical yields under
+spill. Analysis adapters (attempt-yield / ANA-002) already stream per-source
+attempt scans and do not depend on Dashboard spill.
 
 Run:
 

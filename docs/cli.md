@@ -153,6 +153,7 @@ versions and publish the same `analysis-receipt-v1` layout. Dispatch via
 | --- | --- | --- |
 | `site-variation-request-v1` | `site-variation-result-v1` / `prr-site-variation-v1` | Yield by `H{head} / S{site}` |
 | `lot-comparison-request-v1` | `lot-comparison-result-v1` / `prr-lot-comparison-v1` | Yield by `lot_id` |
+| `wafer-comparison-request-v1` | `wafer-comparison-result-v1` / `prr-wafer-comparison-v1` | Yield by wafer; `__missing__` / `__empty__` reserved |
 | `retest-impact-request-v1` | `retest-impact-result-v1` / `prr-retest-impact-v1` | Per-source ECID first/last; unresolved identity counted separately |
 
 Populations remain `all_attempts` and `latest_device` (with
@@ -161,7 +162,7 @@ Populations remain `all_attempts` and `latest_device` (with
 
 ```powershell
 .\target\release\zstdf-cli.exe snapshot analyze path\to\dataset site-request.json
-cargo test -p stdf-cli site_variation lot_comparison retest_impact --locked
+cargo test -p stdf-cli site_variation lot_comparison wafer_comparison retest_impact --locked
 ```
 
 ## Multi-file Conversion (Phase 10B)

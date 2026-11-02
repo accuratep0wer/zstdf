@@ -58,10 +58,14 @@ Shared retained-evidence adapter also ships:
 
 - `site-variation-request-v1` / `prr-site-variation-v1`
 - `lot-comparison-request-v1` / `prr-lot-comparison-v1`
+- `wafer-comparison-request-v1` / `prr-wafer-comparison-v1`
 - `retest-impact-request-v1` / `prr-retest-impact-v1`
 
 Public entry: `zstdf-cli snapshot analyze <dataset> <request.json>` (attempt-yield
-remains available). Dashboard `coordinate-v1` merging is unchanged.
+remains available). Dashboard `coordinate-v1` merging is unchanged. Absent and
+empty wafer IDs stay distinct (`__missing__` / `__empty__`). Pareto remains
+deferred. Analysis scans stream per evidence source after inventory collection
+so corrupt indexes still fail before a complete receipt.
 
 ### Run telemetry
 

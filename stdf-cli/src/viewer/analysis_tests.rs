@@ -1111,6 +1111,79 @@ fn lot_comparison_latest_device_population() {
 }
 
 #[test]
+fn wafer_comparison_splits_multiple_wafers() {
+    let f = Fixture::new();
+    // Hand-computed: W1 pass + W2 fail across two MIR runs.
+    let mut bytes = start();
+    prr_only(&mut bytes, 1, 1, 0, 1);
+    finish(&mut bytes, 200);
+    bytes.extend(run("LOT-A", "W2", 300));
+    prr_only(&mut bytes, 1, 1, 8, 2);
+    finish(&mut bytes, 400);
+    let (snapshot, _, bundle) = f.setup(&bytes);
+    let response = f
+        .execute(&summary_request(
+            "wafer-comparison-request-v1",
+            &snapshot,
+            &[bundle],
+        ))
+        .unwrap();
+    assert_eq!(response["version"], "wafer-comparison-result-v1");
+    assert_eq!(response["operation"], "prr-wafer-comparison-v1");
+    assert_eq!(response["counts"], counts(2, 2, 0, 1, 1, 0, 0));
+    let wafers = response["wafers"].as_array().unwrap();
+    assert_eq!(wafers.len(), 2);
+    assert_eq!(wafers[0]["label"], "W1");
+    assert_eq!(wafers[0]["counts"], counts(1, 1, 0, 1, 0, 0, 0));
+    assert_eq!(wafers[1]["label"], "W2");
+    assert_eq!(wafers[1]["counts"], counts(1, 1, 0, 0, 1, 0, 0));
+    assert_eq!(response["analysis"]["status"], "complete");
+}
+
+#[test]
+fn wafer_comparison_latest_device_and_receipt_replay() {
+    let f = Fixture::new();
+    let mut bytes = start();
+    prr_only(&mut bytes, 1, 1, 8, 1);
+    finish(&mut bytes, 200);
+    bytes.extend(run("LOT-A", "W1", 300));
+    prr_only(&mut bytes, 1, 1, 0, 1);
+    finish(&mut bytes, 400);
+    let (snapshot, _, bundle) = f.setup(&bytes);
+    let mut req = summary_request("wafer-comparison-request-v1", &snapshot, &[bundle]);
+    req["population"] = json!("latest_device");
+    req["identity_policy"] = json!("latest-ecid-start-t-v1");
+    let first = f.execute(&req).unwrap();
+    let second = f.execute(&req).unwrap();
+    assert_eq!(first["population"], "latest_device");
+    assert_eq!(first["counts"], counts(1, 1, 0, 1, 0, 0, 0));
+    assert_eq!(first["wafers"].as_array().unwrap().len(), 1);
+    assert_eq!(
+        first["analysis"]["result_hash"],
+        second["analysis"]["result_hash"]
+    );
+    assert_eq!(first["counts"], second["counts"]);
+}
+
+#[test]
+fn streaming_scan_still_fails_corrupt_evidence_with_empty_scope() {
+    // Stream phase must fully read attempts even when scope matches nothing.
+    let f = Fixture::new();
+    let (snapshot, bundles) = f.aliases();
+    let mut req = summary_request("wafer-comparison-request-v1", &snapshot, &bundles);
+    req["scope"] = json!({"wafer_ids": ["NO-SUCH-WAFER"]});
+    let corrupt = f
+        .dataset()
+        .join("evidence")
+        .join(bundles[1]["evidence_id"].as_str().unwrap())
+        .join("attempts.idx");
+    fs::write(corrupt, b"corrupt index").unwrap();
+    assert!(f.execute(&req).is_err());
+    req["allow_partial"] = json!(true);
+    assert!(f.execute(&req).is_err());
+}
+
+#[test]
 fn retest_impact_receipt_replay_stable() {
     let f = Fixture::new();
     let mut bytes = start();

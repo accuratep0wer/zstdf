@@ -85,7 +85,7 @@ or installer evidence. Do not alter current CI merely to hide extension failures
 
 | Priority / issue | Scope | Gate |
 | --- | --- | --- |
-| P1 / ANA-002 | Latest yield, lot comparison, site variation, retest impact and Pareto | Latest yield + site/lot/retest shipped over retained evidence; Pareto still deferred; Dashboard merge untouched |
+| P1 / ANA-002 | Latest yield, lot comparison, site variation, wafer comparison, retest impact and Pareto | Latest yield + site/lot/wafer/retest shipped over retained evidence; Pareto / FTR pattern population still deferred; Dashboard merge untouched |
 | P1 / API-001 | Read-only typed local tool adapter | Schema, authorization, cancellation, payload limits and denied operations tested; no LLM needed |
 | Optional / SQL-001 | Embedded DuckDB query adapter | Pinned version, fixed operations, restricted object access, resource tests, semantic parity; no install required for ordinary users |
 | Optional / AI-001 | Local or opted-in cloud explanation adapter | Authorized data scope, no arbitrary tool capability, provenance-grounded output, prompt-injection tests |

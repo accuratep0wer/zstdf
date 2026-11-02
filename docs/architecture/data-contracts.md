@@ -169,13 +169,18 @@ distinct request/result versions:
 
 - `site-variation-request-v1` → per `(head, site)` yield; unresolved visible
 - `lot-comparison-request-v1` → per `lot_id` yield; unresolved visible
+- `wafer-comparison-request-v1` → per wafer yield; absent wafer groups as
+  `__missing__`, empty-string wafer as `__empty__` (kept distinct); unresolved
+  visible
 - `retest-impact-request-v1` → per-source ECID first/last attempt impact,
   recovery/degradation among known verdicts; unresolved identity counted
   separately; `latest_device` keeps full history only for ECIDs with a selected
   latest flag
 
-Pareto remains deferred. Site differences alone do not prove hardware causality
-or GR&R; qualification/reliability decisions need study metadata.
+Pareto / FTR pattern-attempt population remains deferred (needs execution
+evidence beyond PRR companions). Site or wafer differences alone do not prove
+hardware causality or GR&R; qualification/reliability decisions need study
+metadata.
 
 ## Receipt and reproducibility
 

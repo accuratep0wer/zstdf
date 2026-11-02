@@ -30,6 +30,9 @@ use stdf_parquet::snapshot::verify_snapshot;
 thread_local! {
     static FAIL_AFTER_RESULT: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
     static FAIL_BEFORE_RENAME: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+    /// After this many successful `limits_check` calls, the next check fails as cancelled.
+    static CANCEL_AFTER_CHECKS: std::cell::Cell<Option<u32>> = const { std::cell::Cell::new(None) };
+    static CHECKS_SEEN: std::cell::Cell<u32> = const { std::cell::Cell::new(0) };
 }
 
 #[cfg(test)]
@@ -40,6 +43,13 @@ pub(crate) fn inject_fail_after_result() {
 #[cfg(test)]
 pub(crate) fn inject_fail_before_rename() {
     FAIL_BEFORE_RENAME.with(|v| v.set(true));
+}
+
+/// Fail the next `limits_check` after `n` successful checks (mid-scan cancel).
+#[cfg(test)]
+pub(crate) fn inject_cancel_after_checks(n: u32) {
+    CHECKS_SEEN.with(|v| v.set(0));
+    CANCEL_AFTER_CHECKS.with(|v| v.set(Some(n)));
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -445,6 +455,18 @@ fn validate_limits(limits: &EvidenceLimits) -> CliResult<()> {
 }
 
 fn limits_check(limits: &EvidenceLimits) -> CliResult<()> {
+    #[cfg(test)]
+    if let Some(n) = CANCEL_AFTER_CHECKS.with(|v| v.get()) {
+        let seen = CHECKS_SEEN.with(|c| {
+            let next = c.get().saturating_add(1);
+            c.set(next);
+            next
+        });
+        if seen > n {
+            CANCEL_AFTER_CHECKS.with(|v| v.set(None));
+            return Err("evidence operation cancelled".into());
+        }
+    }
     if limits
         .cancel_file
         .as_ref()

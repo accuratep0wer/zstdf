@@ -884,3 +884,250 @@ fn list_complete_analysis(dataset: &Path) -> BTreeSet<String> {
         .map(|e| e.file_name().to_string_lossy().into_owned())
         .collect()
 }
+
+fn latest_request(snapshot: &str, bundles: &[Value]) -> Value {
+    let mut req = request(snapshot, bundles);
+    req["population"] = json!("latest_device");
+    req["identity_policy"] = json!("latest-ecid-start-t-v1");
+    req
+}
+
+#[test]
+fn attempt_yield_absent_and_empty_scope_share_result_hash() {
+    let f = Fixture::new();
+    let (snapshot, _, bundle) = f.setup(&rich());
+    let absent = f.execute(&request(&snapshot, &[bundle.clone()])).unwrap();
+    let mut empty = request(&snapshot, &[bundle]);
+    empty["scope"] = json!({"lot_ids": [], "wafer_ids": [], "sites": [], "runs": []});
+    let empty = f.execute(&empty).unwrap();
+    assert_eq!(absent["counts"], empty["counts"]);
+    assert_eq!(absent["yields"], empty["yields"]);
+    assert_eq!(
+        absent["analysis"]["result_hash"],
+        empty["analysis"]["result_hash"]
+    );
+    // Raw request shape still differs, so fingerprints stay distinct.
+    assert_ne!(
+        absent["analysis"]["request_fingerprint"],
+        empty["analysis"]["request_fingerprint"]
+    );
+}
+
+#[test]
+fn attempt_yield_unresolved_overlaps_pass_fail_unknown() {
+    let f = Fixture::new();
+    let mut bytes = start();
+    prr_only(&mut bytes, 1, 1, 0, i16::MIN); // pass, unresolved XY
+    prr_only(&mut bytes, 1, 1, 8, i16::MIN); // fail, unresolved XY
+    prr_only(&mut bytes, 1, 1, 0x14, i16::MIN); // unknown, unresolved XY
+    finish(&mut bytes, 200);
+    let (snapshot, _, bundle) = f.setup(&bytes);
+    let response = f.execute(&request(&snapshot, &[bundle])).unwrap();
+    // Unresolved overlaps every verdict; it does not replace pass/fail/unknown.
+    assert_eq!(response["counts"], counts(3, 3, 0, 1, 1, 1, 3));
+    assert_eq!(response["yields"], yields(1, 3, 2));
+}
+
+#[test]
+fn latest_device_tied_start_t_excludes_ambiguous_ecid() {
+    let f = Fixture::new();
+    let mut bytes = start(); // START_T = 100
+    prr_only(&mut bytes, 1, 1, 8, 1); // fail
+    finish(&mut bytes, 200);
+    bytes.extend(run("LOT-A", "W1", 100)); // tied START_T across runs
+    prr_only(&mut bytes, 1, 1, 0, 1); // pass, same ECID
+    finish(&mut bytes, 400);
+    let (snapshot, _, bundle) = f.setup(&bytes);
+    let all = f.execute(&request(&snapshot, &[bundle.clone()])).unwrap();
+    assert_eq!(all["counts"], counts(2, 2, 0, 1, 1, 0, 0));
+    let latest = f.execute(&latest_request(&snapshot, &[bundle])).unwrap();
+    // Tied distinct runs do not fabricate a latest winner.
+    assert_eq!(latest["counts"], counts(0, 0, 0, 0, 0, 0, 0));
+    assert_eq!(latest["yields"], yields(0, 0, 0));
+}
+
+#[test]
+fn latest_device_missing_start_t_stays_unresolved() {
+    let f = Fixture::new();
+    let mut bytes = start(); // START_T = 100
+    prr_only(&mut bytes, 1, 1, 8, 1);
+    finish(&mut bytes, 200);
+    bytes.extend(run("LOT-A", "W1", 0)); // START_T 0 => missing
+    prr_only(&mut bytes, 1, 1, 0, 1);
+    finish(&mut bytes, 400);
+    let (snapshot, _, bundle) = f.setup(&bytes);
+    let latest = f.execute(&latest_request(&snapshot, &[bundle])).unwrap();
+    assert_eq!(latest["counts"], counts(0, 0, 0, 0, 0, 0, 0));
+    assert_eq!(latest["yields"], yields(0, 0, 0));
+}
+
+#[test]
+fn attempt_yield_result_hash_stable_under_request_reorder() {
+    let f = Fixture::new();
+    let (snapshot, bundles) = f.aliases();
+    let mut req = request(&snapshot, &bundles);
+    req["scope"] = json!({
+        "lot_ids": ["LOT-A", "ABSENT"],
+        "wafer_ids": ["W1", "ABSENT"],
+        "sites": [{"head": 1, "site": 2}, {"head": 1, "site": 1}],
+        "runs": bundles.iter().map(|b| json!({
+            "source_id": b["source_id"],
+            "run_id": "1"
+        })).collect::<Vec<_>>()
+    });
+    let first = f.execute(&req).unwrap();
+    req["evidence_ids"].as_array_mut().unwrap().reverse();
+    for key in ["lot_ids", "wafer_ids", "sites", "runs"] {
+        req["scope"][key].as_array_mut().unwrap().reverse();
+    }
+    let reordered = f.execute(&req).unwrap();
+    assert_eq!(reordered["counts"], first["counts"]);
+    assert_eq!(reordered["yields"], first["yields"]);
+    assert_eq!(reordered["sources"], first["sources"]);
+    assert_eq!(
+        reordered["analysis"]["result_hash"],
+        first["analysis"]["result_hash"]
+    );
+    assert_ne!(
+        reordered["analysis"]["request_fingerprint"],
+        first["analysis"]["request_fingerprint"]
+    );
+}
+
+#[test]
+fn attempt_yield_cancel_mid_scan_leaves_no_receipt() {
+    let f = Fixture::new();
+    let (snapshot, _, bundle) = f.setup(&rich());
+    let req = request(&snapshot, &[bundle]);
+    let before = list_complete_analysis(&f.dataset());
+    // validate_limits + first few row checks succeed; then cooperative cancel.
+    analysis::inject_cancel_after_checks(2);
+    assert!(f.execute(&req).is_err());
+    assert_eq!(list_complete_analysis(&f.dataset()), before);
+}
+
+#[test]
+fn site_variation_scopes_and_source_local_excludes() {
+    let f = Fixture::new();
+    let (snapshot, source, bundle) = f.setup(&rich());
+    let mut req = summary_request("site-variation-request-v1", &snapshot, &[bundle]);
+    req["scope"] = json!({
+        "sites": [{"head": 1, "site": 1}]
+    });
+    req["exclude_attempts"] = json!([
+        {"source_id": source, "attempt_id": "5"},
+        {"source_id": source, "attempt_id": "2"}
+    ]);
+    let response = f.execute(&req).unwrap();
+    assert_eq!(response["version"], "site-variation-result-v1");
+    // Attempt 2 is outside site scope, so only attempt 5 is an excluded scoped PRR.
+    assert_eq!(response["counts"], counts(3, 2, 1, 1, 0, 1, 0));
+    let sites = response["sites"].as_array().unwrap();
+    assert_eq!(sites.len(), 1);
+    assert_eq!(sites[0]["label"], "H1 / S1");
+}
+
+#[test]
+fn site_variation_zero_denominator_groups_are_explicit() {
+    let f = Fixture::new();
+    let (snapshot, source, bundle) = f.setup(&rich());
+    let mut req = summary_request("site-variation-request-v1", &snapshot, &[bundle]);
+    req["exclude_attempts"] =
+        json!([1, 2, 3, 4, 5].map(|id| json!({"source_id": source, "attempt_id": id.to_string()})));
+    let response = f.execute(&req).unwrap();
+    assert_eq!(response["counts"], counts(5, 0, 5, 0, 0, 0, 0));
+    assert_eq!(response["yields"], yields(0, 0, 0));
+    for site in response["sites"].as_array().unwrap() {
+        assert_eq!(site["yields"], yields(0, 0, 0));
+        assert_eq!(
+            site["yields"]["all_attempts"]["null_reason"],
+            "zero-eligible-attempts"
+        );
+    }
+}
+
+#[test]
+fn site_variation_corrupt_evidence_fails_with_empty_scope() {
+    let f = Fixture::new();
+    let (snapshot, bundles) = f.aliases();
+    let mut req = summary_request("site-variation-request-v1", &snapshot, &bundles);
+    req["scope"] = json!({"lot_ids": ["ABSENT"]});
+    let corrupt = f
+        .dataset()
+        .join("evidence")
+        .join(bundles[1]["evidence_id"].as_str().unwrap())
+        .join("attempts.idx");
+    fs::write(corrupt, b"corrupt index").unwrap();
+    assert!(f.execute(&req).is_err());
+    req["allow_partial"] = json!(true);
+    assert!(f.execute(&req).is_err());
+}
+
+#[test]
+fn lot_comparison_splits_multiple_lots() {
+    let f = Fixture::new();
+    let mut bytes = start();
+    prr_only(&mut bytes, 1, 1, 0, 1);
+    finish(&mut bytes, 200);
+    bytes.extend(run("LOT-B", "W2", 300));
+    prr_only(&mut bytes, 1, 1, 8, 2);
+    finish(&mut bytes, 400);
+    let (snapshot, _, bundle) = f.setup(&bytes);
+    let response = f
+        .execute(&summary_request(
+            "lot-comparison-request-v1",
+            &snapshot,
+            &[bundle],
+        ))
+        .unwrap();
+    assert_eq!(response["counts"], counts(2, 2, 0, 1, 1, 0, 0));
+    let lots = response["lots"].as_array().unwrap();
+    assert_eq!(lots.len(), 2);
+    assert_eq!(lots[0]["label"], "LOT-A");
+    assert_eq!(lots[0]["counts"], counts(1, 1, 0, 1, 0, 0, 0));
+    assert_eq!(lots[1]["label"], "LOT-B");
+    assert_eq!(lots[1]["counts"], counts(1, 1, 0, 0, 1, 0, 0));
+}
+
+#[test]
+fn lot_comparison_latest_device_population() {
+    let f = Fixture::new();
+    let mut bytes = start();
+    prr_only(&mut bytes, 1, 1, 8, 1); // fail first
+    finish(&mut bytes, 200);
+    bytes.extend(run("LOT-A", "W1", 300));
+    prr_only(&mut bytes, 1, 1, 0, 1); // pass later
+    finish(&mut bytes, 400);
+    let (snapshot, _, bundle) = f.setup(&bytes);
+    let mut req = summary_request("lot-comparison-request-v1", &snapshot, &[bundle]);
+    req["population"] = json!("latest_device");
+    req["identity_policy"] = json!("latest-ecid-start-t-v1");
+    let response = f.execute(&req).unwrap();
+    assert_eq!(response["population"], "latest_device");
+    assert_eq!(response["counts"], counts(1, 1, 0, 1, 0, 0, 0));
+    let lots = response["lots"].as_array().unwrap();
+    assert_eq!(lots.len(), 1);
+    assert_eq!(lots[0]["counts"]["pass"], "1");
+}
+
+#[test]
+fn retest_impact_receipt_replay_stable() {
+    let f = Fixture::new();
+    let mut bytes = start();
+    prr_only(&mut bytes, 1, 1, 8, 1);
+    finish(&mut bytes, 200);
+    bytes.extend(run("LOT-A", "W1", 300));
+    prr_only(&mut bytes, 1, 1, 0, 1);
+    finish(&mut bytes, 400);
+    let (snapshot, _, bundle) = f.setup(&bytes);
+    let req = summary_request("retest-impact-request-v1", &snapshot, &[bundle]);
+    let first = f.execute(&req).unwrap();
+    let second = f.execute(&req).unwrap();
+    assert_eq!(first["analysis"], second["analysis"]);
+    assert_eq!(first["counts"], second["counts"]);
+    assert_eq!(first["rates"], second["rates"]);
+    assert_eq!(
+        first["analysis"]["result_hash"],
+        second["analysis"]["result_hash"]
+    );
+}

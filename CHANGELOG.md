@@ -67,6 +67,16 @@ empty wafer IDs stay distinct (`__missing__` / `__empty__`). Pareto remains
 deferred. Analysis scans stream per evidence source after inventory collection
 so corrupt indexes still fail before a complete receipt.
 
+### Dashboard yield cockpit
+
+Measurement dashboards now open on a yield cockpit: hard/soft bin Pareto with
+a cumulative share line, a die wafer map (one merged part per coordinate,
+filterable by wafer), a 16-bin parametric histogram with spec tails, and a
+yield traffic-light KPI. The map does not replace `heatmap_points`, which
+remains the per-result density series in the JSON payload. Histograms with
+both limits count every finite result; limit-free tests keep a deterministic
+512-value reservoir and set `sampled`.
+
 ### Run telemetry
 
 `convert`, `view`, `snapshot attempt-yield`, and `snapshot analyze` accept optional

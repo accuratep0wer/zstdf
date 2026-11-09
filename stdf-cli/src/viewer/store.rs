@@ -213,7 +213,7 @@ impl TableWriter {
         let path = format!("{}-{:06}.parquet", self.name, self.fragments.len());
         let props = WriterProperties::builder()
             .set_compression(parquet::basic::Compression::ZSTD(Default::default()))
-            .set_max_row_group_size(1024)
+            .set_max_row_group_row_count(Some(1024))
             .build();
         let mut writer =
             ArrowWriter::try_new(File::create(self.root.join(&path))?, schema, Some(props))?;

@@ -81,8 +81,21 @@ pub(super) struct DashboardData {
     commonality: Vec<CommonalityAggregate>,
     correlations: Vec<CorrelationPair>,
     heatmap_points: Vec<HeatmapPoint>,
+    die_points: Vec<DiePoint>,
     process_windows: Vec<ProcessWindow>,
     data_quality: Vec<GroupAggregate>,
+}
+
+/// One merged part that has both PRR/PTR coordinates. This is the wafer-map
+/// population; `HeatmapPoint` remains the older per-result density series.
+#[derive(Debug, Clone, PartialEq)]
+pub(super) struct DiePoint {
+    wafer: String,
+    x: i16,
+    y: i16,
+    hard_bin: u16,
+    soft_bin: u16,
+    pass: bool,
 }
 
 #[derive(Debug, Clone)]
@@ -118,6 +131,21 @@ pub(super) struct TestAggregate {
     lo_limit: Option<f64>,
     hi_limit: Option<f64>,
     yield_percent: f64,
+    histogram: Option<TestHistogram>,
+}
+
+/// Fixed-width distribution for one test. Spec histograms count every finite
+/// result. Limit-free tests keep a deterministic reservoir once they pass the cap.
+#[derive(Debug, Clone, PartialEq)]
+pub(super) struct TestHistogram {
+    bin_lo: f64,
+    bin_width: f64,
+    counts: Vec<u32>,
+    below: u32,
+    above: u32,
+    observed: u32,
+    sampled: bool,
+    spec: bool,
 }
 
 #[derive(Debug, Clone)]
@@ -174,6 +202,8 @@ struct PartInfo {
     site_num: u8,
     hard_bin: u16,
     soft_bin: u16,
+    x_coord: Option<i16>,
+    y_coord: Option<i16>,
 }
 
 #[derive(Debug, Clone)]
@@ -195,6 +225,27 @@ struct RunningTest {
     max: Option<f64>,
     lo_limit: Option<f64>,
     hi_limit: Option<f64>,
+    histogram: HistogramAccum,
+}
+
+const HISTOGRAM_BINS: usize = 16;
+const HISTOGRAM_SAMPLE_CAP: u32 = 512;
+
+#[derive(Debug, Clone)]
+enum HistogramAccum {
+    Empty,
+    Limited {
+        lo: f64,
+        hi: f64,
+        below: u32,
+        within: [u32; HISTOGRAM_BINS],
+        above: u32,
+        observed: u32,
+    },
+    Sampled {
+        values: Vec<f64>,
+        observed: u32,
+    },
 }
 
 impl RunningTest {
@@ -217,6 +268,7 @@ impl RunningTest {
             max: None,
             lo_limit: row.lo_limit.map(f64::from),
             hi_limit: row.hi_limit.map(f64::from),
+            histogram: HistogramAccum::Empty,
         }
     }
 
@@ -234,6 +286,7 @@ impl RunningTest {
             self.sum_sq += value * value;
             self.min = Some(self.min.map_or(value, |current| current.min(value)));
             self.max = Some(self.max.map_or(value, |current| current.max(value)));
+            self.observe_histogram(value);
 
             if row.lo_limit.is_some_and(|limit| value < f64::from(limit))
                 || row.hi_limit.is_some_and(|limit| value > f64::from(limit))
@@ -282,6 +335,201 @@ impl RunningTest {
             lo_limit: self.lo_limit,
             hi_limit: self.hi_limit,
             yield_percent: percent(self.pass, known),
+            histogram: finish_histogram(self.histogram),
+        }
+    }
+
+    fn spec_window(&self) -> Option<(f64, f64)> {
+        match (self.lo_limit, self.hi_limit) {
+            (Some(lo), Some(hi)) if lo.is_finite() && hi.is_finite() && hi > lo => Some((lo, hi)),
+            _ => None,
+        }
+    }
+
+    fn observe_histogram(&mut self, value: f64) {
+        if let Some((lo, hi)) = self.spec_window() {
+            self.observe_limited(value, lo, hi);
+        } else {
+            self.observe_sampled(value);
+        }
+    }
+
+    fn observe_limited(&mut self, value: f64, lo: f64, hi: f64) {
+        if let HistogramAccum::Sampled { values, observed } = &self.histogram {
+            if *observed != u32::try_from(values.len()).unwrap_or(u32::MAX) {
+                self.observe_sampled(value);
+                return;
+            }
+        }
+        if matches!(self.histogram, HistogramAccum::Sampled { .. }) {
+            let previous = std::mem::replace(&mut self.histogram, HistogramAccum::Empty);
+            if let HistogramAccum::Sampled { values, .. } = previous {
+                self.histogram = limited_histogram(lo, hi);
+                for sample in values {
+                    self.bump_limited(sample, lo, hi);
+                }
+            }
+        }
+        if matches!(self.histogram, HistogramAccum::Empty) {
+            self.histogram = limited_histogram(lo, hi);
+        }
+        let window = match &self.histogram {
+            HistogramAccum::Limited { lo, hi, .. } => Some((*lo, *hi)),
+            _ => None,
+        };
+        if let Some((lo, hi)) = window {
+            self.bump_limited(value, lo, hi);
+        }
+    }
+
+    fn bump_limited(&mut self, value: f64, lo: f64, hi: f64) {
+        if let HistogramAccum::Limited {
+            below,
+            within,
+            above,
+            observed,
+            ..
+        } = &mut self.histogram
+        {
+            *observed = observed.saturating_add(1);
+            if value < lo {
+                *below = below.saturating_add(1);
+            } else if value > hi {
+                *above = above.saturating_add(1);
+            } else {
+                let idx = histogram_bin(value, lo, hi);
+                within[idx] = within[idx].saturating_add(1);
+            }
+        }
+    }
+
+    fn observe_sampled(&mut self, value: f64) {
+        if !matches!(
+            self.histogram,
+            HistogramAccum::Sampled { .. } | HistogramAccum::Empty
+        ) {
+            return;
+        }
+        if matches!(self.histogram, HistogramAccum::Empty) {
+            self.histogram = HistogramAccum::Sampled {
+                values: Vec::new(),
+                observed: 0,
+            };
+        }
+        if let HistogramAccum::Sampled { values, observed } = &mut self.histogram {
+            let index = *observed;
+            if let Some(slot) = reservoir_slot(index, HISTOGRAM_SAMPLE_CAP) {
+                if slot == values.len() {
+                    values.push(value);
+                } else if slot < values.len() {
+                    values[slot] = value;
+                }
+            }
+            *observed = observed.saturating_add(1);
+        }
+    }
+}
+
+fn limited_histogram(lo: f64, hi: f64) -> HistogramAccum {
+    HistogramAccum::Limited {
+        lo,
+        hi,
+        below: 0,
+        within: [0; HISTOGRAM_BINS],
+        above: 0,
+        observed: 0,
+    }
+}
+
+fn histogram_bin(value: f64, lo: f64, hi: f64) -> usize {
+    let span = hi - lo;
+    if !(span.is_finite() && span > 0.0 && value.is_finite()) {
+        return 0;
+    }
+    let scaled = (value - lo) / span * HISTOGRAM_BINS as f64;
+    if !scaled.is_finite() || scaled <= 0.0 {
+        return 0;
+    }
+    if scaled >= HISTOGRAM_BINS as f64 {
+        HISTOGRAM_BINS - 1
+    } else {
+        scaled.floor() as usize
+    }
+}
+
+/// Deterministic reservoir index. `index` is the 0-based arrival number.
+fn reservoir_slot(index: u32, cap: u32) -> Option<usize> {
+    if cap == 0 {
+        return None;
+    }
+    if index < cap {
+        return Some(usize::try_from(index).unwrap_or(0));
+    }
+    let mut x = index.wrapping_mul(0x9E37_79B1);
+    x ^= x >> 16;
+    let denom = index.saturating_add(1);
+    if denom == 0 || x % denom >= cap {
+        None
+    } else {
+        Some(usize::try_from(x % cap).unwrap_or(0))
+    }
+}
+
+fn finish_histogram(accum: HistogramAccum) -> Option<TestHistogram> {
+    match accum {
+        HistogramAccum::Empty => None,
+        HistogramAccum::Limited {
+            lo,
+            hi,
+            below,
+            within,
+            above,
+            observed,
+        } => Some(TestHistogram {
+            bin_lo: lo,
+            bin_width: (hi - lo) / HISTOGRAM_BINS as f64,
+            counts: within.to_vec(),
+            below,
+            above,
+            observed,
+            sampled: false,
+            spec: true,
+        }),
+        HistogramAccum::Sampled { values, observed } => {
+            if values.is_empty() {
+                return None;
+            }
+            let mut min = f64::INFINITY;
+            let mut max = f64::NEG_INFINITY;
+            for value in &values {
+                min = min.min(*value);
+                max = max.max(*value);
+            }
+            let width = if max > min {
+                (max - min) / HISTOGRAM_BINS as f64
+            } else {
+                1.0
+            };
+            let mut counts = vec![0u32; HISTOGRAM_BINS];
+            for value in &values {
+                let idx = if max > min {
+                    histogram_bin(*value, min, max)
+                } else {
+                    0
+                };
+                counts[idx] = counts[idx].saturating_add(1);
+            }
+            let retained = u32::try_from(values.len()).unwrap_or(u32::MAX);
+            Some(TestHistogram {
+                bin_lo: min,
+                bin_width: width,
+                counts,
+                below: 0,
+                above: 0,
+                observed,
+                sampled: observed != retained,
+                spec: false,
+            })
         }
     }
 }
@@ -457,8 +705,16 @@ impl AnalysisAccumulator {
                 site_num: row.site_num,
                 hard_bin: row.hard_bin,
                 soft_bin: row.soft_bin,
+                x_coord: row.x_coord,
+                y_coord: row.y_coord,
             });
         entry.part_pass &= row.part_pass;
+        if entry.x_coord.is_none() {
+            entry.x_coord = row.x_coord;
+        }
+        if entry.y_coord.is_none() {
+            entry.y_coord = row.y_coord;
+        }
 
         self.tests
             .entry(test_key(row))
@@ -545,6 +801,30 @@ impl AnalysisAccumulator {
                 yield_percent: percent(total.saturating_sub(fail), total),
             })
             .collect();
+        let mut die_points: Vec<_> = self
+            .parts
+            .values()
+            .filter_map(|part| {
+                Some(DiePoint {
+                    wafer: part
+                        .wafer_id
+                        .clone()
+                        .unwrap_or_else(|| "(no wafer)".to_string()),
+                    x: part.x_coord?,
+                    y: part.y_coord?,
+                    hard_bin: part.hard_bin,
+                    soft_bin: part.soft_bin,
+                    pass: part.part_pass,
+                })
+            })
+            .collect();
+        die_points.sort_by(|left, right| {
+            left.wafer
+                .cmp(&right.wafer)
+                .then(left.y.cmp(&right.y))
+                .then(left.x.cmp(&right.x))
+                .then(left.hard_bin.cmp(&right.hard_bin))
+        });
 
         DashboardData {
             title: options.title.clone(),
@@ -579,6 +859,7 @@ impl AnalysisAccumulator {
             commonality: finish_commonality(self.commonality, options.max_items),
             correlations,
             heatmap_points,
+            die_points,
             process_windows,
             data_quality: finish_quality(self.data_quality),
         }
@@ -1065,6 +1346,61 @@ mod tests {
             .commonality
             .iter()
             .any(|item| item.dimension == "site" && item.label == "H1 / S1"));
+        assert_eq!(data.die_points.len(), 3);
+        assert!(data
+            .die_points
+            .iter()
+            .any(|die| die.hard_bin == 9 && !die.pass));
+        let histogram = data.pareto[0].histogram.as_ref().expect("histogram");
+        assert!(histogram.spec);
+        assert!(!histogram.sampled);
+        assert_eq!(histogram.observed, 3);
+        assert_eq!(histogram.below, 0);
+        assert_eq!(histogram.above, 0);
+        assert_eq!(histogram.counts.iter().sum::<u32>(), 3);
+    }
+
+    #[test]
+    fn spec_histogram_counts_tails_outside_limits() {
+        let mut rows = sample_rows();
+        rows.push(row("P4", 0, false, 200, 12.0, false));
+        let data = analyze_rows(&rows, &DashboardOptions::default());
+        let test = data
+            .pareto
+            .iter()
+            .find(|item| item.test_num == 200)
+            .expect("test 200");
+        let histogram = test.histogram.as_ref().expect("histogram");
+        assert_eq!(histogram.observed, 4);
+        assert_eq!(histogram.above, 1);
+        assert_eq!(
+            histogram.below + histogram.above + histogram.counts.iter().sum::<u32>(),
+            histogram.observed
+        );
+        assert_eq!(data.die_points.len(), 4);
+    }
+
+    #[test]
+    fn limit_free_histogram_is_marked_when_the_reservoir_drops_values() {
+        let mut rows = Vec::new();
+        for index in 0..=usize::try_from(HISTOGRAM_SAMPLE_CAP).expect("cap") {
+            let mut sample = row("P1", 0, true, 100, index as f32, true);
+            sample.lo_limit = None;
+            sample.hi_limit = None;
+            sample.part_id = format!("P{index}");
+            sample.part_sequence = index as u64;
+            sample.x_coord = Some((index % 20) as i16);
+            sample.y_coord = Some((index / 20) as i16);
+            sample.part_merge_key =
+                stdf_arrow::identity::wafer_key(Some("W1"), sample.x_coord, sample.y_coord);
+            rows.push(sample);
+        }
+        let data = analyze_rows(&rows, &DashboardOptions::default());
+        let histogram = data.pareto[0].histogram.as_ref().expect("histogram");
+        assert!(!histogram.spec);
+        assert!(histogram.sampled);
+        assert_eq!(histogram.observed, HISTOGRAM_SAMPLE_CAP + 1);
+        assert_eq!(histogram.counts.iter().sum::<u32>(), HISTOGRAM_SAMPLE_CAP);
     }
 
     #[test]
@@ -1101,6 +1437,10 @@ mod tests {
         assert!(html.contains("failure-commonality"));
         assert!(html.contains("correlation-heatmap"));
         assert!(html.contains("dashboard-data"));
+        assert!(html.contains("id=\"overview-wafer\""));
+        assert!(html.contains("id=\"param-histogram\""));
+        assert!(html.contains("\"die_points\":"));
+        assert!(html.contains("\"histogram\":"));
         assert!(!html.contains("A <lot> dashboard"));
     }
 

@@ -194,7 +194,7 @@ impl EvidenceWriter {
         let props = WriterProperties::builder()
             .set_compression(Compression::SNAPPY)
             .set_dictionary_enabled(false)
-            .set_max_row_group_size(128)
+            .set_max_row_group_row_count(Some(128))
             .build();
         Ok(Self {
             writer: ArrowWriter::try_new(file, schema.clone(), Some(props))?,

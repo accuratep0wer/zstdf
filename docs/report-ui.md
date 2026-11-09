@@ -36,6 +36,14 @@ Unknown values fall back to saved settings or the defaults, **MES / English**.
 `tab` applies to the measurement Dashboard and accepts `overview`, `pareto`,
 `commonality`, `correlation`, `spatial`, or `quality`.
 
+The Overview tab is a yield cockpit on the same merged-part population as the
+other tabs: hard/soft bin Pareto with a cumulative share line, one die per
+merged part on the wafer map (not the older per-result density series), a
+spec-limit histogram for one parametric test, and site yield. Parts without
+both coordinates are omitted from the map and remain in the part counts.
+Limit-free histograms keep at most 512 reservoir values and are labeled as
+sampled. `?lang=zh` selects Chinese copy; source test names stay verbatim.
+
 ## Regenerate reports
 
 The controls, styles, and translation dictionary are embedded in generated HTML;

@@ -3414,5 +3414,131 @@
     "カラースケールの終点色",
     "색상 범위 끝 색상",
     "Endfarbe der Farbskala"
+  ],
+  "Yield cockpit compares bins, a die wafer map, and one parametric distribution. It uses the same merged-part population as the other tabs.": [
+    "Yield cockpit compares bins, a die wafer map, and one parametric distribution. It uses the same merged-part population as the other tabs.",
+    "良率驾驶舱对照 Bin、晶粒晶圆图和一项参数分布，并与其他页签使用同一套合并后的器件总体。",
+    "歩留まりコックピットはビン、ダイのウェハマップ、1つのパラメータ分布を比較します。他のタブと同じ結合済みデバイス母集団を使います。",
+    "수율 콕핏은 빈, 다이 웨이퍼 맵, 파라미터 분포 하나를 비교합니다. 다른 탭과 같은 병합 소자 모집단을 사용합니다.",
+    "Das Ausbeute-Cockpit vergleicht Bins, eine Die-Waferkarte und eine Parameterverteilung. Es nutzt dieselbe zusammengeführte Bauteilpopulation wie die anderen Register."
+  ],
+  "Bin Pareto": [
+    "Bin Pareto",
+    "Bin Pareto",
+    "ビンパレート",
+    "빈 Pareto",
+    "Bin-Pareto"
+  ],
+  "Wafer Map": [
+    "Wafer Map",
+    "晶圆图",
+    "ウェハマップ",
+    "웨이퍼 맵",
+    "Waferkarte"
+  ],
+  "Parametric Distribution": [
+    "Parametric Distribution",
+    "参数分布",
+    "パラメータ分布",
+    "파라미터 분포",
+    "Parameterverteilung"
+  ],
+  "Parametric test": [
+    "Parametric test",
+    "参数测试",
+    "パラメータテスト",
+    "파라미터 테스트",
+    "Parametertest"
+  ],
+  "All wafers": [
+    "All wafers",
+    "全部晶圆",
+    "すべてのウェハ",
+    "모든 웨이퍼",
+    "Alle Wafer"
+  ],
+  "Cumulative share": [
+    "Cumulative share",
+    "累积占比",
+    "累積比率",
+    "누적 비율",
+    "Kumulierter Anteil"
+  ],
+  "Bars rank failure count. The line is cumulative share.": [
+    "Bars rank failure count. The line is cumulative share.",
+    "柱高是失败数，折线是累积占比。",
+    "棒は不良数、線は累積比率です。",
+    "막대는 실패 수, 선은 누적 비율입니다.",
+    "Balken zeigen Fehlerzahlen, die Linie den kumulierten Anteil."
+  ],
+  "{label}: {fail} failing of {total}, yield {yield}.": [
+    "{label}: {fail} failing of {total}, yield {yield}.",
+    "{label}：{total} 中失败 {fail}，良率 {yield}。",
+    "{label}：{total} 中の不良 {fail}、歩留まり {yield}。",
+    "{label}: {total} 중 실패 {fail}, 수율 {yield}.",
+    "{label}: {fail} von {total} ausgefallen, Ausbeute {yield}."
+  ],
+  "No bins in this population.": [
+    "No bins in this population.",
+    "该总体没有 Bin。",
+    "この母集団にビンはありません。",
+    "이 모집단에는 빈이 없습니다.",
+    "Keine Bins in dieser Population."
+  ],
+  "No die coordinates in this population.": [
+    "No die coordinates in this population.",
+    "该总体没有晶粒坐标。",
+    "この母集団にダイ座標はありません。",
+    "이 모집단에는 다이 좌표가 없습니다.",
+    "Keine Die-Koordinaten in dieser Population."
+  ],
+  "{parts} parts with coordinates. {cells} map cells. X {minx} to {maxx}, Y {miny} to {maxy}.": [
+    "{parts} parts with coordinates. {cells} map cells. X {minx} to {maxx}, Y {miny} to {maxy}.",
+    "{parts} 个有坐标的器件，{cells} 个地图格。X {minx} 到 {maxx}，Y {miny} 到 {maxy}。",
+    "座標あり {parts} デバイス、マップセル {cells}。X {minx} から {maxx}、Y {miny} から {maxy}。",
+    "좌표가 있는 소자 {parts}개, 맵 칸 {cells}개. X {minx}–{maxx}, Y {miny}–{maxy}.",
+    "{parts} Bauteile mit Koordinaten, {cells} Kartenzellen. X {minx} bis {maxx}, Y {miny} bis {maxy}."
+  ],
+  "X {x}, Y {y}, hard bin {hard}, soft bin {soft}, {verdict}.": [
+    "X {x}, Y {y}, hard bin {hard}, soft bin {soft}, {verdict}.",
+    "X {x}，Y {y}，Hard Bin {hard}，Soft Bin {soft}，{verdict}。",
+    "X {x}、Y {y}、ハードビン {hard}、ソフトビン {soft}、{verdict}。",
+    "X {x}, Y {y}, 하드 빈 {hard}, 소프트 빈 {soft}, {verdict}.",
+    "X {x}, Y {y}, Hard-Bin {hard}, Soft-Bin {soft}, {verdict}."
+  ],
+  "Mixed": [
+    "Mixed",
+    "混合",
+    "混在",
+    "혼합",
+    "Gemischt"
+  ],
+  "No numeric distribution for this test.": [
+    "No numeric distribution for this test.",
+    "该测试项没有数值分布。",
+    "このテストに数値分布はありません。",
+    "이 테스트에는 숫자 분포가 없습니다.",
+    "Für diesen Test gibt es keine numerische Verteilung."
+  ],
+  "Sampled distribution of {observed} results.": [
+    "Sampled distribution of {observed} results.",
+    "由 {observed} 个结果抽样得到的分布。",
+    "{observed} 件の結果から抽出した分布。",
+    "{observed}개 결과에서 표본 추출한 분포.",
+    "Verteilung aus einer Stichprobe von {observed} Ergebnissen."
+  ],
+  "{observed} results. Below limit {below}. Above limit {above}.": [
+    "{observed} results. Below limit {below}. Above limit {above}.",
+    "{observed} 个结果。下限外 {below}。上限外 {above}。",
+    "{observed} 件。下限未満 {below}。上限超過 {above}。",
+    "결과 {observed}개. 하한 미만 {below}. 상한 초과 {above}.",
+    "{observed} Ergebnisse. Unter der Grenze {below}. Über der Grenze {above}."
+  ],
+  "{label} distribution": [
+    "{label} distribution",
+    "{label} 分布",
+    "{label} の分布",
+    "{label} 분포",
+    "{label}-Verteilung"
   ]
 }

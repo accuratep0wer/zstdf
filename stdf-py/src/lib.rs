@@ -11,7 +11,7 @@ use stdf_io::StdfReader;
 const DEFAULT_BATCH_SIZE: usize = 65_536;
 
 #[pyfunction]
-fn read_batches(py: Python<'_>, path: &str, batch_size: Option<usize>) -> PyResult<Vec<PyObject>> {
+fn read_batches(py: Python<'_>, path: &str, batch_size: Option<usize>) -> PyResult<Vec<Py<PyAny>>> {
     let reader = StdfReader::open(path).map_err(to_py_err)?;
     let batches = stdf_arrow::records_to_batches(
         reader.records(),
@@ -21,7 +21,7 @@ fn read_batches(py: Python<'_>, path: &str, batch_size: Option<usize>) -> PyResu
 
     batches
         .iter()
-        .map(|batch| batch.to_pyarrow(py))
+        .map(|batch| Ok(batch.to_pyarrow(py)?.unbind()))
         .collect::<PyResult<Vec<_>>>()
 }
 
@@ -83,7 +83,7 @@ fn write_parquet_many(
         ..Default::default()
     };
     let summary = py
-        .allow_threads(|| {
+        .detach(|| {
             stdf_parquet::files_to_partitioned_parquet_dir(
                 &paths,
                 Path::new(output_dir),
@@ -141,7 +141,7 @@ fn write_parquet_partitioned(
         max_output_files,
     };
     let summary = py
-        .allow_threads(|| {
+        .detach(|| {
             stdf_parquet::catalog::convert_dataset(
                 &inputs,
                 Path::new(output_dir),
@@ -294,7 +294,7 @@ mod tests {
     #[test]
     fn read_batches_invalid_input_returns_error() {
         prepare_python();
-        Python::with_gil(|py| {
+        Python::attach(|py| {
             let result = read_batches(py, "does-not-exist.stdf", Some(1));
             assert!(result.is_err());
         });
@@ -306,7 +306,7 @@ mod tests {
         std::fs::write(&input, far_only()).unwrap();
 
         prepare_python();
-        Python::with_gil(|py| {
+        Python::attach(|py| {
             let batches = read_batches(py, input.to_str().unwrap(), Some(1)).unwrap();
             assert!(batches.is_empty());
         });
@@ -317,7 +317,7 @@ mod tests {
     #[test]
     fn module_registers_expected_functions() {
         prepare_python();
-        Python::with_gil(|py| {
+        Python::attach(|py| {
             let module = PyModule::new(py, "_zstdf").unwrap();
             super::_zstdf(&module).unwrap();
 
@@ -331,7 +331,7 @@ mod tests {
 
     fn prepare_python() {
         static INIT: Once = Once::new();
-        INIT.call_once(pyo3::prepare_freethreaded_python);
+        INIT.call_once(Python::initialize);
     }
 
     #[test]
@@ -343,7 +343,7 @@ mod tests {
         let b = dir.join("b.stdf");
         std::fs::write(&a, build_test_stdf()).unwrap();
         std::fs::write(&b, build_test_stdf()).unwrap();
-        Python::with_gil(|py| {
+        Python::attach(|py| {
             let args = vec![
                 a.to_string_lossy().into_owned(),
                 b.to_string_lossy().into_owned(),
@@ -382,7 +382,7 @@ mod tests {
     fn write_parquet_many_rejects_invalid_partition_and_empty_inputs() {
         prepare_python();
         let output = temp_path("invalid_many");
-        Python::with_gil(|py| {
+        Python::attach(|py| {
             assert!(write_parquet_many(
                 py,
                 vec![],
@@ -414,7 +414,7 @@ mod tests {
         std::fs::create_dir(&dir).unwrap();
         let input = dir.join("input.stdf");
         std::fs::write(&input, build_test_stdf()).unwrap();
-        Python::with_gil(|py| {
+        Python::attach(|py| {
             let inputs = vec![input.to_string_lossy().into_owned()];
             let out = dir.join("out");
             for _ in 0..2 {

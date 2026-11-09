@@ -353,7 +353,7 @@ impl<'a> WriterCache<'a> {
                     .create_new(true)
                     .open(self.root.join(&relative))?;
                 let props = WriterProperties::builder()
-                    .set_max_row_group_size(self.options.row_group_rows)
+                    .set_max_row_group_row_count(Some(self.options.row_group_rows))
                     .set_dictionary_enabled(false)
                     .build();
                 let writer = ArrowWriter::try_new(file, stdf_arrow::eav_schema(), Some(props))?;

@@ -67,6 +67,14 @@ empty wafer IDs stay distinct (`__missing__` / `__empty__`). Pareto remains
 deferred. Analysis scans stream per evidence source after inventory collection
 so corrupt indexes still fail before a complete receipt.
 
+### Arrow and Parquet 60
+
+Workspace `arrow` and `parquet` are 60.1.0, and `pyo3` is 0.29. Parquet 60
+drops the `thrift` crate, so RUSTSEC-2026-0435 no longer applies. The same
+upgrade moves `zstd` to 0.14.3 and removes the `paste` dependency, which
+clears the advisories previously ignored because Parquet 55 could not take
+those fixes. Row-group limits use `set_max_row_group_row_count`.
+
 ### Dashboard yield cockpit
 
 Measurement dashboards now open on a yield cockpit: hard/soft bin Pareto with
